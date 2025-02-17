@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "react-native-restate",
-    "slug": "react-native-restate",
+    "name": "react-native-korbis",
+    "slug": "react-native-korbis",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "korbis",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
