@@ -18,10 +18,10 @@ export default function Index() {
       }}
     >
       <Image source={{ uri: user?.avatar }} className="size-12 rounded-full" />
-      <Text className="font-bold my-10 font-rubik text-3xl">
-        Welcome to Korbis
+      <Text className="font-bold my-10 font-rubik text-3xl text-center">
+        Welcome to Korbis,{"\n"}
+        {user?.name.split(" ")[0]}
       </Text>
-      <Link href="/sign-in">Sign In</Link>
       <Link href="/explore">Explore</Link>
       <Link href="/profile">Profile</Link>
       <Link href="/properties/1">Property</Link>

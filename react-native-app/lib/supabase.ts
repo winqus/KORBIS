@@ -2,7 +2,7 @@ import { AppState } from "react-native";
 import * as Linking from "expo-linking";
 import "react-native-url-polyfill/auto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createClient } from "@supabase/supabase-js";
+import { AuthSessionMissingError, createClient } from "@supabase/supabase-js";
 import { throwIfMissing } from "@/lib/utils";
 import { openAuthSessionAsync } from "expo-web-browser";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
@@ -36,6 +36,7 @@ export async function login() {
       options: {
         redirectTo: redirectUri,
         skipBrowserRedirect: true,
+        scopes: "openid email profile",
       },
     });
     if (response.error) {
@@ -92,6 +93,11 @@ export async function getCurrentUser() {
   try {
     const { data, error } = await supabase.auth.getUser();
     if (error) {
+      if (error instanceof AuthSessionMissingError) {
+        console.log("No session found. User is not authenticated.");
+        return null;
+      }
+
       throw error;
     }
 
@@ -117,7 +123,7 @@ export async function getCurrentUser() {
 
     return null;
   } catch (error) {
-    console.error(error);
+    console.error("An unexpected error occurred:", error.message);
     return null;
   }
 }
