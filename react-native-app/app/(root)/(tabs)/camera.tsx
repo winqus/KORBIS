@@ -9,9 +9,10 @@ import React, { useRef, useState } from "react";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import PicturePreview from "@/components/PicturePreview";
-import { saveToLibraryAsync } from "expo-media-library";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "expo-router";
+import { uploadItemPicture } from "@/lib/supabase";
+import * as FileSystem from "expo-file-system";
 
 const Camera = () => {
   const cameraRef = useRef<CameraView>(null);
@@ -45,16 +46,23 @@ const Camera = () => {
     setPictureUri(response?.uri ?? "");
   };
 
+  const handleSubmitPicture = async () => {
+    console.log("Submitting picture");
+    // saveToLibraryAsync(pictureUri);
+    const base64 = await FileSystem.readAsStringAsync(pictureUri, {
+      encoding: "base64",
+    });
+    await uploadItemPicture({ pictureBase64: base64 });
+
+    setPictureUri("");
+  };
+
   if (pictureUri) {
     return (
       <PicturePreview
         pictureUri={pictureUri}
         onCancel={() => setPictureUri("")}
-        onSubmit={() => {
-          console.log("Submitting picture");
-          saveToLibraryAsync(pictureUri);
-          setPictureUri("");
-        }}
+        onSubmit={handleSubmitPicture}
         submitText="Continue"
       />
     );

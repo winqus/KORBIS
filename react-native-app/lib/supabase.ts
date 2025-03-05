@@ -6,6 +6,7 @@ import { AuthSessionMissingError, createClient } from "@supabase/supabase-js";
 import { throwIfMissing } from "@/lib/utils";
 import { openAuthSessionAsync } from "expo-web-browser";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
+import { decode } from "base64-arraybuffer";
 
 throwIfMissing("env variables", process.env, [
   "EXPO_PUBLIC_SUPABASE_PROJECT_URL",
@@ -124,6 +125,38 @@ export async function getCurrentUser() {
     return null;
   } catch (error) {
     console.error("An unexpected error occurred:", error.message);
+    return null;
+  }
+}
+
+export async function uploadItemPicture({
+  pictureBase64,
+}: {
+  pictureBase64: string;
+}) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error("No user data found. User is not authenticated.");
+    }
+
+    const filePathInBucket = `${user.id}/${new Date().getTime()}.jpg`;
+
+    const { data, error } = await supabase.storage
+      .from("user-files")
+      .upload(filePathInBucket, decode(pictureBase64), {
+        contentType: "image/jpeg",
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    console.log("uploadData", data);
+
+    return true;
+  } catch (error) {
+    console.error("Upload picture error", error);
     return null;
   }
 }
