@@ -1,0 +1,66 @@
+{
+    "clientName": "Thunder Client",
+    "collectionName": "KORBIS",
+    "collectionId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
+    "dateExported": "2025-03-08T10:26:06.885Z",
+    "version": "1.2",
+    "folders": [
+        {
+            "_id": "5c084456-1082-40c7-b738-ab17d0978be0",
+            "name": "hello-world",
+            "containerId": "",
+            "created": "2025-03-08T10:11:43.692Z",
+            "sortNum": 10000,
+            "settings": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+                }
+            }
+        }
+    ],
+    "requests": [
+        {
+            "_id": "fb4bff04-3f9c-4c6c-956c-9987795f806d",
+            "colId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
+            "containerId": "5c084456-1082-40c7-b738-ab17d0978be0",
+            "name": "/hello-world/",
+            "url": "http://127.0.0.1:54321/functions/v1/hello-world/",
+            "method": "GET",
+            "sortNum": 10000,
+            "created": "2025-03-08T10:11:55.185Z",
+            "modified": "2025-03-08T10:24:49.956Z",
+            "headers": []
+        },
+        {
+            "_id": "c882247b-c77a-45bd-a1c0-1e43d98e2d27",
+            "colId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
+            "containerId": "5c084456-1082-40c7-b738-ab17d0978be0",
+            "name": "/hello-world/:id",
+            "url": "http://127.0.0.1:54321/functions/v1/hello-world/123",
+            "method": "GET",
+            "sortNum": 20000,
+            "created": "2025-03-08T10:17:46.872Z",
+            "modified": "2025-03-08T10:25:32.568Z",
+            "headers": []
+        },
+        {
+            "_id": "5e818505-da13-48a0-a7f1-c8439d4ad4de",
+            "colId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
+            "containerId": "5c084456-1082-40c7-b738-ab17d0978be0",
+            "name": "/hello-world/",
+            "url": "http://127.0.0.1:54321/functions/v1/hello-world/",
+            "method": "POST",
+            "sortNum": 20000,
+            "created": "2025-03-08T10:18:19.977Z",
+            "modified": "2025-03-08T10:25:27.555Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"name\": \"TESTING\"\n}",
+                "form": []
+            }
+        }
+    ],
+    "ref": "14NWuvcCis4H0KJdC_1fQ4sltBy34wLmwZ0UNa6UOAvNYuyMEAccLbSULJOANn5qG7k_0Walr9s2twx851iFyA"
+}
