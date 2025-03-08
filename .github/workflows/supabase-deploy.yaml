@@ -11,7 +11,7 @@ on:
 jobs:
   sbdeploy:
     name: Deploy Supabase Functions
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     concurrency:
@@ -30,3 +30,4 @@ jobs:
           version: latest
 
       - run: supabase functions deploy --project-ref $SUPABASE_PROJECT_ID
+        working-directory: sb-backend-app
