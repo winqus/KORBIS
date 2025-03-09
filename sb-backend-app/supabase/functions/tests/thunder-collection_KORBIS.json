@@ -2,7 +2,7 @@
     "clientName": "Thunder Client",
     "collectionName": "KORBIS",
     "collectionId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
-    "dateExported": "2025-03-08T10:26:06.885Z",
+    "dateExported": "2025-03-09T09:07:36.201Z",
     "version": "1.2",
     "folders": [
         {
@@ -11,6 +11,19 @@
             "containerId": "",
             "created": "2025-03-08T10:11:43.692Z",
             "sortNum": 10000,
+            "settings": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+                }
+            }
+        },
+        {
+            "_id": "a9c9f752-acf7-484b-8e9c-bc1e26616596",
+            "name": "generator",
+            "containerId": "",
+            "created": "2025-03-08T13:36:14.334Z",
+            "sortNum": 20000,
             "settings": {
                 "auth": {
                     "type": "bearer",
@@ -60,7 +73,24 @@
                 "raw": "{\n  \"name\": \"TESTING\"\n}",
                 "form": []
             }
+        },
+        {
+            "_id": "05834034-add1-4004-a8b7-a6857a23d54a",
+            "colId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
+            "containerId": "a9c9f752-acf7-484b-8e9c-bc1e26616596",
+            "name": "/generator/picture-to-item-metadata/",
+            "url": "http://127.0.0.1:54321/functions/v1/generator/picture-to-item-metadata",
+            "method": "POST",
+            "sortNum": 40000,
+            "created": "2025-03-08T13:36:26.936Z",
+            "modified": "2025-03-08T13:38:08.386Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"picturePath\": \"test.jpg\"\n}",
+                "form": []
+            }
         }
     ],
-    "ref": "14NWuvcCis4H0KJdC_1fQ4sltBy34wLmwZ0UNa6UOAvNYuyMEAccLbSULJOANn5qG7k_0Walr9s2twx851iFyA"
+    "ref": "14NWuvcCis4H0KJdC_1fQx2dxRwFARXrYitvE6k_EpW_IiQWWpRvV1N523hqJN3P7VaqJHc8pCeAOTDynR6htw"
 }
