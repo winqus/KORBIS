@@ -13,6 +13,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "expo-router";
 import { uploadItemPicture } from "@/lib/supabase";
 import * as FileSystem from "expo-file-system";
+import { mostRecentlyTakenPictureUri } from "@/lib/signals";
 
 const Camera = () => {
   const cameraRef = useRef<CameraView>(null);
@@ -44,6 +45,7 @@ const Camera = () => {
       shutterSound: false,
     });
     setPictureUri(response?.uri ?? "");
+    mostRecentlyTakenPictureUri.value = response?.uri ?? "";
   };
 
   const handleSubmitPicture = async () => {
@@ -93,4 +95,5 @@ const Camera = () => {
     </View>
   );
 };
+
 export default Camera;
