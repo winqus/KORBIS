@@ -16,7 +16,7 @@ const TabIcon = ({
     className={`flex-[1] flex-row justify-between items-center p-2.5 gap-2.5`}
   >
     <View
-      className={`rounded-full size-14 items-center justify-center ${focused ? "bg-black" : "bg-gray-400"}`}
+      className={`rounded-full size-14 items-center justify-center ${focused ? "bg-primary-300" : "bg-black-100"}`}
     >
       <Image
         source={source}
@@ -43,10 +43,15 @@ const TabsLayout = () => {
           position: "absolute",
           height: 82,
           backgroundColor: "white",
-          borderRadius: 50,
+          borderRadius: 100,
           paddingBottom: 0, // for iOS
           marginHorizontal: 30,
           marginBottom: 20,
+          // shadowColor: "rgba(0, 0, 0, 0.1)",
+          borderStyle: "solid",
+          borderColor: "rgba(0, 0, 0, 0.1)",
+          borderWidth: 1,
+          boxShadow: "0px 0px 4px rgba(0, 0, 0, 0.1)",
         },
         tabBarItemStyle: { height: 35 },
       }}
