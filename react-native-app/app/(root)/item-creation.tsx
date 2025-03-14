@@ -1,5 +1,5 @@
-import { View, ScrollView, TouchableOpacity } from "react-native";
-import React, { useState } from "react";
+import { View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import React, { useEffect, useState } from "react";
 import { mostRecentlyTakenPictureUri } from "@/lib/signals";
 import icons from "@/constants/icons";
 import IconButton from "@/components/IconButton";
@@ -9,21 +9,103 @@ import SquareGallery from "@/components/SquareGallery";
 import GenerativeInputField from "@/components/GenerativeInputField";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "expo-router";
+import { generateItemMetadataFromPicture } from "@/lib/supabase";
+import * as FileSystem from "expo-file-system";
+import { GeneratedItemMetadata } from "@/types";
 
 const ItemCreation = () => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [canAdd, setCanAdd] = useState(false);
-  const uri = mostRecentlyTakenPictureUri.value || "";
   const navigation = useNavigation();
 
+  const uri = mostRecentlyTakenPictureUri.value || "";
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [canAdd, setCanAdd] = useState(false);
+  const [canGenerate, setCanGenerate] = useState(uri !== "");
+  const [generatedMetadata, setGeneratedMetadata] =
+    useState<GeneratedItemMetadata | null>(null);
   const [form, setForm] = useState({
     name: "",
     description: "",
   });
 
+  const fieldMap = {
+    name: "shorthand",
+    description: "description",
+  };
+
+  useEffect(() => {
+    setCanAdd(form.name.length > 0);
+  }, [form.name]);
+
+  useEffect(() => {
+    setCanGenerate(uri !== "" && !isGenerating);
+  }, [uri, isGenerating]);
+
+  useEffect(() => {
+    if (generatedMetadata) {
+      setForm({
+        name: (generatedMetadata as any)[fieldMap.name] || form.name,
+        description:
+          (generatedMetadata as any)[fieldMap.description] || form.description,
+      });
+    }
+  }, [generatedMetadata]);
+
   const onCancel = () => {
     navigation.goBack();
     mostRecentlyTakenPictureUri.value = "";
+  };
+
+  const handleGenerate = async () => {
+    const pictureUri = uri;
+    if (!pictureUri) {
+      throw new Error("No picture uri");
+    }
+
+    console.log(`Starting to generate with picture uri: ${pictureUri}`);
+    setIsGenerating(true);
+
+    const pictureBase64 = await FileSystem.readAsStringAsync(pictureUri, {
+      encoding: "base64",
+    });
+
+    const generatedData = await generateItemMetadataFromPicture({
+      pictureBase64,
+    });
+
+    if (!generatedData) {
+      console.error(`Failed to generate data for ${pictureUri}`);
+      Alert.alert("Error", "Failed to generate data for the picture");
+    }
+
+    if (generatedData) {
+      setGeneratedMetadata(generatedData);
+    }
+
+    setIsGenerating(false);
+    console.log(`Generated item data for ${pictureUri}`);
+  };
+
+  const showGenerationIcon = (field: keyof typeof fieldMap): boolean => {
+    if (isGenerating) {
+      return true;
+    }
+
+    if (!generatedMetadata) {
+      return false;
+    }
+
+    if (!(field in form)) {
+      throw new Error(`Field "${field}" does not exist in form`);
+    }
+
+    if (!(fieldMap[field] in generatedMetadata)) {
+      throw new Error(
+        `Field "${fieldMap[field]}" does not exist in generatedMetadata`,
+      );
+    }
+
+    return form[field] === (generatedMetadata as any)[fieldMap[field]];
   };
 
   return (
@@ -44,7 +126,7 @@ const ItemCreation = () => {
             label="Name"
             placeholder="Enter the name"
             value={form.name}
-            icon={isGenerating ? icons.shines : undefined}
+            icon={showGenerationIcon("name") ? icons.shines : undefined}
             onChangeText={(value) => setForm({ ...form, name: value })}
             onClear={() => setForm({ ...form, name: "" })}
             isLoading={isGenerating}
@@ -53,7 +135,7 @@ const ItemCreation = () => {
             label="Description"
             placeholder="Enter the description"
             value={form.description}
-            icon={isGenerating ? icons.shines : undefined}
+            icon={showGenerationIcon("description") ? icons.shines : undefined}
             onChangeText={(value) => setForm({ ...form, description: value })}
             onClear={() => setForm({ ...form, description: "" })}
             isLoading={isGenerating}
@@ -65,12 +147,10 @@ const ItemCreation = () => {
       <StaticFooterMenu>
         <View className="items-start w-full">
           <IconButton
-            onPress={() => {
-              setIsGenerating(true);
-            }}
+            onPress={handleGenerate}
             icon={icons.shines}
             label="Generate"
-            disabled={isGenerating}
+            disabled={!canGenerate}
           />
         </View>
         <PrimaryButton onPress={() => {}} label="Add" disabled={!canAdd} />
