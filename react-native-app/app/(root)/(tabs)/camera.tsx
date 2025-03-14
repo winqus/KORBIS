@@ -8,18 +8,16 @@ import {
 import React, { useRef, useState } from "react";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import PicturePreview from "@/components/PicturePreview";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useNavigation } from "expo-router";
-import { uploadItemPicture } from "@/lib/supabase";
-import * as FileSystem from "expo-file-system";
+import { useNavigation, useRouter } from "expo-router";
+import { mostRecentlyTakenPictureUri } from "@/lib/signals";
 
 const Camera = () => {
   const cameraRef = useRef<CameraView>(null);
-  const [facing, setFacing] = useState<CameraType>("back");
+  const [facing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
-  const [pictureUri, setPictureUri] = useState<string>("");
   const navigation = useNavigation();
+  const router = useRouter();
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -39,34 +37,14 @@ const Camera = () => {
 
   const handleTakePicture = async () => {
     const response = await cameraRef.current?.takePictureAsync({
-      quality: 0.2,
+      quality: 0.5,
       exif: false,
       shutterSound: false,
     });
-    setPictureUri(response?.uri ?? "");
+
+    mostRecentlyTakenPictureUri.value = response?.uri ?? "";
+    router.push("/item-creation");
   };
-
-  const handleSubmitPicture = async () => {
-    console.log("Submitting picture");
-    // saveToLibraryAsync(pictureUri);
-    const base64 = await FileSystem.readAsStringAsync(pictureUri, {
-      encoding: "base64",
-    });
-    await uploadItemPicture({ pictureBase64: base64 });
-
-    setPictureUri("");
-  };
-
-  if (pictureUri) {
-    return (
-      <PicturePreview
-        pictureUri={pictureUri}
-        onCancel={() => setPictureUri("")}
-        onSubmit={handleSubmitPicture}
-        submitText="Continue"
-      />
-    );
-  }
 
   return (
     <View className="flex-[1] justify-center">
@@ -93,4 +71,5 @@ const Camera = () => {
     </View>
   );
 };
+
 export default Camera;

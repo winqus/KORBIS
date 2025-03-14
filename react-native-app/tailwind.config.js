@@ -20,6 +20,7 @@ module.exports = {
           300: "#0061FF",
         },
         accent: {
+          DEFAULT: "#D9D9D9",
           100: "#FBFBFD",
         },
         black: {
@@ -27,6 +28,9 @@ module.exports = {
           100: "#8C8E98",
           200: "#666876",
           300: "#191D31",
+        },
+        disabled: {
+          DEFAULT: "#D9D9D9",
         },
         danger: "#F75555",
       },

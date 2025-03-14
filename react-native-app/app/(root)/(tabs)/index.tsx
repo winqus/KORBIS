@@ -1,6 +1,7 @@
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { logout } from "@/lib/supabase";
 import { useGlobalContext } from "@/lib/global-provider";
+import { Link } from "expo-router";
 
 export default function Index() {
   const { user, refetch } = useGlobalContext();
@@ -21,6 +22,7 @@ export default function Index() {
         Welcome to Korbis,{"\n"}
         {user?.name.split(" ")[0]}
       </Text>
+      <Link href="/item-creation">Item Creation</Link>
       <TouchableOpacity onPress={handleSignOut}>
         <Text>Sign Out</Text>
       </TouchableOpacity>

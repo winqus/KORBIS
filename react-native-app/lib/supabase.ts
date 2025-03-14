@@ -2,11 +2,18 @@ import { AppState } from "react-native";
 import * as Linking from "expo-linking";
 import "react-native-url-polyfill/auto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AuthSessionMissingError, createClient } from "@supabase/supabase-js";
+import {
+  AuthSessionMissingError,
+  createClient,
+  FunctionsFetchError,
+  FunctionsHttpError,
+  FunctionsRelayError,
+} from "@supabase/supabase-js";
 import { throwIfMissing } from "@/lib/utils";
 import { openAuthSessionAsync } from "expo-web-browser";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
 import { decode } from "base64-arraybuffer";
+import { GeneratedItemMetadata } from "@/types";
 
 throwIfMissing("env variables", process.env, [
   "EXPO_PUBLIC_SUPABASE_PROJECT_URL",
@@ -129,7 +136,7 @@ export async function getCurrentUser() {
   }
 }
 
-export async function uploadItemPicture({
+export async function uploadTempPicture({
   pictureBase64,
 }: {
   pictureBase64: string;
@@ -143,7 +150,7 @@ export async function uploadItemPicture({
     const filePathInBucket = `${user.id}/${new Date().getTime()}.jpg`;
 
     const { data, error } = await supabase.storage
-      .from("user-files")
+      .from("public-bucket")
       .upload(filePathInBucket, decode(pictureBase64), {
         contentType: "image/jpeg",
       });
@@ -154,13 +161,61 @@ export async function uploadItemPicture({
 
     console.log("uploadData", data);
 
-    return true;
+    return { data, error };
   } catch (error) {
     console.error("Upload picture error", error);
     return null;
   }
 }
 
+export async function generateItemMetadataFromPicture({
+  pictureBase64,
+}: {
+  pictureBase64: string;
+}) {
+  try {
+    const uploadResult = await uploadTempPicture({
+      pictureBase64,
+    });
+
+    if (!uploadResult?.data || uploadResult?.error) {
+      throw new Error("Failed to upload picture");
+    }
+
+    console.log("");
+    const { data: itemData, error: funcError } =
+      await supabase.functions.invoke("generator/picture-to-item-metadata", {
+        method: "POST",
+        body: {
+          picturePath: uploadResult.data.path,
+        },
+      });
+
+    if (funcError instanceof FunctionsHttpError) {
+      const errorMessage = await funcError.context.json();
+      console.log("Function returned an error", errorMessage);
+    } else if (funcError instanceof FunctionsRelayError) {
+      console.log("Relay error:", funcError.message);
+    } else if (funcError instanceof FunctionsFetchError) {
+      console.log("Fetch error:", funcError.message);
+    }
+
+    if (funcError) {
+      throw new Error("Failed to fetch picture based item metadata");
+    }
+
+    throwIfMissing("generated item metadata", itemData, [
+      "item_name",
+      "shorthand",
+      "description",
+    ]);
+
+    return itemData as GeneratedItemMetadata;
+  } catch (error) {
+    console.error("Generate item metadata error", error);
+    return null;
+  }
+}
 // Tells Supabase Auth to continuously refresh the session automatically
 // if the app is in the foreground. When this is added, you will continue
 // to receive `onAuthStateChange` events with the `TOKEN_REFRESHED` or
