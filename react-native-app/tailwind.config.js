@@ -28,6 +28,9 @@ module.exports = {
           200: "#666876",
           300: "#191D31",
         },
+        disabled: {
+          DEFAULT: "#D9D9D9",
+        },
         danger: "#F75555",
       },
     },

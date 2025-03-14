@@ -18,5 +18,7 @@ export default function AppLayout() {
     return <Redirect href="/sign-in" />;
   }
 
+  // return <Redirect href="/item-creation" />; // TODO remove
+
   return <Slot />;
 }
