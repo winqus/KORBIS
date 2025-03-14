@@ -33,6 +33,8 @@ import location from "@/assets/icons/location.png";
 import edit from "@/assets/icons/edit.png";
 import camera from "@/assets/icons/camera.png";
 import shines from "@/assets/icons/shines.png";
+import clear from "@/assets/icons/clear.png";
+import focus_lens from "@/assets/icons/focus_lens.png";
 
 export default {
   google,
@@ -70,4 +72,6 @@ export default {
   edit,
   camera,
   shines,
+  clear,
+  focus_lens,
 };
