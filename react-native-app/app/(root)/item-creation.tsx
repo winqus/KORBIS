@@ -45,7 +45,7 @@ const ItemCreation = () => {
             placeholder="Enter the name"
             value={form.name}
             icon={isGenerating ? icons.shines : undefined}
-            onChange={(value) => setForm({ ...form, name: value })}
+            onChangeText={(value) => setForm({ ...form, name: value })}
             onClear={() => setForm({ ...form, name: "" })}
             isLoading={isGenerating}
           />
@@ -54,9 +54,10 @@ const ItemCreation = () => {
             placeholder="Enter the description"
             value={form.description}
             icon={isGenerating ? icons.shines : undefined}
-            onChange={(value) => setForm({ ...form, description: value })}
+            onChangeText={(value) => setForm({ ...form, description: value })}
             onClear={() => setForm({ ...form, description: "" })}
             isLoading={isGenerating}
+            multiline
           />
           <View className="h-40"></View>
         </View>

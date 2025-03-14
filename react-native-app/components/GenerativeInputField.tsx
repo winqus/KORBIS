@@ -10,16 +10,17 @@ import {
   TouchableOpacity,
   Keyboard,
   ActivityIndicator,
+  TextInputProps,
 } from "react-native";
 import React from "react";
 import icons from "@/constants/icons";
 
-interface GenerativeInputFieldProps {
+interface GenerativeInputFieldProps extends TextInputProps {
   label: string;
   placeholder: string;
   value: string;
   isLoading?: boolean;
-  onChange?: (value: string) => void;
+  onChangeText: (text: string) => void;
   onClear?: () => void;
   icon?: ImageSourcePropType;
   labelClass?: string;
@@ -33,13 +34,14 @@ const GenerativeInputField = ({
   placeholder,
   value,
   isLoading,
-  onChange,
+  onChangeText,
   onClear,
   icon,
   containerClass,
   labelClass,
   iconClass,
   inputClass,
+  ...props
 }: GenerativeInputFieldProps) => {
   return (
     <KeyboardAvoidingView
@@ -58,10 +60,11 @@ const GenerativeInputField = ({
               <TextInput
                 className={`text-3xl font-rubik flex-1 items-center ${inputClass} text-left`}
                 placeholder={placeholder}
-                onChangeText={onChange}
+                onChangeText={onChangeText}
                 value={value}
                 importantForAutofill="no"
                 autoComplete="off"
+                {...props}
               />
             )}
             {isLoading && (
