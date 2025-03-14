@@ -18,6 +18,7 @@ import serapiExampleResponse from "../_shared/data/serapiResponse_5AgUKUF.json" 
 import geminiExampleResponse1 from "../_shared/data/geminiResponse1_5AgUKUF.json" with {
   type: "json",
 };
+import { isStorageError } from "npm:@supabase/storage-js@2.7.1";
 
 throwIfMissing("env variables", Deno.env.toObject(), [
   "USE_SERPAPI",
@@ -60,6 +61,18 @@ function getPublicImageUrl(picturePath: string): string {
   }
 
   return data.publicUrl;
+}
+
+async function deletePublicImage(picturePath: string) {
+  const supabaseAdminClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_KEY") ?? "",
+  );
+
+  const { error} = await supabaseAdminClient.storage.from("public-bucket").remove([picturePath]);
+  if (isStorageError(error)) {
+    console.error(`Failed to delete image ${picturePath} from public bucket: ${error.message}`);
+  }
 }
 
 interface VisualMatch {
@@ -233,6 +246,8 @@ app.post("/generator/picture-to-item-metadata", async (req, res) => {
   } else if (matches.length === 0) {
     return res.status(404).send("No metadata found for provided image");
   }
+
+  deletePublicImage(picturePath);
 
   // send metadata to gemini api to create item metadata
   const generatedMetadata = await generateItemDataForVisualMatches(matches);
