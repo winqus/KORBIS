@@ -15,6 +15,7 @@ services:
     - 50051:50051
     volumes:
     - ./weaviate_data:/var/lib/weaviate
+    - ./weaviate_backups:/tmp/backups
     restart: on-failure:0
     environment:
       CLIP_INFERENCE_API: 'http://multi2vec-clip:8080'
@@ -25,8 +26,9 @@ services:
       AUTHENTICATION_APIKEY_USERS: 'service-account'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       DEFAULT_VECTORIZER_MODULE: 'multi2vec-clip'
-      ENABLE_MODULES: 'multi2vec-clip'
+      ENABLE_MODULES: 'backup-filesystem,multi2vec-clip'
       CLUSTER_HOSTNAME: 'node1'
+      BACKUP_FILESYSTEM_PATH: '/tmp/backups'
   multi2vec-clip:
     image: cr.weaviate.io/semitechnologies/multi2vec-clip:sentence-transformers-clip-ViT-B-32-multilingual-v1
     environment:
