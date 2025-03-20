@@ -5,7 +5,7 @@ on:
     branches:
       - 'main'
     paths: 
-      - 'sb-backend-app/**'
+      - 'sb-backend-app/supabase/**'
   workflow_dispatch:
 
 jobs:
