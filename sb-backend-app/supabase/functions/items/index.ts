@@ -1,15 +1,28 @@
 // @ts-types="npm:@types/express"
 import express from "express";
-import { WeaviateV2ItemsRepository } from "@/adapters/index";
+import { WeaviateV2ItemsRepository } from "@/adapters/index.ts";
 import ItemsController from "./controller.ts";
+import { throwIfMissing } from "@/utils.ts";
+import { createWeaviateClientV2 } from "@/drivers/index.ts";
 
-const app = express();
 const port = 8000;
 
-function bootstrap() {
+throwIfMissing("env variables", Deno.env.toObject(), [
+  "WEAVIATE_SCHEME",
+  "WEAVIATE_ENDPOINT",
+  "WEAVIATE_API_KEY",
+]);
+
+function bootstrap({ port }: { port: number }) {
+  const app = express();
   app.use(express.json());
 
-  const itemsRepository = new WeaviateV2ItemsRepository();
+  const weaviateClient = createWeaviateClientV2({
+    scheme: Deno.env.get("WEAVIATE_SCHEME") ?? "http",
+    host: Deno.env.get("WEAVIATE_ENDPOINT") ?? "localhost:8080",
+    apiKey: Deno.env.get("WEAVIATE_API_KEY") ?? "",
+  });
+  const itemsRepository = new WeaviateV2ItemsRepository(weaviateClient);
   const itemsController = new ItemsController(itemsRepository);
 
   app.get("/items", itemsController.findAll);
@@ -19,15 +32,14 @@ function bootstrap() {
   //   res.send(`Hello World with id ${req.params.id}!`);
   // });
 
+  app.listen(port, (error) => {
+    if (error) {
+      return console.error(`Error listening: ${error}`);
+    }
+  });
 }
 
-bootstrap();
-
-app.listen(port, (error) => {
-  if (error) {
-    return console.error(`Error listening: ${error}`);
-  }
-});
+bootstrap({ port });
 
 // Deno.serve(async (req) => {
 //   const { name } = await req.json();

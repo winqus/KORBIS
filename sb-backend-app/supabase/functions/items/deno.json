@@ -1,7 +1,7 @@
 {
   "imports": {
-    "express": "npm:express@4.21.2",
-    "@/": "../_shared/"
+    "@/": "../_shared/",
+    "express": "npm:express@4.21.2"
   },
   "compilerOptions": {
     "types": [
