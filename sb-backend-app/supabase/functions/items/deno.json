@@ -1,0 +1,12 @@
+{
+  "imports": {
+    "express": "npm:express@4.21.2",
+    "@/": "../_shared/"
+  },
+  "compilerOptions": {
+    "types": [
+      "npm:@types/express",
+      "jsr:@supabase/functions-js/edge-runtime.d.ts"
+    ]
+  }
+}

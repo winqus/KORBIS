@@ -1,6 +1,6 @@
 supabase init
 supabase functions new myfunctionname
 supabase start -x gotrue,realtime,storage-api,imgproxy,kong,inbucket,postgrest,postgres-meta,studio,logflare,vector,supavisor
-supabase start -x studio,imgproxy,vector
+supabase start -x studio,imgproxy,vector,realtime
 supabase stop
 supabase stop --no-backup
