@@ -13,10 +13,10 @@ throwIfMissing("env variables", Deno.env.toObject(), [
   "WEAVIATE_API_KEY",
 ]);
 
-function bootstrap({ port }: { port: number }) {
-  const app = express();
-  app.use(express.json());
+const app = express();
+app.use(express.json());
 
+function bootstrap() {
   const weaviateClient = createWeaviateClientV2({
     scheme: Deno.env.get("WEAVIATE_SCHEME") ?? "http",
     host: Deno.env.get("WEAVIATE_ENDPOINT") ?? "localhost:8080",
@@ -25,33 +25,28 @@ function bootstrap({ port }: { port: number }) {
   const itemsRepository = new WeaviateV2ItemsRepository(weaviateClient);
   const itemsController = new ItemsController(itemsRepository);
 
-  app.get("/items", itemsController.findAll);
-  app.post("/items", itemsController.create);
-
-  // app.get("/items/:id", (req, res) => {
-  //   res.send(`Hello World with id ${req.params.id}!`);
-  // });
-
-  app.listen(port, (error) => {
-    if (error) {
-      return console.error(`Error listening: ${error}`);
-    }
-  });
+  return { weaviateClient, itemsRepository, itemsController };
 }
 
-bootstrap({ port });
+app.post("/items", async (req, res, next) => {
+  const { itemsController } = bootstrap();
+  await itemsController.create(req, res, next);
+});
 
-// Deno.serve(async (req) => {
-//   const { name } = await req.json();
-//   const data = {
-//     message: `Hello ${name}!`,
-//   };
+app.get("/items", async (req, res, next) => {
+  const { itemsController } = bootstrap();
+  await itemsController.findAll(req, res, next);
+});
 
-//   return new Response(
-//     JSON.stringify(data),
-//     { headers: { "Content-Type": "application/json" } },
-//   );
+// app.get("/items/:id", (req, res) => {
+//   res.send(`Hello World with id ${req.params.id}!`);
 // });
+
+app.listen(port, (error) => {
+  if (error) {
+    return console.error(`Error listening: ${error}`);
+  }
+});
 
 /* To invoke locally:
 
@@ -61,6 +56,5 @@ bootstrap({ port });
   curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/items' \
     --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
     --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
-
+    --data '{"name":"SomeNewItemName", "description":"SomeNewItemDescription"}'
 */
