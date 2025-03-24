@@ -4,3 +4,5 @@ supabase start -x gotrue,realtime,storage-api,imgproxy,kong,inbucket,postgrest,p
 supabase start -x studio,imgproxy,vector,realtime
 supabase stop
 supabase stop --no-backup
+supabase functions serve
+supabase functions serve --inspect-mode brk

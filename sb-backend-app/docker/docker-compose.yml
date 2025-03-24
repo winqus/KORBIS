@@ -29,8 +29,19 @@ services:
       ENABLE_MODULES: 'backup-filesystem,multi2vec-clip'
       CLUSTER_HOSTNAME: 'node1'
       BACKUP_FILESYSTEM_PATH: '/tmp/backups'
+      AUTOSCHEMA_ENABLED: 'false'
   multi2vec-clip:
     image: cr.weaviate.io/semitechnologies/multi2vec-clip:sentence-transformers-clip-ViT-B-32-multilingual-v1
     environment:
       ENABLE_CUDA: '0'
+  weaviate-ui:
+    image: naaive/weaviate-ui:latest
+    restart: unless-stopped
+    ports:
+      - 7777:7777
+    environment:
+      WEAVIATE_URL: http://host.docker.internal:8080
+      WEAVIATE_API_KEYS: 'xxxxxxxxxxxxxxxx_myapikey_xxxxxxxxxxxxxxxx'
+    depends_on:
+      - weaviate
 ...
