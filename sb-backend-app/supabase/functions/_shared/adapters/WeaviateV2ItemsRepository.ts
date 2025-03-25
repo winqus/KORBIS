@@ -2,6 +2,7 @@ import { ItemsRepository } from "../app/interfaces/ItemsRepository.ts";
 import { Item } from "../core/types.ts";
 import { WeaviateClient } from "npm:weaviate-ts-client@2.2.0";
 import itemSchema from "../schema/ItemSchema.ts";
+import { throwIfMissing } from "../utils.ts";
 
 export class WeaviateV2ItemsRepository implements ItemsRepository {
   private readonly className: string;
@@ -38,8 +39,6 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
         throw new Error("Failed to create item");
       }
 
-      this.log("create", `Created new item: ${result.id}`);
-
       return {
         ID: result.id,
         name: item.name,
@@ -53,47 +52,59 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
 
   private async createDefaultClass(): Promise<void> {
     try {
-      const newClass = await this.client
+      const _newClass = await this.client
         .schema
         .classCreator()
         .withClass(itemSchema)
         .do();
 
-      this.log("createClass", `Created new class: ${newClass.class}`);
     } catch (error) {
       this.error("createClass", "Error creating class:", error);
     }
   }
 
-  public async findByID(ID: string): Promise<Item> {
-    throw new Error("Method not implemented.");
-    // if (ID == null) {
-    //   throw new Error("ID cannot be null");
-    // }
+  public async findByID(ID: string): Promise<Item | null> {
+    try {
+      if (!ID) {
+        throw new Error("ID cannot be null");
+      }
 
-    // const result = await this.client
-    //   .data
-    //   .getterById()
-    //   .withClassName(this.className)
-    //   .withId(ID)
-    //   .do();
+      const result = await this.client
+        .data
+        .getterById()
+        .withClassName(this.className)
+        .withId(ID)
+        .do().catch((error) => {
+          if (!this.isItemNotFoundError(error)) {
+            this.error("findByID", error);
+          }
 
-    // if (!result || !result.properties) {
-    //   throw new Error(`Item with ID ${ID} not found`);
-    // }
+          return null;
+        });
 
-    // throwIfMissing("item properties", result.properties, [
-    //   "name",
-    //   "description",
-    // ]);
+      if (!result || !result.properties) {
+        this.log("findByID", `Item with ID ${ID} not found`);
 
-    // const item: Item = {
-    //   ID,
-    //   name: result.properties.name as string,
-    //   description: result.properties.description as string,
-    // };
+        return null;
+      }
 
-    // return item;
+      throwIfMissing("item properties", result.properties, [
+        "name",
+        "description",
+      ]);
+
+      const item: Item = {
+        ID,
+        name: result.properties.name as string,
+        description: result.properties.description as string,
+      };
+
+      return item;
+    } catch (error) {
+      this.error("findByID", error);
+
+      return null;
+    }
   }
 
   public async findAll(): Promise<Item[]> {
@@ -108,8 +119,6 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
         { name: string; description: string; _additional: { id: string } }
       >;
 
-      this.log("findAll", `Returning ${items.length} items`);
-
       return items.map((obj) => ({
         ID: obj._additional.id,
         name: obj.name,
@@ -122,10 +131,22 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
   }
 
   public async delete(item: Item): Promise<void> {
-    throw new Error("Method not implemented.");
-    // await this.client.data.deleter()
-    //   .withId(item.ID)
-    //   .do();
+    try {
+      await this.client.data.deleter()
+        .withId(item.ID)
+        .do().catch((error) => {
+          if (this.isItemNotFoundError(error)) {
+            this.log("delete", `Item with ID ${item.ID} not found`);
+
+            return;
+          }
+
+          throw error;
+        });
+    } catch (error) {
+      this.error("delete", `Failed deleting item (${item?.ID})`, error);
+      throw error;
+    }
   }
 
   private isClassNotFoundInSchemaError(error: any) {
@@ -133,7 +154,17 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
        Error: usage error (422): {"error":[{"message":"invalid object: class \"Item\" not found in schema"}]}
     */
     const targetMessage = `class \\"${this.className}\\" not found in schema`;
-    return error?.message?.includes(targetMessage);
+
+    return error?.message?.includes(targetMessage) ?? false;
+  }
+
+  private isItemNotFoundError(error: any) {
+    /* Example error message:
+       Error: usage error (404)
+    */
+    const targetMessage = "usage error (404)";
+
+    return error?.message?.includes(targetMessage) ?? false;
   }
 
   private log(functionName: string, message: any, ...data: any[]) {

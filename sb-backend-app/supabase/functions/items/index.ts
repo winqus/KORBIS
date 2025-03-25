@@ -13,34 +13,21 @@ throwIfMissing("env variables", Deno.env.toObject(), [
   "WEAVIATE_API_KEY",
 ]);
 
+const weaviateClient = createWeaviateClientV2({
+  scheme: Deno.env.get("WEAVIATE_SCHEME") ?? "http",
+  host: Deno.env.get("WEAVIATE_ENDPOINT") ?? "localhost:8080",
+  apiKey: Deno.env.get("WEAVIATE_API_KEY") ?? "",
+});
+const itemsRepository = new WeaviateV2ItemsRepository(weaviateClient);
+const itemsController = new ItemsController(itemsRepository);
+
 const app = express();
 app.use(express.json());
 
-function bootstrap() {
-  const weaviateClient = createWeaviateClientV2({
-    scheme: Deno.env.get("WEAVIATE_SCHEME") ?? "http",
-    host: Deno.env.get("WEAVIATE_ENDPOINT") ?? "localhost:8080",
-    apiKey: Deno.env.get("WEAVIATE_API_KEY") ?? "",
-  });
-  const itemsRepository = new WeaviateV2ItemsRepository(weaviateClient);
-  const itemsController = new ItemsController(itemsRepository);
-
-  return { weaviateClient, itemsRepository, itemsController };
-}
-
-app.post("/items", async (req, res, next) => {
-  const { itemsController } = bootstrap();
-  await itemsController.create(req, res, next);
-});
-
-app.get("/items", async (req, res, next) => {
-  const { itemsController } = bootstrap();
-  await itemsController.findAll(req, res, next);
-});
-
-// app.get("/items/:id", (req, res) => {
-//   res.send(`Hello World with id ${req.params.id}!`);
-// });
+app.post("/items", itemsController.create.bind(itemsController));
+app.get("/items", itemsController.findAll.bind(itemsController));
+app.get("/items/:id", itemsController.findById.bind(itemsController));
+app.delete("/items/:id", itemsController.delete.bind(itemsController));
 
 app.listen(port, (error) => {
   if (error) {

@@ -2,7 +2,7 @@
     "clientName": "Thunder Client",
     "collectionName": "KORBIS",
     "collectionId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
-    "dateExported": "2025-03-24T18:34:17.222Z",
+    "dateExported": "2025-03-25T15:43:54.387Z",
     "version": "1.2",
     "folders": [
         {
@@ -132,7 +132,31 @@
             "created": "2025-03-24T17:04:56.763Z",
             "modified": "2025-03-24T17:05:05.705Z",
             "headers": []
+        },
+        {
+            "_id": "225ce561-4abc-4203-91fb-1ec8cd03ab1c",
+            "colId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
+            "containerId": "3c4019a0-1ce9-478d-a72e-1083c3b38be2",
+            "name": "/items/:id",
+            "url": "http://127.0.0.1:54321/functions/v1/items/18f98e2a-fa72-46f4-a356-bcf435029889",
+            "method": "GET",
+            "sortNum": 60000,
+            "created": "2025-03-25T14:54:25.727Z",
+            "modified": "2025-03-25T15:42:41.956Z",
+            "headers": []
+        },
+        {
+            "_id": "af5ec964-546c-41f8-a906-4776fad160ea",
+            "colId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
+            "containerId": "3c4019a0-1ce9-478d-a72e-1083c3b38be2",
+            "name": "/items/:id",
+            "url": "http://127.0.0.1:54321/functions/v1/items/18f98e2a-fa72-46f4-a356-bcf435029889",
+            "method": "DELETE",
+            "sortNum": 70000,
+            "created": "2025-03-25T15:14:30.010Z",
+            "modified": "2025-03-25T15:42:47.976Z",
+            "headers": []
         }
     ],
-    "ref": "14NWuvcCis4H0KJdC_1fQ7IfPNurxz_VtI7-fYj8_KZdemQS4g47pwmWsuvgIZtC2XKkseU1_WTmkf9m9hNGJw"
+    "ref": "14NWuvcCis4H0KJdC_1fQyl6Z7s0NinRTEbknJLNwa6meBt4HB_Egbw6n2GLH1oi3hVFp3da1jvQ9WP9jtIjSw"
 }
