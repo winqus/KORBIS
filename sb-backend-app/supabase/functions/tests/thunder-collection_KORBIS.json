@@ -2,7 +2,7 @@
     "clientName": "Thunder Client",
     "collectionName": "KORBIS",
     "collectionId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
-    "dateExported": "2025-03-09T09:07:36.201Z",
+    "dateExported": "2025-03-24T18:34:17.222Z",
     "version": "1.2",
     "folders": [
         {
@@ -24,6 +24,19 @@
             "containerId": "",
             "created": "2025-03-08T13:36:14.334Z",
             "sortNum": 20000,
+            "settings": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+                }
+            }
+        },
+        {
+            "_id": "3c4019a0-1ce9-478d-a72e-1083c3b38be2",
+            "name": "items",
+            "containerId": "",
+            "created": "2025-03-24T15:34:46.191Z",
+            "sortNum": 25000,
             "settings": {
                 "auth": {
                     "type": "bearer",
@@ -90,7 +103,36 @@
                 "raw": "{\n  \"picturePath\": \"test.jpg\"\n}",
                 "form": []
             }
+        },
+        {
+            "_id": "943e3eab-5684-43b8-8d66-ed79b2d73168",
+            "colId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
+            "containerId": "3c4019a0-1ce9-478d-a72e-1083c3b38be2",
+            "name": "/items",
+            "url": "http://127.0.0.1:54321/functions/v1/items",
+            "method": "POST",
+            "sortNum": 40000,
+            "created": "2025-03-24T15:34:46.191Z",
+            "modified": "2025-03-24T17:11:47.430Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"name\": \"SomeNewItemName\",\n  \"description\": \"SomeNewItemDescription\"\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "b8e0a434-bf13-4474-9f59-130f9ccbdb5e",
+            "colId": "c17cca5b-e4e5-4c60-8db9-d505052ff27e",
+            "containerId": "3c4019a0-1ce9-478d-a72e-1083c3b38be2",
+            "name": "/items",
+            "url": "http://127.0.0.1:54321/functions/v1/items",
+            "method": "GET",
+            "sortNum": 50000,
+            "created": "2025-03-24T17:04:56.763Z",
+            "modified": "2025-03-24T17:05:05.705Z",
+            "headers": []
         }
     ],
-    "ref": "14NWuvcCis4H0KJdC_1fQx2dxRwFARXrYitvE6k_EpW_IiQWWpRvV1N523hqJN3P7VaqJHc8pCeAOTDynR6htw"
+    "ref": "14NWuvcCis4H0KJdC_1fQ7IfPNurxz_VtI7-fYj8_KZdemQS4g47pwmWsuvgIZtC2XKkseU1_WTmkf9m9hNGJw"
 }
