@@ -1,4 +1,4 @@
-import { ItemsRepository } from "../app/interfaces/ItemsRepository.ts";
+import { CreateItemProps, ItemsRepository } from "../app/interfaces/ItemsRepository.ts";
 import { Item } from "../core/types.ts";
 import { WeaviateClient } from "npm:weaviate-ts-client@2.2.0";
 import itemSchema from "../schema/ItemSchema.ts";
@@ -11,17 +11,20 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
     this.className = className;
   }
 
-  public async create(item: Omit<Item, "ID">): Promise<Item> {
+  public async create(item: CreateItemProps): Promise<Item> {
     try {
       if (!item) {
         throw new Error("Item cannot be null");
       }
 
+      const imageID = item.imageBase64 ? crypto.randomUUID() : undefined;
       const itemCreator = this.client.data.creator()
         .withClassName(this.className)
         .withProperties({
           name: item.name,
           description: item.description,
+          image: item.imageBase64 || undefined,
+          imageID: imageID,
         });
 
       const result = await itemCreator.do()
@@ -43,6 +46,7 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
         ID: result.id,
         name: item.name,
         description: item.description,
+        imageID: imageID,
       };
     } catch (error) {
       this.error("create", error);
@@ -69,6 +73,8 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
         throw new Error("ID cannot be null");
       }
 
+      // TODO: Refactor to use the WeaviateClient's graphql `get` method instead of `getterById`
+      //       to prevent image data from being returned in the response.
       const result = await this.client
         .data
         .getterById()
@@ -88,15 +94,11 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
         return null;
       }
 
-      throwIfMissing("item properties", result.properties, [
-        "name",
-        "description",
-      ]);
-
       const item: Item = {
         ID,
         name: result.properties.name as string,
         description: result.properties.description as string,
+        imageID: result.properties.imageID as string | undefined,
       };
 
       return item;
@@ -111,18 +113,19 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
     try {
       const result = await this.client.graphql.get()
         .withClassName(this.className)
-        .withFields("name description _additional{id}")
+        .withFields("name description imageID _additional{id}")
         .withLimit(100)
         .do();
 
       const items = result.data.Get.Item as Array<
-        { name: string; description: string; _additional: { id: string } }
+        { name: string; description: string; imageID: string; _additional: { id: string } }
       >;
 
-      return items.map((obj) => ({
-        ID: obj._additional.id,
-        name: obj.name,
-        description: obj.description,
+      return items.map((item) => ({
+        ID: item._additional.id,
+        name: item.name,
+        description: item.description,
+        imageID: item.imageID,
       }));
     } catch (error) {
       this.error("findAll", "Failed retrieving items:", error);

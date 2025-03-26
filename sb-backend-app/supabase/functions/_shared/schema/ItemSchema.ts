@@ -5,24 +5,28 @@ const itemSchema = {
     moduleConfig: {
         /* https://weaviate.github.io/typescript-client/types/Multi2VecClipConfig.html (v2) */
         "multi2vec-clip": {
-            // imageFields: [
-            //     "image",
-            // ],
+            imageFields: [
+                "image",
+            ],
             textFields: [
                 "name",
                 "description",
             ],
             weights: {
-                // imageFields: [0.9],
+                imageFields: [0.9],
                 textFields: [0.1, 0.1],
             },
         },
     },
     properties: [
-        // {
-        //     "name": "image",
-        //     "dataType": ["blob"],
-        // },
+        {
+            "name": "image",
+            "dataType": ["blob"],
+        },
+        {
+            "name": "imageID",
+            "dataType": ["uuid"],
+        },
         {
             "name": "name",
             "dataType": ["string"],
