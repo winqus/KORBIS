@@ -22,7 +22,7 @@ const itemsRepository = new WeaviateV2ItemsRepository(weaviateClient);
 const itemsController = new ItemsController(itemsRepository);
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit : "10mb" }));
 
 app.post("/items", itemsController.create.bind(itemsController));
 app.get("/items", itemsController.findAll.bind(itemsController));
