@@ -58,13 +58,40 @@ export default class ItemsController {
       // TODO: Refactor to ItemsImageRepository::saveImage
       console.log(`Created new item with ID: ${newItem.ID}`);
       if (imageBase64) {
-        const supabaseClient = createClient(
+        const supabaseAdminClient = createClient(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
         );
 
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        const userID = user?.id ?? (Deno.env.get("ENVIRONMENT") === "development" ? "supabase-demo" : null);
+        const supabaseClient = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+        );
+
+        let userID = null;
+        const { data: { user }, error: error1 } = await supabaseClient.auth.getUser();
+        /* TODO: remove/refactor this block later ***********************************/
+        if (error1) {
+          console.error("error1", error1.message);
+        }
+        if (user) {
+          console.log("Successfully authenticated user with ANON key, userId:", user.id);
+        } else {
+          const jwt = req.get("Authorization")!.replace('Bearer ', '');
+          console.log("Request JWT token:", jwt.slice(0, 30) + "...");
+          const { data: { user }, error: error2 } = await supabaseAdminClient.auth.getUser(jwt);
+          if (error2) {
+            console.error("error2", error2.message);
+          }
+          if (user) {
+            console.log("Successfully authenticated user with JWT token, userId:", user.id);
+            userID = user.id;
+          } else {
+            console.log("Failed to authenticate user with JWT token");
+          }
+        }
+        /******************************************************************************** */
+        userID = user?.id ?? (Deno.env.get("ENVIRONMENT") === "development" ? "supabase-demo" : null);
         console.log(`Current user ID: ${userID}`); // TODO: remove this line
         if (!userID) {
           throw new Error("User not found for image upload");
@@ -72,7 +99,7 @@ export default class ItemsController {
         const bucketName = "public-bucket";
         const filePath = `images/${userID}/${newItem.ID}.png`;
         const imageBuffer = decodeBase64(imageBase64);
-        const storageFileApi = supabaseClient
+        const storageFileApi = supabaseAdminClient
           .storage
           .from(bucketName);
 
@@ -81,7 +108,7 @@ export default class ItemsController {
         });
         if (error) {
           if (error.message.includes("Bucket not found")) {
-            const { error: bucketError } = await supabaseClient.storage
+            const { error: bucketError } = await supabaseAdminClient.storage
               .createBucket(bucketName, {
                 public: true,
               });
