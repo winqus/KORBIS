@@ -1,7 +1,9 @@
 import { ItemsRepository } from "@/app/interfaces/index.ts";
 import { NextFunction, Request, Response } from "express";
-import { createClient } from "jsr:@supabase/supabase-js";
+import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { decode as decodeBase64 } from "npm:base64-arraybuffer";
+import { Item } from "@/core/types.ts";
+import { StorageError } from "npm:@supabase/storage-js@2.7.1";
 
 type CreateItemDTO = {
   name: string;
@@ -38,8 +40,6 @@ export default class ItemsController {
         return;
       }
       if (
-        // TODO: refactor
-        // imageBase64 && !/^data:image\/(png|jpeg|jpg);base64,/.test(imageBase64)
         imageBase64 && !/^\//.test(imageBase64)
       ) {
         console.log(
@@ -58,79 +58,17 @@ export default class ItemsController {
       // TODO: Refactor to ItemsImageRepository::saveImage
       console.log(`Created new item with ID: ${newItem.ID}`);
       if (imageBase64 && newItem.imageID) {
-        const supabaseAdminClient = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-        );
-
-        const supabaseClient = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_ANON_KEY")!,
-        );
-
-        const jwt = req.get("Authorization")!.replace("Bearer ", "");
+        const authToken = req.get("Authorization")!;
+        const jwt = authToken.replace("Bearer ", "");
         console.log("Request JWT token:", jwt.slice(0, 30) + "...");
 
-        const { data: { user }, error: getUserError } = await supabaseClient.auth
-          .getUser(jwt);
-        if (getUserError) {
-          console.error("getUserError", getUserError.message);
-        }
+        const supabaseCurrentUserClient = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authToken } } },
+        );
 
-        if (!user) {
-          console.error("User not found");
-          throw new Error("User not found for image upload");
-        }
-        console.log(`Current user ID: ${user.id}`);
-
-        const bucketName = "user-images";
-        const filePath = `images/${user.id}/${newItem.imageID}.png`;
-        const imageBuffer = decodeBase64(imageBase64);
-        const storageFileApi = supabaseAdminClient
-          .storage
-          .from(bucketName);
-
-        const { error } = await storageFileApi.upload(filePath, imageBuffer, {
-          contentType: "image/png",
-        });
-        if (error) {
-          if (error.message.includes("Bucket not found")) {
-            const { error: bucketError } = await supabaseAdminClient.storage
-              .createBucket(bucketName, {
-                public: true,
-                allowedMimeTypes: ["image/*"],
-                fileSizeLimit: "20MB"
-              });
-            if (bucketError) {
-              console.error(
-                `Failed to create bucket ${bucketName}: ${bucketError.message}`,
-              );
-              throw new Error("Failed to create bucket");
-            }
-            console.log(`Created bucket ${bucketName}`);
-            const { error: secondUploadError } = await storageFileApi.upload(
-              filePath,
-              imageBuffer,
-              {
-                contentType: "image/png",
-              },
-            );
-            if (secondUploadError) {
-              console.error(
-                `Failed to upload image to Supabase: ${secondUploadError.message}`,
-              );
-              throw new Error("Failed to upload image to Supabase again");
-            }
-            console.log(`Uploaded image to S3 at ${filePath}`);
-          } else {
-            console.error(
-              `Failed to upload image to Supabase: ${error.message}`,
-            );
-            throw new Error("Failed to upload image to Supabase");
-          }
-        } else {
-          console.log(`Uploaded image to S3 at ${filePath}`);
-        }
+        await this.saveImage(newItem, imageBase64, supabaseCurrentUserClient);
       } else {
         console.log("No image provided, skipping upload to Supabase Bucket");
       }
@@ -207,5 +145,121 @@ export default class ItemsController {
       console.error(`Error deleting item:`, error);
       res.status(500).send("Internal server error");
     }
+  }
+
+  private async saveImage(
+    item: Item,
+    imageBase64: string,
+    currentUser: SupabaseClient,
+  ) {
+    const { data: { user }, error: userError } = await currentUser.auth
+      .getUser();
+    if (userError) {
+      console.error("getUserError", userError.message);
+    }
+
+    if (!user) {
+      console.error("User not found");
+      throw new Error("User not found for image upload");
+    }
+
+    console.log(`Current user ID: ${user.id}`);
+
+    const bucketName = "user-images";
+    const filePath = `${user.id}/${item.imageID}.png`;
+    const uploadImage = this.createUserImageUploader(
+      bucketName,
+      imageBase64,
+      filePath,
+      currentUser,
+    );
+
+    const { data: uploadData, error: uploadError } = await uploadImage();
+
+    if (uploadData) {
+      console.log(
+        `Uploaded image at ${
+          uploadData.fullPath ?? "<uploadData is undefined>"
+        }`,
+      );
+
+      return;
+    }
+
+    if (!(uploadError?.message.includes("Bucket not found"))) {
+      console.error(
+        `Failed to upload image at ${filePath}: ${uploadError?.message}`,
+      );
+      throw new Error("Failed to upload image");
+    }
+
+    console.log("Bucket not found, creating bucket...");
+
+    await this.createUserImagesBucket(bucketName);
+
+    const { data: reuploadData, error: reuploadError } = await uploadImage();
+    if (reuploadError) {
+      console.error(
+        `Failed to upload image to ${filePath}: ${reuploadError.message}`,
+      );
+      throw new Error("Failed to upload image");
+    }
+
+    console.log(
+      `Uploaded image at ${
+        reuploadData?.fullPath ?? "<uploadData is undefined>"
+      }`,
+    );
+  }
+
+  private createUserImageUploader(
+    bucketName: string,
+    imageBase64: string,
+    filePath: string,
+    userClient: SupabaseClient,
+  ) {
+    const imageBuffer = decodeBase64(imageBase64);
+    const storageFileApi = userClient
+      .storage
+      .from(bucketName);
+
+    const uploadImage = async () => {
+      const uploadResult = await storageFileApi.upload(filePath, imageBuffer, {
+        contentType: "image/png",
+      });
+
+      return {
+        data: uploadResult.data,
+        /* StorageFileApi.upload is confused with return properties, error is returned instead of uploadError for some reason */
+        error: uploadResult.uploadError ??
+          (uploadResult as { error?: StorageError }).error,
+      };
+    };
+
+    return uploadImage;
+  }
+
+  private async createUserImagesBucket(bucketName: string) {
+    const supabaseAdminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: bucketData, error: bucketError } = await supabaseAdminClient
+      .storage
+      .createBucket(bucketName, {
+        public: true,
+        allowedMimeTypes: ["image/*"],
+        fileSizeLimit: "20MB",
+      });
+
+    if (bucketError) {
+      console.error(
+        `Failed to create bucket ${bucketName}: ${bucketError.message}`,
+      );
+      throw new Error("Failed to create bucket");
+    }
+
+    console.log(`Created bucket ${bucketData.name}`);
   }
 }
