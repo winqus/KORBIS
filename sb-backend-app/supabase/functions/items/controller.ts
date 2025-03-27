@@ -7,7 +7,7 @@ type CreateItemDTO = {
   name: string;
   description?: string;
   imageBase64?: string;
-}
+};
 
 export default class ItemsController {
   constructor(private readonly itemsRepository: ItemsRepository) {}
@@ -57,7 +57,7 @@ export default class ItemsController {
       });
       // TODO: Refactor to ItemsImageRepository::saveImage
       console.log(`Created new item with ID: ${newItem.ID}`);
-      if (imageBase64) {
+      if (imageBase64 && newItem.imageID) {
         const supabaseAdminClient = createClient(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -68,36 +68,23 @@ export default class ItemsController {
           Deno.env.get("SUPABASE_ANON_KEY")!,
         );
 
-        let userID = null;
-        const { data: { user }, error: error1 } = await supabaseClient.auth.getUser();
-        /* TODO: remove/refactor this block later ***********************************/
-        if (error1) {
-          console.error("error1", error1.message);
+        const jwt = req.get("Authorization")!.replace("Bearer ", "");
+        console.log("Request JWT token:", jwt.slice(0, 30) + "...");
+
+        const { data: { user }, error: getUserError } = await supabaseClient.auth
+          .getUser(jwt);
+        if (getUserError) {
+          console.error("getUserError", getUserError.message);
         }
-        if (user) {
-          console.log("Successfully authenticated user with ANON key, userId:", user.id);
-        } else {
-          const jwt = req.get("Authorization")!.replace('Bearer ', '');
-          console.log("Request JWT token:", jwt.slice(0, 30) + "...");
-          const { data: { user }, error: error2 } = await supabaseAdminClient.auth.getUser(jwt);
-          if (error2) {
-            console.error("error2", error2.message);
-          }
-          if (user) {
-            console.log("Successfully authenticated user with JWT token, userId:", user.id);
-            userID = user.id;
-          } else {
-            console.log("Failed to authenticate user with JWT token");
-          }
-        }
-        /******************************************************************************** */
-        userID = user?.id ?? (Deno.env.get("ENVIRONMENT") === "development" ? "supabase-demo" : null);
-        console.log(`Current user ID: ${userID}`); // TODO: remove this line
-        if (!userID) {
+
+        if (!user) {
+          console.error("User not found");
           throw new Error("User not found for image upload");
         }
-        const bucketName = "public-bucket";
-        const filePath = `images/${userID}/${newItem.ID}.png`;
+        console.log(`Current user ID: ${user.id}`);
+
+        const bucketName = "user-images";
+        const filePath = `images/${user.id}/${newItem.imageID}.png`;
         const imageBuffer = decodeBase64(imageBase64);
         const storageFileApi = supabaseAdminClient
           .storage
@@ -111,6 +98,8 @@ export default class ItemsController {
             const { error: bucketError } = await supabaseAdminClient.storage
               .createBucket(bucketName, {
                 public: true,
+                allowedMimeTypes: ["image/*"],
+                fileSizeLimit: "20MB"
               });
             if (bucketError) {
               console.error(
@@ -142,6 +131,8 @@ export default class ItemsController {
         } else {
           console.log(`Uploaded image to S3 at ${filePath}`);
         }
+      } else {
+        console.log("No image provided, skipping upload to Supabase Bucket");
       }
 
       res.json(newItem);
