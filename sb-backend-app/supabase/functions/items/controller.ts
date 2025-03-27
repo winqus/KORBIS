@@ -4,6 +4,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { decode as decodeBase64 } from "npm:base64-arraybuffer";
 import { Item } from "@/core/types.ts";
 import { StorageError } from "npm:@supabase/storage-js@2.7.1";
+import * as postgres from "https://deno.land/x/postgres@v0.19.3/mod.ts";
 
 type CreateItemDTO = {
   name: string;
@@ -49,17 +50,18 @@ export default class ItemsController {
         return;
       }
 
-      // TODO: Refactor to ItemsService::createItem
       const newItem = await this.itemsRepository.create({
         name: name as string,
         description: description as string,
         imageBase64: imageBase64 as string,
       });
-      // TODO: Refactor to ItemsImageRepository::saveImage
+
       console.log(`Created new item with ID: ${newItem.ID}`);
+
       if (imageBase64 && newItem.imageID) {
         const authToken = req.get("Authorization")!;
         const jwt = authToken.replace("Bearer ", "");
+
         console.log("Request JWT token:", jwt.slice(0, 30) + "...");
 
         const supabaseCurrentUserClient = createClient(
@@ -83,6 +85,7 @@ export default class ItemsController {
   public async findAll(_req: Request, res: Response, _next: NextFunction) {
     try {
       const items = await this.itemsRepository.findAll();
+
       console.log(`Found ${items.length} items`);
 
       res.json(items);
@@ -255,11 +258,47 @@ export default class ItemsController {
 
     if (bucketError) {
       console.error(
-        `Failed to create bucket ${bucketName}: ${bucketError.message}`,
+        `Failed to create bucket "${bucketName}": ${bucketError.message}`,
       );
       throw new Error("Failed to create bucket");
     }
 
-    console.log(`Created bucket ${bucketData.name}`);
+    console.log(`Created bucket "${bucketData.name}"`);
+
+    const policyName =
+      `Allow upload to user-images bucket personal folder 144gyii_0`;
+    const policyCreationQuery = `
+        CREATE POLICY "${policyName}"
+        ON storage.objects
+        FOR INSERT
+        TO public
+        WITH CHECK (
+          (bucket_id = '${bucketData.name}') AND
+          ((SELECT auth.uid()::text) = (storage.foldername(name))[1])
+        );
+      `;
+
+    const pool = new postgres.Pool(Deno.env.get("SUPABASE_DB_URL")!, 1, true);
+    const connection = await pool.connect();
+    const result = await connection.queryArray(policyCreationQuery).catch(
+      async (error) => {
+        console.error(
+          `Failed to create policy for bucket "${bucketName}": ${error.message}`,
+        );
+
+        await supabaseAdminClient.storage.deleteBucket(bucketData.name);
+        console.log(
+          `Deleted bucket "${bucketData.name}" due to policy creation failure`,
+        );
+
+        throw new Error("Failed to create bucket policy");
+      },
+    );
+
+    console.log("Policy creation result:", result);
+
+    console.log(
+      `Created policy "${policyName}" for bucket "${bucketData.name}"`,
+    );
   }
 }
