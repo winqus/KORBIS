@@ -13,3 +13,18 @@ export function throwIfMissing(
     throw new Error(`Missing required ${subject}: ${missing.join(", ")}`);
   }
 }
+
+export function duplicateElements<T extends Record<string, any>>(
+  arr: T[],
+  numberOfRepetitions: number,
+  keyPropertyName: keyof T,
+): T[] {
+  return arr
+    .flatMap((element) =>
+      Array.from({ length: numberOfRepetitions }, () => element),
+    )
+    .map((element, index) => ({
+      ...element,
+      [keyPropertyName]: `${element[keyPropertyName]}-${index}`,
+    }));
+}

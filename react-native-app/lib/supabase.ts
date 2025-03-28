@@ -259,6 +259,60 @@ export async function createItem({
   }
 }
 
+export async function getItems() {
+  try {
+    const { data: items, error: funcError } = await supabase.functions.invoke(
+      "items",
+      {
+        method: "GET",
+      },
+    );
+
+    if (funcError instanceof FunctionsHttpError) {
+      const errorMessage = await funcError.context.json();
+      console.log("Function returned an error", errorMessage);
+    } else if (funcError instanceof FunctionsRelayError) {
+      console.log("Relay error:", funcError.message);
+    } else if (funcError instanceof FunctionsFetchError) {
+      console.log("Fetch error:", funcError.message);
+    }
+
+    if (funcError) {
+      throw new Error("Failed to get items");
+    }
+
+    console.log(`getItems retrieved ${items.length} items`);
+
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error("No user data found. User is not authenticated.");
+    }
+
+    const returnedItems: Item[] = items.map((item: any) => {
+      if (!item) {
+        throw new Error("Returned item is null");
+      }
+
+      const imageURI = item.imageID
+        ? `${config.projectUrl}/storage/v1/object/public/user-images/${user.id}/${item.imageID}.png`
+        : undefined;
+
+      return {
+        ID: item.ID || "NO-ID",
+        name: item.name || "NO-NAME",
+        description: item.description ?? "NO-DESCRIPTION",
+        imageID: item.imageID,
+        imageURI: imageURI,
+      } satisfies Item;
+    });
+
+    return returnedItems;
+  } catch (error) {
+    console.error("getItems error", error);
+    return [];
+  }
+}
+
 // Tells Supabase Auth to continuously refresh the session automatically
 // if the app is in the foreground. When this is added, you will continue
 // to receive `onAuthStateChange` events with the `TOKEN_REFRESHED` or
