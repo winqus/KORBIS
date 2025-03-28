@@ -35,6 +35,8 @@ import camera from "@/assets/icons/camera.png";
 import shines from "@/assets/icons/shines.png";
 import clear from "@/assets/icons/clear.png";
 import focus_lens from "@/assets/icons/focus_lens.png";
+import document from "@/assets/icons/document.png";
+import back_caret_circle from "@/assets/icons/back_caret_circle.png";
 
 export default {
   google,
@@ -74,4 +76,6 @@ export default {
   shines,
   clear,
   focus_lens,
+  document,
+  back_caret_circle,
 };

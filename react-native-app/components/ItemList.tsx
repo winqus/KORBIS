@@ -6,6 +6,7 @@ import NoResults from "@/components/NoResults";
 
 interface ItemListProps {
   items: Item[];
+  onCardPress: (item: Item) => void;
   loading?: boolean;
   showHeader?: boolean;
   customHeader?: React.ReactElement;
@@ -16,11 +17,8 @@ const ItemList = ({
   loading,
   showHeader,
   customHeader,
+  onCardPress,
 }: ItemListProps) => {
-  const handleCardPress = (item: Item) => {
-    console.log(`pressed item ${item.ID}`);
-  };
-
   const listEmptyComponent = loading ? (
     <ActivityIndicator size="large" className="text-primary-300 mt-5" />
   ) : (
@@ -45,7 +43,7 @@ const ItemList = ({
       <FlatList
         data={items}
         renderItem={({ item }) => (
-          <ItemCard item={item} onPress={() => handleCardPress(item)} />
+          <ItemCard item={item} onPress={() => onCardPress(item)} />
         )}
         keyExtractor={(item) => item.ID}
         numColumns={2}
