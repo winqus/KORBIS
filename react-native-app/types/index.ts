@@ -9,4 +9,5 @@ export interface Item {
   name: string;
   description: string;
   imageID?: string;
+  imageURI?: string;
 }
