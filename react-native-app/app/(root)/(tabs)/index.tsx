@@ -1,63 +1,58 @@
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { getItems, logout } from "@/lib/supabase";
+import { getItems } from "@/lib/supabase";
 import { useGlobalContext } from "@/lib/global-provider";
-import { Link } from "expo-router";
 import { useSupabase } from "@/lib/useSupabase";
-import { useEffect } from "react";
 import ItemList from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Item } from "@/types";
+import icons from "@/constants/icons";
+import { useRouter } from "expo-router";
 
 export default function Index() {
-  const { user, refetch } = useGlobalContext();
-  const handleSignOut = async () => {
-    await logout();
-    refetch({});
-  };
+  const { user } = useGlobalContext();
+  const router = useRouter();
 
   const { data: items, loading: loadingItems } = useSupabase({
     fn: getItems,
   });
 
-  useEffect(() => {
-    console.log("items", items);
-  }, [items]);
+  const handleProfilePress = () => router.push("/profile");
 
-  // TODO: Remove this when testing is done
-  const dublicateItems = (arr: Item[], numberOfRepetitions: number) =>
-    arr
-      .flatMap(
-        (i) => Array.from({ length: numberOfRepetitions }).fill(i) as Item[],
-      )
-      .map((item, index) => ({ ...item, ID: `${item.ID}-${index}` }));
+  const itemListHeader = (
+    <View className="px-5">
+      <View className="flex flex-row items-center justify-between mt-5">
+        <TouchableOpacity
+          onPress={handleProfilePress}
+          className="flex flex-row items-center"
+        >
+          <Image
+            source={{ uri: user?.avatar }}
+            className="size-12 rounded-full"
+          />
+          <View className="flex flex-col items-start ml-2 justify-center">
+            <Text className="text-xs font-rubik text-black-100">Welcome,</Text>
+            <Text className="text-base font-rubik-medium text-black-300">
+              {user?.name.split(" ")[0]}
+            </Text>
+          </View>
+        </TouchableOpacity>
+        <Image source={icons.bell} className="size-6" />
+      </View>
+      <View className="mt-5">
+        <Text className="text-xl font-rubik-bold text-black-300 mt-5">
+          Found {items?.length} item(s) in your inventory
+        </Text>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView className="bg-white h-full">
-      <View
-        style={{
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <TouchableOpacity onPress={handleSignOut}>
-          <Text>Sign Out</Text>
-        </TouchableOpacity>
-        <View className="flex flex-row gap-1">
-          <Image
-            source={{ uri: user?.avatar }}
-            className="size-6 rounded-full"
-          />
-          <Text>Welcome to Korbis, {user?.name.split(" ")[0]}</Text>
-        </View>
-        <Text className="text-center">
-          {loadingItems
-            ? "Loading..."
-            : `You have ${items?.length || "(0)"} items in your inventory.`}
-        </Text>
-        <Link href="/item-creation">Item Creation</Link>
-      </View>
-      {/*<ItemList items={items ?? []} />*/}
-      <ItemList items={dublicateItems(items ?? [], 10)} />
+      <ItemList
+        items={items ?? []}
+        loading={loadingItems}
+        showHeader={true}
+        customHeader={itemListHeader}
+      />
     </SafeAreaView>
   );
 }
