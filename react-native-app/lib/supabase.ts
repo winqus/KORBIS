@@ -13,7 +13,7 @@ import { throwIfMissing } from "@/lib/utils";
 import { openAuthSessionAsync } from "expo-web-browser";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
 import { decode } from "base64-arraybuffer";
-import { GeneratedItemMetadata } from "@/types";
+import { GeneratedItemMetadata, Item } from "@/types";
 
 throwIfMissing("env variables", process.env, [
   "EXPO_PUBLIC_SUPABASE_PROJECT_URL",
@@ -216,6 +216,49 @@ export async function generateItemMetadataFromPicture({
     return null;
   }
 }
+
+export async function createItem({
+  name,
+  description,
+  pictureBase64,
+}: {
+  name: string;
+  description: string;
+  pictureBase64?: string;
+}) {
+  try {
+    const { data: itemData, error: funcError } =
+      await supabase.functions.invoke("items", {
+        method: "POST",
+        body: {
+          name,
+          description,
+          imageBase64: pictureBase64 || undefined,
+        },
+      });
+
+    if (funcError instanceof FunctionsHttpError) {
+      const errorMessage = await funcError.context.json();
+      console.log("Function returned an error", errorMessage);
+    } else if (funcError instanceof FunctionsRelayError) {
+      console.log("Relay error:", funcError.message);
+    } else if (funcError instanceof FunctionsFetchError) {
+      console.log("Fetch error:", funcError.message);
+    }
+
+    if (funcError) {
+      throw new Error("Failed to create new item");
+    }
+
+    console.log("created item", itemData);
+
+    return itemData as Item;
+  } catch (error) {
+    console.error("createItem error", error);
+    return null;
+  }
+}
+
 // Tells Supabase Auth to continuously refresh the session automatically
 // if the app is in the foreground. When this is added, you will continue
 // to receive `onAuthStateChange` events with the `TOKEN_REFRESHED` or

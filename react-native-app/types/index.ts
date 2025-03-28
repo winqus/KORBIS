@@ -3,3 +3,10 @@ export interface GeneratedItemMetadata {
   shorthand: string;
   description: string;
 }
+
+export interface Item {
+  ID: string;
+  name: string;
+  description: string;
+  imageID?: string;
+}

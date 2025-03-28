@@ -8,13 +8,14 @@ import StaticFooterMenu from "@/components/StaticFooterMenu";
 import SquareGallery from "@/components/SquareGallery";
 import GenerativeInputField from "@/components/GenerativeInputField";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useNavigation } from "expo-router";
-import { generateItemMetadataFromPicture } from "@/lib/supabase";
+import { useNavigation, useRouter } from "expo-router";
+import { createItem, generateItemMetadataFromPicture } from "@/lib/supabase";
 import * as FileSystem from "expo-file-system";
 import { GeneratedItemMetadata } from "@/types";
 
 const ItemCreation = () => {
   const navigation = useNavigation();
+  const router = useRouter();
 
   const uri = mostRecentlyTakenPictureUri.value || "";
 
@@ -56,6 +57,18 @@ const ItemCreation = () => {
     mostRecentlyTakenPictureUri.value = "";
   };
 
+  const getPictureBase64 = async (pictureUri: string) => {
+    if (!pictureUri) {
+      return null;
+    }
+
+    return await FileSystem.readAsStringAsync(pictureUri, {
+      encoding: "base64",
+    });
+  };
+
+  const getRecentPictureBase64 = async () => getPictureBase64(uri);
+
   const handleGenerate = async () => {
     const pictureUri = uri;
     if (!pictureUri) {
@@ -65,9 +78,10 @@ const ItemCreation = () => {
     console.log(`Starting to generate with picture uri: ${pictureUri}`);
     setIsGenerating(true);
 
-    const pictureBase64 = await FileSystem.readAsStringAsync(pictureUri, {
-      encoding: "base64",
-    });
+    const pictureBase64 = await getPictureBase64(pictureUri);
+    if (!pictureBase64) {
+      throw new Error(`No picture base64 for picture uri ${pictureUri}`);
+    }
 
     const generatedData = await generateItemMetadataFromPicture({
       pictureBase64,
@@ -106,6 +120,28 @@ const ItemCreation = () => {
     }
 
     return form[field] === (generatedMetadata as any)[fieldMap[field]];
+  };
+
+  const handleAdd = async () => {
+    const pictureBase64 = await getRecentPictureBase64();
+    const newItem = await createItem({
+      name: form.name,
+      description: form.description,
+      pictureBase64: pictureBase64 || undefined,
+    });
+
+    if (!newItem) {
+      console.error("Failed to create item");
+      Alert.alert("Error", "Failed to create item");
+      return;
+    }
+
+    setForm({
+      name: "",
+      description: "",
+    });
+
+    router.replace("/");
   };
 
   return (
@@ -153,7 +189,7 @@ const ItemCreation = () => {
             disabled={!canGenerate}
           />
         </View>
-        <PrimaryButton onPress={() => {}} label="Add" disabled={!canAdd} />
+        <PrimaryButton onPress={handleAdd} label="Add" disabled={!canAdd} />
       </StaticFooterMenu>
     </View>
   );
