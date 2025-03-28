@@ -6,6 +6,7 @@ import ItemList from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import icons from "@/constants/icons";
 import { useRouter } from "expo-router";
+import { Item } from "@/types";
 
 export default function Index() {
   const { user } = useGlobalContext();
@@ -16,6 +17,8 @@ export default function Index() {
   });
 
   const handleProfilePress = () => router.push("/profile");
+
+  const handleCardPress = ({ ID }: Item) => router.push(`/items/${ID}`);
 
   const itemListHeader = (
     <View className="px-5">
@@ -49,6 +52,7 @@ export default function Index() {
     <SafeAreaView className="bg-white h-full">
       <ItemList
         items={items ?? []}
+        onCardPress={handleCardPress}
         loading={loadingItems}
         showHeader={true}
         customHeader={itemListHeader}
