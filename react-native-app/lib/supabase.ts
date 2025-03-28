@@ -313,6 +313,62 @@ export async function getItems() {
   }
 }
 
+export async function getItemById({ ID }: Pick<Item, "ID">) {
+  try {
+    if (!ID) {
+      throw new Error("No item ID provided");
+    }
+
+    const { data: item, error: funcError } = await supabase.functions.invoke(
+      `items/${ID}`,
+      {
+        method: "GET",
+      },
+    );
+
+    if (funcError instanceof FunctionsHttpError) {
+      const errorMessage = await funcError.context.json();
+      console.log("Function returned an error", errorMessage);
+    } else if (funcError instanceof FunctionsRelayError) {
+      console.log("Relay error:", funcError.message);
+    } else if (funcError instanceof FunctionsFetchError) {
+      console.log("Fetch error:", funcError.message);
+    }
+
+    if (funcError) {
+      throw new Error("Failed to get item");
+    }
+
+    console.log(`getItemById retrieved "${item.ID}"`);
+
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error("No user data found. User is not authenticated.");
+    }
+
+    if (!item) {
+      throw new Error("Returned item is null");
+    }
+
+    const imageURI = item.imageID
+      ? `${config.projectUrl}/storage/v1/object/public/user-images/${user.id}/${item.imageID}.png`
+      : undefined;
+
+    const returnedItem: Item = {
+      ID: item.ID || "NO-ID",
+      name: item.name || "NO-NAME",
+      description: item.description ?? "NO-DESCRIPTION",
+      imageID: item.imageID,
+      imageURI: imageURI,
+    } satisfies Item;
+
+    return returnedItem;
+  } catch (error) {
+    console.error("getItemById error", error);
+    return null;
+  }
+}
+
 // Tells Supabase Auth to continuously refresh the session automatically
 // if the app is in the foreground. When this is added, you will continue
 // to receive `onAuthStateChange` events with the `TOKEN_REFRESHED` or
