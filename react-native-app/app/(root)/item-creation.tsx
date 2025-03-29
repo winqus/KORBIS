@@ -1,4 +1,4 @@
-import { View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, ScrollView, TouchableOpacity, Alert, Image } from "react-native";
 import React, { useEffect, useState } from "react";
 import { mostRecentlyTakenPictureUri } from "@/lib/signals";
 import icons from "@/constants/icons";
@@ -8,17 +8,15 @@ import StaticFooterMenu from "@/components/StaticFooterMenu";
 import SquareGallery from "@/components/SquareGallery";
 import GenerativeInputField from "@/components/GenerativeInputField";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useNavigation, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { createItem, generateItemMetadataFromPicture } from "@/lib/supabase";
 import * as FileSystem from "expo-file-system";
 import { GeneratedItemMetadata } from "@/types";
 
 const ItemCreation = () => {
-  const navigation = useNavigation();
   const router = useRouter();
 
-  const uri = mostRecentlyTakenPictureUri.value || "";
-
+  const [uri, setUri] = useState(mostRecentlyTakenPictureUri.value || "");
   const [isGenerating, setIsGenerating] = useState(false);
   const [canAdd, setCanAdd] = useState(false);
   const [canGenerate, setCanGenerate] = useState(uri !== "");
@@ -53,7 +51,7 @@ const ItemCreation = () => {
   }, [generatedMetadata]);
 
   const onCancel = () => {
-    navigation.goBack();
+    router.back();
     mostRecentlyTakenPictureUri.value = "";
   };
 
@@ -144,19 +142,32 @@ const ItemCreation = () => {
     router.replace("/");
   };
 
+  const handleDismissPicture = () => {
+    const mostRecentPictureUri = "";
+    setUri(mostRecentPictureUri);
+  };
+
   return (
     <View className="h-full bg-white">
       <TouchableOpacity
         onPress={onCancel}
         className="absolute top-2 left-2 z-10"
       >
-        <Ionicons name="close-circle-outline" size={36} color="#D9D9D9" />
+        <Ionicons
+          name="chevron-back-circle-outline"
+          size={36}
+          color="#D9D9D9"
+        />
       </TouchableOpacity>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-40"
       >
-        <SquareGallery uri={uri} />
+        <SquareGallery
+          uri={uri}
+          topRightIcon={uri && icons.clear}
+          topRightIconOnPress={handleDismissPicture}
+        />
         <View>
           <GenerativeInputField
             label="Name"
