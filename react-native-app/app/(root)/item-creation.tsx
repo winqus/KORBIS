@@ -1,4 +1,4 @@
-import { View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, ScrollView, TouchableOpacity, Alert, Image } from "react-native";
 import React, { useEffect, useState } from "react";
 import { mostRecentlyTakenPictureUri } from "@/lib/signals";
 import icons from "@/constants/icons";
@@ -8,17 +8,16 @@ import StaticFooterMenu from "@/components/StaticFooterMenu";
 import SquareGallery from "@/components/SquareGallery";
 import GenerativeInputField from "@/components/GenerativeInputField";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useNavigation, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { createItem, generateItemMetadataFromPicture } from "@/lib/supabase";
 import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
 import { GeneratedItemMetadata } from "@/types";
 
 const ItemCreation = () => {
-  const navigation = useNavigation();
   const router = useRouter();
 
-  const uri = mostRecentlyTakenPictureUri.value || "";
-
+  const [uri, setUri] = useState(mostRecentlyTakenPictureUri.value || "");
   const [isGenerating, setIsGenerating] = useState(false);
   const [canAdd, setCanAdd] = useState(false);
   const [canGenerate, setCanGenerate] = useState(uri !== "");
@@ -53,7 +52,7 @@ const ItemCreation = () => {
   }, [generatedMetadata]);
 
   const onCancel = () => {
-    navigation.goBack();
+    router.back();
     mostRecentlyTakenPictureUri.value = "";
   };
 
@@ -144,19 +143,48 @@ const ItemCreation = () => {
     router.replace("/");
   };
 
+  const handleDismissPicture = () => {
+    const mostRecentPictureUri = "";
+    setUri(mostRecentPictureUri);
+  };
+
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: false,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      setUri(result.assets[0].uri);
+    }
+  };
+
   return (
     <View className="h-full bg-white">
       <TouchableOpacity
         onPress={onCancel}
         className="absolute top-2 left-2 z-10"
       >
-        <Ionicons name="close-circle-outline" size={36} color="#D9D9D9" />
+        <Ionicons
+          name="chevron-back-circle-outline"
+          size={36}
+          color="#D9D9D9"
+        />
       </TouchableOpacity>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-40"
       >
-        <SquareGallery uri={uri} />
+        <SquareGallery
+          uri={uri}
+          showDismissIcon={uri !== ""}
+          onDismiss={handleDismissPicture}
+          showPickerIcon={uri === ""}
+          onPickerPress={pickImage}
+        />
         <View>
           <GenerativeInputField
             label="Name"
