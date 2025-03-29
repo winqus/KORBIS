@@ -11,6 +11,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { createItem, generateItemMetadataFromPicture } from "@/lib/supabase";
 import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
 import { GeneratedItemMetadata } from "@/types";
 
 const ItemCreation = () => {
@@ -147,6 +148,20 @@ const ItemCreation = () => {
     setUri(mostRecentPictureUri);
   };
 
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: false,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      setUri(result.assets[0].uri);
+    }
+  };
+
   return (
     <View className="h-full bg-white">
       <TouchableOpacity
@@ -165,8 +180,10 @@ const ItemCreation = () => {
       >
         <SquareGallery
           uri={uri}
-          topRightIcon={uri && icons.clear}
-          topRightIconOnPress={handleDismissPicture}
+          showDismissIcon={uri !== ""}
+          onDismiss={handleDismissPicture}
+          showPickerIcon={uri === ""}
+          onPickerPress={pickImage}
         />
         <View>
           <GenerativeInputField
