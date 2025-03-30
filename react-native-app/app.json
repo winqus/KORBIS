@@ -63,7 +63,8 @@
         {
           "photosPermission": "The app accesses your photos to use for your created items."
         }
-      ]
+      ],
+      "@config-plugins/detox"
     ],
     "experiments": {
       "typedRoutes": true
