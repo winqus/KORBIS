@@ -1,0 +1,26 @@
+### https://docs.maestro.dev/
+### https://dev.to/b42/test-your-react-native-app-with-maestro-5bfj
+### https://blog.theodo.com/2024/03/three-hacks-level-up-maestro-testing/
+
+### Run app with `npx expo start` or `npx expo run:android`
+### Run tests with e.g. `maestro test .\maestro\flow.yaml`
+
+#appId: "com.anonymous.rntestsexample" # Android development build
+appId: host.exp.exponent # Expo Go
+---
+- launchApp
+- openLink: exp://127.0.0.1:8081
+- assertVisible: ".*inventory.*"
+
+### Other examples
+#- assertVisible: "Welcome!"
+#- tapOn: "Explore"
+#- assertVisible: "This app includes example.*" # uses regex
+#- tapOn: "File-based routing"
+#- assertVisible: "Learn more"
+#- scroll
+#- assertVisible: "Animations"
+#
+### e.g. <TextInput testID="searchInput" />
+#- tapOn: { id: "searchInput" }
+#- inputText: "Hello !!!"
