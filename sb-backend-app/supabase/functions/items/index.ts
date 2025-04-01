@@ -28,6 +28,7 @@ app.post("/items", itemsController.create.bind(itemsController));
 app.get("/items", itemsController.findAll.bind(itemsController));
 app.get("/items/:id", itemsController.findById.bind(itemsController));
 app.delete("/items/:id", itemsController.delete.bind(itemsController));
+app.post("/items/search", itemsController.search.bind(itemsController));
 
 app.listen(port, (error) => {
   if (error) {
