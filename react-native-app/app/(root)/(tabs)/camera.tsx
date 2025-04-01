@@ -43,7 +43,25 @@ const Camera = () => {
     });
 
     mostRecentlyTakenPictureUri.value = response?.uri ?? "";
+  };
+
+  const handleTakePictureAndAddItem = async () => {
+    await handleTakePicture();
+
     router.push("/item-creation");
+  };
+
+  const handleTakeAndSearchImage = async () => {
+    await handleTakePicture();
+    const encodedUri = encodeURIComponent(mostRecentlyTakenPictureUri.value);
+
+    router.replace({
+      pathname: "/",
+      params: {
+        queryText: "",
+        queryImageUri: encodedUri,
+      },
+    });
   };
 
   return (
@@ -59,12 +77,30 @@ const Camera = () => {
             color="#fff8"
           />
         </TouchableOpacity>
-        <View className="flex-[1] flex-row bg-transparent m-16">
+        <View className="flex-[1] flex-row justify-center gap-4 bg-transparent mx-8 mb-16">
           <TouchableOpacity
-            className="flex-[1] self-end items-center"
-            onPress={handleTakePicture}
+            className="flex self-end items-center justify-center w-40"
+            onPress={handleTakeAndSearchImage}
           >
-            <FontAwesome name="circle-thin" size={96} color="#fffc" />
+            <Ionicons
+              name="search"
+              size={64}
+              color="#fffc"
+              className="absolute self-center -scale-x-100"
+            />
+            <FontAwesome name="circle-thin" size={128} color="#fffc" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="flex self-end items-center justify-center w-40"
+            onPress={handleTakePictureAndAddItem}
+          >
+            <Ionicons
+              name="add"
+              size={64}
+              color="#fffc"
+              className="absolute self-center"
+            />
+            <FontAwesome name="circle-thin" size={128} color="#fffc" />
           </TouchableOpacity>
         </View>
       </CameraView>

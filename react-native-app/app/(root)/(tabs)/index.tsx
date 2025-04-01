@@ -5,11 +5,17 @@ import { useSupabase } from "@/lib/useSupabase";
 import ItemList from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import icons from "@/constants/icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Item } from "@/types";
+import SearchBar from "@/components/SearchBar";
+import React, { useEffect } from "react";
 
 export default function Index() {
   const { user } = useGlobalContext();
+  const params = useLocalSearchParams<{
+    queryText?: string;
+    queryImageUri?: string;
+  }>();
   const router = useRouter();
 
   const { data: items, loading: loadingItems } = useSupabase({
@@ -20,8 +26,13 @@ export default function Index() {
 
   const handleCardPress = ({ ID }: Item) => router.push(`/items/${ID}`);
 
+  useEffect(() => {
+    console.log("index params", params);
+  }, [params.queryImageUri, params.queryText]);
+
   const itemListHeader = (
     <View className="px-5">
+      {/* Avatar */}
       <View className="flex flex-row items-center justify-between mt-5">
         <TouchableOpacity
           onPress={handleProfilePress}
@@ -40,6 +51,11 @@ export default function Index() {
         </TouchableOpacity>
         <Image source={icons.bell} className="size-6" />
       </View>
+
+      {/* Search bar */}
+      <SearchBar />
+
+      {/* Found Items text */}
       <View className="mt-5">
         <Text className="text-xl font-rubik-bold text-black-300 mt-5">
           Found {items?.length} item(s) in your inventory
