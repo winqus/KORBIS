@@ -150,6 +150,48 @@ export default class ItemsController {
     }
   }
 
+  public async search(req: Request, res: Response, _next: NextFunction) {
+    try {
+      const { queryText, queryImageBase64 } = req.body;
+      if (queryText && typeof queryText !== "string") {
+        console.log(
+          `Attempted to search for item with invalid queryText: ${queryText}`,
+        );
+        res.status(400).send("Query of type string is required");
+
+        return;
+      }
+      if (queryImageBase64 && typeof queryImageBase64 !== "string") {
+        console.log(
+          `Attempted to search for item with invalid queryImageBase64: ${queryImageBase64}`,
+        );
+        res.status(400).send("Query image of type string is required");
+
+        return;
+      }
+      if (!queryText && !queryImageBase64) {
+        console.log(
+          `Attempted to search for item with no queryText or queryImageBase64`,
+        );
+        res.status(400).send("Query text or image is required");
+
+        return;
+      }
+
+      const items = await this.itemsRepository.search({
+        queryText: queryText,
+        queryImageBase64: queryImageBase64,
+      });
+
+      console.log(`Found ${items.length} items`);
+
+      res.json(items);
+    } catch (error) {
+      console.error("Error searching for items:", error);
+      res.status(500).send("Internal server error");
+    }
+  }
+
   private async saveImage(
     item: Item,
     imageBase64: string,

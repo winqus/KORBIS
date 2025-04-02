@@ -1,8 +1,26 @@
-import { CreateItemProps, ItemsRepository } from "../app/interfaces/ItemsRepository.ts";
+import {
+  CreateItemProps,
+  ItemsRepository,
+  SearchItemsProps,
+} from "../app/interfaces/ItemsRepository.ts";
 import { Item } from "../core/types.ts";
 import { WeaviateClient } from "npm:weaviate-ts-client@2.2.0";
 import itemSchema from "../schema/ItemSchema.ts";
-import { throwIfMissing } from "../utils.ts";
+
+type WeaviateItemSearchResult = {
+  name: string;
+  description: string;
+  imageID: string;
+  _additional: { id: string };
+};
+
+type WeaviateNearImageItemSearchResult = WeaviateItemSearchResult & {
+  _additional: { distance: number };
+};
+
+type WeaviateScoredItemSearchResult = WeaviateItemSearchResult & {
+  _additional: { score: number };
+};
 
 export class WeaviateV2ItemsRepository implements ItemsRepository {
   private readonly className: string;
@@ -61,7 +79,6 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
         .classCreator()
         .withClass(itemSchema)
         .do();
-
     } catch (error) {
       this.error("createClass", "Error creating class:", error);
     }
@@ -118,7 +135,12 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
         .do();
 
       const items = result.data.Get.Item as Array<
-        { name: string; description: string; imageID: string; _additional: { id: string } }
+        {
+          name: string;
+          description: string;
+          imageID: string;
+          _additional: { id: string };
+        }
       >;
 
       return items.map((item) => ({
@@ -148,6 +170,138 @@ export class WeaviateV2ItemsRepository implements ItemsRepository {
         });
     } catch (error) {
       this.error("delete", `Failed deleting item (${item?.ID})`, error);
+      throw error;
+    }
+  }
+
+  public async search(
+    query: SearchItemsProps,
+  ): Promise<Array<Item & { score: number }>> {
+    try {
+      const { queryText, queryImageBase64 } = query;
+      if (!queryText && !queryImageBase64) {
+        throw new Error(
+          "Either queryText or queryImageBase64 must be provided",
+        );
+      }
+
+      const imageBasedResults: WeaviateScoredItemSearchResult[] = [];
+      if (queryImageBase64 && queryImageBase64.length > 0) {
+        this.log(
+          "search",
+          "searching by image:",
+          queryImageBase64.slice(0, 20),
+        );
+
+        const result = await this.client.graphql.get()
+          .withClassName("Item")
+          .withFields("name description imageID _additional{id distance}")
+          .withNearImage({ image: queryImageBase64 })
+          .withLimit(10)
+          .do();
+
+        this.log(
+          "search",
+          "founds by image items:",
+          result.data.Get.Item.length,
+        );
+
+        this.log(
+          "search",
+          "founds by image items:",
+          result.data.Get.Item,
+        );
+
+        const rawItems = (result.data.Get.Item || []).map((
+          item: WeaviateNearImageItemSearchResult,
+        ) => ({
+          ...item,
+          _additional: {
+            id: item._additional.id,
+            score: 1 - item._additional.distance,
+          },
+        }));
+
+        imageBasedResults.push(...rawItems);
+      }
+
+      const textBasedResults: WeaviateScoredItemSearchResult[] = [];
+      if (queryText && queryText.trim().length > 0) {
+        this.log("search", "searching by text:", queryText.slice(0, 20));
+
+        const result = await this.client.graphql.get()
+          .withClassName("Item")
+          .withFields(
+            "name description imageID _additional{id score}",
+          )
+          .withHybrid({
+            query: queryText,
+            properties: ["name^3", "description^2"],
+            alpha: 0.25,
+          })
+          .withLimit(10)
+          .do();
+
+        this.log(
+          "search",
+          "founds by text items:",
+          result.data.Get.Item.length,
+        );
+
+        this.log(
+          "search",
+          "founds by text items:",
+          result.data.Get.Item,
+        );
+
+        const rawItems = (result.data.Get.Item || []).map(
+          (item: WeaviateScoredItemSearchResult) => ({
+            ...item,
+            _additional: {
+              id: item._additional.id,
+              score: +item._additional.score, /* Convert string to number */
+            },
+          } satisfies WeaviateScoredItemSearchResult),
+        );
+
+        textBasedResults.push(...rawItems);
+      }
+
+      const idToBestScoredItem = new Map<string, WeaviateScoredItemSearchResult>();
+      for (const item of [...imageBasedResults, ...textBasedResults]) {
+        const id = item._additional.id;
+        const existing = idToBestScoredItem.get(id);
+
+        if (!existing || item._additional.score > existing._additional.score) {
+          idToBestScoredItem.set(id, item);
+        }
+      }
+
+      const uniqueResults = Array.from(idToBestScoredItem.values());
+
+      const sortedResults = uniqueResults.sort((a, b) => {
+        if (a._additional.score && b._additional.score) {
+          return b._additional.score - a._additional.score;
+        }
+
+        return 0;
+      });
+
+      const items = sortedResults.map((
+        item,
+      ) => ({
+        ID: item._additional.id,
+        name: item.name,
+        description: item.description,
+        imageID: item.imageID,
+        score: item._additional.score,
+      } satisfies Item & { score: number }));
+
+      this.log("search", "items found:", items.length);
+
+      return items;
+    } catch (error) {
+      this.error("search", error);
       throw error;
     }
   }
