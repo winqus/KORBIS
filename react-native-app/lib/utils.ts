@@ -1,3 +1,5 @@
+import * as FileSystem from "expo-file-system";
+
 export function throwIfMissing(
   subject: string,
   obj: Record<string, any>,
@@ -27,4 +29,14 @@ export function duplicateElements<T extends Record<string, any>>(
       ...element,
       [keyPropertyName]: `${element[keyPropertyName]}-${index}`,
     }));
+}
+
+export async function getPictureBase64FromLocalUri(pictureUri: string) {
+  if (!pictureUri) {
+    return null;
+  }
+
+  return await FileSystem.readAsStringAsync(pictureUri, {
+    encoding: "base64",
+  });
 }
