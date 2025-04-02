@@ -9,7 +9,7 @@ import {
   FunctionsHttpError,
   FunctionsRelayError,
 } from "@supabase/supabase-js";
-import { throwIfMissing } from "@/lib/utils";
+import { getPictureBase64FromLocalUri, throwIfMissing } from "@/lib/utils";
 import { openAuthSessionAsync } from "expo-web-browser";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
 import { decode } from "base64-arraybuffer";
@@ -130,7 +130,7 @@ export async function getCurrentUser() {
     }
 
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error("An unexpected error occurred:", error.message);
     return null;
   }
@@ -227,6 +227,11 @@ export async function createItem({
   pictureBase64?: string;
 }) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error("No user data found. User is not authenticated.");
+    }
+
     const { data: itemData, error: funcError } =
       await supabase.functions.invoke("items", {
         method: "POST",
@@ -252,7 +257,7 @@ export async function createItem({
 
     console.log("created item", itemData);
 
-    return itemData as Item;
+    return mapAny2Item(itemData, user, config);
   } catch (error) {
     console.error("createItem error", error);
     return null;
@@ -261,6 +266,11 @@ export async function createItem({
 
 export async function getItems() {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error("No user data found. User is not authenticated.");
+    }
+
     const { data: items, error: funcError } = await supabase.functions.invoke(
       "items",
       {
@@ -283,30 +293,7 @@ export async function getItems() {
 
     console.log(`getItems retrieved ${items.length} items`);
 
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error("No user data found. User is not authenticated.");
-    }
-
-    const returnedItems: Item[] = items.map((item: any) => {
-      if (!item) {
-        throw new Error("Returned item is null");
-      }
-
-      const imageURI = item.imageID
-        ? `${config.projectUrl}/storage/v1/object/public/user-images/${user.id}/${item.imageID}.png`
-        : undefined;
-
-      return {
-        ID: item.ID || "NO-ID",
-        name: item.name || "NO-NAME",
-        description: item.description ?? "NO-DESCRIPTION",
-        imageID: item.imageID,
-        imageURI: imageURI,
-      } satisfies Item;
-    });
-
-    return returnedItems;
+    return mapAny2Items(items, user, config);
   } catch (error) {
     console.error("getItems error", error);
     return [];
@@ -317,6 +304,11 @@ export async function getItemById({ ID }: Pick<Item, "ID">) {
   try {
     if (!ID) {
       throw new Error("No item ID provided");
+    }
+
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error("No user data found. User is not authenticated.");
     }
 
     const { data: item, error: funcError } = await supabase.functions.invoke(
@@ -341,32 +333,103 @@ export async function getItemById({ ID }: Pick<Item, "ID">) {
 
     console.log(`getItemById retrieved "${item.ID}"`);
 
+    if (!item) {
+      throw new Error("Returned item is null");
+    }
+
+    return mapAny2Item(item, user, config);
+  } catch (error) {
+    console.error("getItemById error", error);
+    return null;
+  }
+}
+
+export async function searchItems({
+  queryText,
+  queryImageUri,
+}: {
+  queryText?: string;
+  queryImageUri?: string;
+}) {
+  try {
     const user = await getCurrentUser();
     if (!user) {
       throw new Error("No user data found. User is not authenticated.");
     }
 
-    if (!item) {
-      throw new Error("Returned item is null");
+    const pictureBase64 = await getPictureBase64FromLocalUri(
+      queryImageUri || "",
+    );
+
+    console.log(
+      `searchItems: queryText: ${queryText}, pictureBase64: ${pictureBase64?.slice(0, 10)}...`,
+    );
+    if (!queryText && !pictureBase64) {
+      console.log("No search query provided, returning all items");
+      return await getItems();
     }
 
-    const imageURI = item.imageID
-      ? `${config.projectUrl}/storage/v1/object/public/user-images/${user.id}/${item.imageID}.png`
-      : undefined;
+    const { data: items, error: funcError } = await supabase.functions.invoke(
+      "items/search",
+      {
+        method: "POST",
+        body: {
+          queryText: queryText || undefined,
+          queryImageBase64: pictureBase64 || undefined,
+        },
+      },
+    );
 
-    const returnedItem: Item = {
-      ID: item.ID || "NO-ID",
-      name: item.name || "NO-NAME",
-      description: item.description ?? "NO-DESCRIPTION",
-      imageID: item.imageID,
-      imageURI: imageURI,
-    } satisfies Item;
+    if (funcError instanceof FunctionsHttpError) {
+      const errorMessage = await funcError.context.json();
+      console.log("Function returned an error", errorMessage);
+    } else if (funcError instanceof FunctionsRelayError) {
+      console.log("Relay error:", funcError.message);
+    } else if (funcError instanceof FunctionsFetchError) {
+      console.log("Fetch error:", funcError.message);
+    }
 
-    return returnedItem;
+    if (funcError) {
+      throw new Error("Failed to get items");
+    }
+
+    console.log(`getItems retrieved ${items.length} items`);
+
+    return mapAny2Items(items, user, config);
   } catch (error) {
-    console.error("getItemById error", error);
-    return null;
+    console.error("searchItems error", error);
+    return [];
   }
+}
+
+function mapAny2Item(
+  item: any,
+  user: { id: string },
+  config: { projectUrl: string },
+): Item {
+  if (!item) {
+    throw new Error("Returned item is null");
+  }
+
+  const imageURI = item.imageID
+    ? `${config.projectUrl}/storage/v1/object/public/user-images/${user.id}/${item.imageID}.png`
+    : undefined;
+
+  return {
+    ID: item.ID || "NO-ID",
+    name: item.name || "NO-NAME",
+    description: item.description ?? "NO-DESCRIPTION",
+    imageID: item.imageID,
+    imageURI: imageURI,
+  } satisfies Item;
+}
+
+function mapAny2Items(
+  items: any[],
+  user: { id: string },
+  config: { projectUrl: string },
+): Item[] {
+  return items.map((item) => mapAny2Item(item, user, config));
 }
 
 // Tells Supabase Auth to continuously refresh the session automatically

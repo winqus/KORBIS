@@ -10,9 +10,9 @@ import GenerativeInputField from "@/components/GenerativeInputField";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { createItem, generateItemMetadataFromPicture } from "@/lib/supabase";
-import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { GeneratedItemMetadata } from "@/types";
+import { getPictureBase64FromLocalUri } from "@/lib/utils";
 
 const ItemCreation = () => {
   const router = useRouter();
@@ -56,17 +56,7 @@ const ItemCreation = () => {
     mostRecentlyTakenPictureUri.value = "";
   };
 
-  const getPictureBase64 = async (pictureUri: string) => {
-    if (!pictureUri) {
-      return null;
-    }
-
-    return await FileSystem.readAsStringAsync(pictureUri, {
-      encoding: "base64",
-    });
-  };
-
-  const getRecentPictureBase64 = async () => getPictureBase64(uri);
+  const getRecentPictureBase64 = async () => getPictureBase64FromLocalUri(uri);
 
   const handleGenerate = async () => {
     const pictureUri = uri;
@@ -77,7 +67,7 @@ const ItemCreation = () => {
     console.log(`Starting to generate with picture uri: ${pictureUri}`);
     setIsGenerating(true);
 
-    const pictureBase64 = await getPictureBase64(pictureUri);
+    const pictureBase64 = await getPictureBase64FromLocalUri(pictureUri);
     if (!pictureBase64) {
       throw new Error(`No picture base64 for picture uri ${pictureUri}`);
     }

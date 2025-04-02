@@ -1,5 +1,5 @@
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { getItems } from "@/lib/supabase";
+import { searchItems } from "@/lib/supabase";
 import { useGlobalContext } from "@/lib/global-provider";
 import { useSupabase } from "@/lib/useSupabase";
 import ItemList from "@/components/ItemList";
@@ -18,8 +18,17 @@ export default function Index() {
   }>();
   const router = useRouter();
 
-  const { data: items, loading: loadingItems } = useSupabase({
-    fn: getItems,
+  const {
+    data: items,
+    loading: loadingItems,
+    refetch: refetchItems,
+  } = useSupabase({
+    fn: searchItems,
+    params: {
+      queryText: params.queryText || "",
+      queryImageUri: params.queryImageUri || "",
+    },
+    skip: true,
   });
 
   const handleProfilePress = () => router.push("/profile");
@@ -27,7 +36,10 @@ export default function Index() {
   const handleCardPress = ({ ID }: Item) => router.push(`/items/${ID}`);
 
   useEffect(() => {
-    console.log("index params", params);
+    refetchItems({
+      queryText: params.queryText || "",
+      queryImageUri: params.queryImageUri || "",
+    });
   }, [params.queryImageUri, params.queryText]);
 
   const itemListHeader = (
