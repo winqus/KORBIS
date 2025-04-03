@@ -1,5 +1,5 @@
-import { ConfigService } from "../interfaces/ConfigService.ts";
-import { MissingEnvVariableError } from "../errors/MissingEnvVariableError.ts";
+import { ConfigService } from "../interfaces/index.ts";
+import { MissingEnvVariableError } from "../errors/index.ts";
 
 export class DenoEnvConfigService implements ConfigService {
   public get(key: string): string | null {
