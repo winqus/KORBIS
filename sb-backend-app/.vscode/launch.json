@@ -1,0 +1,34 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "request": "launch",
+      "name": "Debug tests",
+      "type": "node",
+      /* disabled specific entrypoint */
+      // "program": "${workspaceFolder}/main.ts",
+      "cwd": "${workspaceFolder}",
+      "env": {},
+      /* modified: using deno process name from my PATH */
+      // "runtimeExecutable": "C:\\Users\\tautv\\scoop\\shims\\deno.EXE",
+      "runtimeExecutable": "deno",
+      "runtimeArgs": [
+        /* modified: was generated as "run", but you asked about testing */
+        "test",
+        "${file}",
+        /* modified: was generated as "--inspect", but using this option
+        causes an initial break to wait for the debugger to attach */
+        "--inspect-brk",
+        "--trace-leaks",
+        /* disabled: allowing all permissions is unsafe: only allow
+        the specific permissions that your scripts need */
+        // "--allow-all"
+        "--allow-net"
+      ],
+      "attachSimplePort": 9229
+    }
+  ]
+}

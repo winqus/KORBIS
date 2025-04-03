@@ -1,8 +1,5 @@
-import { Item } from "../core/types.ts";
-
-export type CreateItemProps = Pick<Item, "name" | "description"> & {
-  imageBase64?: string;
-};
+import { ItemEntity } from "../entities/index.ts";
+import { Optional, Scored } from "../core/types.ts";
 
 export type SearchItemsProps = {
   queryText?: string;
@@ -10,9 +7,20 @@ export type SearchItemsProps = {
 };
 
 export interface ItemsRepository {
-  create(item: CreateItemProps): Promise<Item>;
-  findByID(ID: string): Promise<Item | null>;
-  findAll(): Promise<Item[]>;
-  delete(item: Item): Promise<void>;
-  search(query: SearchItemsProps): Promise<Array<Item & { score: number }>>;
+  create(item: Optional<ItemEntity, "id">): Promise<ItemEntity>;
+
+  create(
+    item: Optional<ItemEntity, "id">,
+    imageBase64?: string,
+  ): Promise<ItemEntity>;
+
+  findById(id: string): Promise<ItemEntity | null>;
+
+  findAll(): Promise<ItemEntity[]>;
+
+  paginate(options: { limit?: number; skip?: number }): Promise<ItemEntity[]>;
+
+  delete(id: string): Promise<void>;
+
+  search(query: SearchItemsProps): Promise<Scored<ItemEntity>[]>;
 }
