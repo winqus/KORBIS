@@ -1,7 +1,5 @@
 {
-  "deno.enablePaths": [
-    "supabase/functions"
-  ],
+  "deno.enablePaths": ["supabase/functions"],
   "deno.lint": true,
   "deno.unstable": [
     "bare-node-builtins",
@@ -40,5 +38,7 @@
     "titleBar.inactiveBackground": "#28825a99",
     "titleBar.inactiveForeground": "#e7e7e799"
   },
-  "peacock.color": "#28825a"
+  "peacock.color": "#28825a",
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "modificationsIfAvailable"
 }
