@@ -11,8 +11,8 @@ export interface ItemsRepository {
 
   createWithImage(
     item: Optional<Item, "id">,
-    imageBase64?: string,
-  ): Promise<Item>;
+    imageBase64: string,
+  ): Promise<Item & Pick<Item, "imageId">>;
 
   findById(id: string): Promise<Item | null>;
 

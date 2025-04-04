@@ -1,5 +1,7 @@
-import { ItemsRepository } from "@/interfaces/index.ts";
+// @ts-types="npm:@types/express"
+import express from "express";
 import { NextFunction, Request, Response } from "express";
+import { ItemsRepository } from "@/interfaces/index.ts";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { decode as decodeBase64 } from "npm:base64-arraybuffer";
 import { StorageError } from "npm:@supabase/storage-js@2.7.1";
@@ -12,7 +14,7 @@ type CreateItemDTO = {
   imageBase64?: string;
 };
 
-export default class ItemsController {
+export default class ItemsControllerOld {
   constructor(private readonly itemsRepository: ItemsRepository) {}
 
   public async create(req: Request, res: Response, _next: NextFunction) {
@@ -55,7 +57,7 @@ export default class ItemsController {
           name: name as string,
           description: description as string,
         },
-        imageBase64,
+        imageBase64!,
       );
 
       console.log(`Created new item with ID: ${newItem.id}`);

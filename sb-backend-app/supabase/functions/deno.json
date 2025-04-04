@@ -1,6 +1,5 @@
 {
   "imports": {
-    "@/": "../_shared/",
     "express": "npm:express@4.21.2",
     "weaviate-ts-client": "npm:weaviate-ts-client@2.2.0",
     "@google/generative-ai": "npm:@google/generative-ai",

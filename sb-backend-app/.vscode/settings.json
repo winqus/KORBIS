@@ -1,4 +1,6 @@
 {
+  "deno.enable": true,
+  "deno.config": "supabase/functions/deno.json",
   "deno.enablePaths": ["supabase/functions"],
   "deno.lint": true,
   "deno.codeLens.test": true,
@@ -17,6 +19,7 @@
     "http",
     "net"
   ],
+  "deno.codeLens.testArgs": ["--allow-all", "--no-check", "-c", "supabase/functions/deno.json"],
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
   },

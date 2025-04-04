@@ -29,6 +29,38 @@
         "--allow-net"
       ],
       "attachSimplePort": 9229
+    },
+    {
+      "name": "Attach V8 Inspector",
+      "type": "node",
+      "address": "127.0.0.1",
+      "request": "attach",
+
+      // This is important: You must enter the path where your edge functions
+      // folders are located.
+      "localRoot": "${workspaceFolder}/supabase/functions/",
+
+      // CLI mounts all functions under /home/deno/functions
+      // "remoteRoot": "/home/deno/functions/",
+
+      // As you can see from the two options above, VsCode tries to locate the script
+      // paths being used by the inspector session locally by matching local and remote
+      // paths.
+      //
+      // If a valid path cannot be found on either side, or the script contents of
+      // those paths do not match each other, the breakpoint setting may not proceed
+      // correctly.
+      //
+      // We set the two options below for this.
+      "sourceMaps": true,
+      "enableContentValidation": false,
+
+      // Properties below are optional.
+      "restart": true,
+      "timeout": 1000000,
+
+      // Inspector is accepting sessions on 8083 by default.
+      "port": 8083
     }
   ]
 }

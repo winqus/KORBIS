@@ -1,0 +1,258 @@
+import { SupabaseClient, User } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+import * as postgres from "postgres";
+import { StorageError } from "@supabase/storage-js";
+import { ConfigService } from "../interfaces/index.ts";
+import { decode as decodeBase64 } from "base64-arraybuffer";
+import { correctLocalPublicUrl } from "../utils.ts";
+import { isLocalEnv } from "../utils";
+
+export class SupabaseService {
+  private adminClient: SupabaseClient | null = null;
+
+  constructor(
+    private readonly client: SupabaseClient,
+    private readonly config: ConfigService,
+  ) {
+  }
+
+  /**
+   * Creates a function to upload a file to storage
+   * @param bucketName Storage bucket name
+   * @param fileBuffer File data as Buffer
+   * @param filePath Destination path in storage
+   * @param client Supabase client instance
+   * @param contentType Optional content type.
+   * Example: "application/json", "image/png", "image/jpeg", "text/plain", "application/pdf", "application/zip", etc.
+   * @returns Async function that performs the upload
+   */
+  public createFileUploader(
+    bucketName: string,
+    fileBuffer: ArrayBuffer,
+    filePath: string,
+    contentType: string,
+  ) {
+    const storageFileApi = this.client
+      .storage
+      .from(bucketName);
+
+    const uploadFile = async () => {
+      const uploadResult = await storageFileApi.upload(filePath, fileBuffer, {
+        contentType,
+      });
+
+      return {
+        data: uploadResult.data,
+        /* StorageFileApi.upload is confused with return properties, error is returned instead of uploadError for some reason */
+        error: uploadResult.uploadError ??
+          (uploadResult as { error?: StorageError }).error,
+      };
+    };
+
+    return uploadFile;
+  }
+
+  /**
+   * Gets the CDN URL for a public file in storage
+   * @param bucketName Storage bucket name
+   * @param filePath Path to the file in storage
+   * @param client Supabase client instance
+   * @returns The public CDN URL of the file
+   */
+  getFilePublicUrl(
+    bucketName: string,
+    filePath: string,
+  ): string {
+    const storageFileApi = this.client
+      .storage
+      .from(bucketName);
+
+    const url = storageFileApi.getPublicUrl(filePath).data.publicUrl;
+
+    if (isLocalEnv()) {
+      return correctLocalPublicUrl(url);
+    }
+
+    return url;
+  }
+
+  public async getCurrentUser(): Promise<User> {
+    const { data: { user }, error } = await this.client.auth.getUser();
+
+    if (error) {
+      console.error("Error getting user:", error.message);
+      throw new Error("Failed to get current user");
+    }
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return user;
+  }
+
+  public ensureFileBase64UploadToBucket(options: {
+    bucketName: string;
+    fileBase64: string;
+    filePath: string;
+    contentType: string;
+    bucketOptions: {
+      public?: boolean;
+      allowedMimeTypes?: string[];
+      fileSizeLimit?: string;
+    };
+  }) {
+    const fileBuffer = this.base64StringToArrayBuffer(options.fileBase64);
+
+    return this.ensureFileUploadToBucket({
+      ...options,
+      fileBuffer,
+    });
+  }
+
+  /**
+   * Ensures a file is uploaded to a bucket, creating the bucket if it doesn't exist.
+   * @param bucketName Storage bucket name
+   * @param fileBuffer File data as Buffer
+   * @param filePath Destination path in storage
+   * @param client Supabase client instance
+   * @param contentType Optional content type
+   * @param bucketOptions Options for creating the bucket
+   * @param bucketOptions.public Whether the bucket is public (default: true)
+   * @param bucketOptions.allowedMimeTypes Allowed MIME types for the bucket (default: all types, example: ["image/*"])
+   * @param bucketOptions.fileSizeLimit File size limit for the bucket (default: unlimited, example: "20MB")
+   * @returns Object containing upload data or error
+   */
+  public async ensureFileUploadToBucket(options: {
+    bucketName: string;
+    fileBuffer: ArrayBuffer;
+    filePath: string;
+    contentType: string;
+    bucketOptions: {
+      public?: boolean;
+      allowedMimeTypes?: string[];
+      fileSizeLimit?: string;
+    };
+  }) {
+    const {
+      bucketName,
+      fileBuffer,
+      filePath,
+      contentType,
+      bucketOptions,
+    } = options;
+
+    const uploadFile = await this.createFileUploader(
+      bucketName,
+      fileBuffer,
+      filePath,
+      contentType,
+    );
+
+    const { data: uploadData, error: uploadError } = await uploadFile();
+
+    if (uploadData || !(uploadError?.message.includes("Bucket not found"))) {
+      return { data: uploadData, error: uploadError };
+    }
+
+    /* If bucket not found, create it */
+    try {
+      const { error: createBucketError } = await this.client.storage
+        .createBucket(
+          bucketName,
+          {
+            public: bucketOptions.public ?? true,
+            allowedMimeTypes: bucketOptions.allowedMimeTypes ?? null,
+            fileSizeLimit: bucketOptions.fileSizeLimit ?? null,
+          },
+        );
+
+      if (createBucketError) {
+        console.error(
+          `Failed to create bucket ${bucketName}: ${createBucketError.message}`,
+        );
+        return { data: null, error: createBucketError };
+      }
+
+      const { data: reuploadData, error: reuploadError } = await uploadFile();
+      return { data: reuploadData, error: reuploadError };
+    } catch (error) {
+      return {
+        data: null,
+        error: {
+          message: `Failed to create bucket and upload file: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        },
+      };
+    }
+  }
+
+  public async deleteBucket(bucketName: string): Promise<void> {
+    const admin = this.getAdminClient();
+    const { error } = await admin.storage.deleteBucket(bucketName);
+
+    if (error) {
+      console.error(
+        `Failed to delete bucket "${bucketName}": ${error.message}`,
+      );
+      throw new Error(`Failed to delete bucket: ${error.message}`);
+    }
+
+    console.log(`Deleted bucket "${bucketName}"`);
+  }
+
+  public createUserFolderPolicy(bucketName: string): Promise<any> {
+    const policyName = `Allow upload to ${bucketName} bucket personal folder`;
+
+    const policyCreationQuery = `
+      CREATE POLICY "${policyName}"
+      ON storage.objects
+      FOR INSERT
+      TO public
+      WITH CHECK (
+        (bucket_id = '${bucketName}') AND
+        ((SELECT auth.uid()::text) = (storage.foldername(name))[1])
+      );
+    `;
+
+    return this.executeQuery(policyCreationQuery);
+  }
+
+  protected async executeQuery(query: string): Promise<any> {
+    const pool = new postgres.Pool(
+      this.config.getOrThrow("SUPABASE_DB_URL"),
+      1,
+      true,
+    );
+    const connection = await pool.connect();
+
+    try {
+      const result = await connection.queryArray(query);
+      console.log("Query execution result:", result);
+      return result;
+    } catch (error: any) {
+      console.error(`Failed to execute query: ${error.message}`);
+      throw new Error(`Failed to execute query: ${error.message}`);
+    } finally {
+      connection.release();
+    }
+  }
+
+  /**
+   * @returns An ArrayBuffer representing the decoded data, compatible with the `FileBody` type used by `StorageFileApi`.
+   */
+  public base64StringToArrayBuffer(base64String: string): ArrayBuffer {
+    return decodeBase64(base64String);
+  }
+
+  protected getAdminClient(): SupabaseClient {
+    if (!this.adminClient) {
+      this.adminClient = createClient(
+        this.config.getOrThrow("SUPABASE_URL"),
+        this.config.getOrThrow("SUPABASE_SERVICE_ROLE_KEY"),
+      );
+    }
+    return this.adminClient;
+  }
+}
