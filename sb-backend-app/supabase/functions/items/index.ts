@@ -1,6 +1,7 @@
 // @ts-types="npm:@types/express"
 import express from "express";
-import { WeaviateV2ItemsRepository } from "@/adapters/index.ts";
+import "npm:reflect-metadata@0.2.2";
+import { WeaviateV2ItemsRepository } from "@/repositories/index.ts";
 import ItemsController from "./controller.ts";
 import { throwIfMissing } from "@/utils.ts";
 import { createWeaviateClientV2 } from "@/drivers/index.ts";

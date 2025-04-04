@@ -1,10 +1,10 @@
-import { ItemsRepository } from "@/app/interfaces/index.ts";
+import { ItemsRepository } from "@/interfaces/index.ts";
 import { NextFunction, Request, Response } from "express";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { decode as decodeBase64 } from "npm:base64-arraybuffer";
-import { Item } from "@/core/types.ts";
 import { StorageError } from "npm:@supabase/storage-js@2.7.1";
 import * as postgres from "https://deno.land/x/postgres@v0.19.3/mod.ts";
+import { Item } from "@/entities/index.ts";
 
 type CreateItemDTO = {
   name: string;
@@ -50,15 +50,17 @@ export default class ItemsController {
         return;
       }
 
-      const newItem = await this.itemsRepository.create({
-        name: name as string,
-        description: description as string,
-        imageBase64: imageBase64 as string,
-      });
+      const newItem = await this.itemsRepository.createWithImage(
+        {
+          name: name as string,
+          description: description as string,
+        },
+        imageBase64,
+      );
 
-      console.log(`Created new item with ID: ${newItem.ID}`);
+      console.log(`Created new item with ID: ${newItem.id}`);
 
-      if (imageBase64 && newItem.imageID) {
+      if (imageBase64 && newItem.imageId) {
         const authToken = req.get("Authorization")!;
         const jwt = authToken.replace("Bearer ", "");
 
@@ -75,7 +77,7 @@ export default class ItemsController {
         console.log("No image provided, skipping upload to Supabase Bucket");
       }
 
-      res.json(newItem);
+      res.status(201).json(newItem);
     } catch (error) {
       console.error("Error creating item:", error);
       res.status(500).send("Internal server error");
@@ -105,7 +107,7 @@ export default class ItemsController {
         return;
       }
 
-      const item = await this.itemsRepository.findByID(id as string);
+      const item = await this.itemsRepository.findById(id as string);
       if (!item) {
         console.log(`Item with ID ${id} not found`);
         res.status(404).send("Item not found");
@@ -132,7 +134,7 @@ export default class ItemsController {
         return;
       }
 
-      const item = await this.itemsRepository.findByID(id as string);
+      const item = await this.itemsRepository.findById(id as string);
       if (!item) {
         console.log(`Item with ID ${id} not found`);
         res.status(404).send("Item not found");
@@ -140,7 +142,7 @@ export default class ItemsController {
         return;
       }
 
-      await this.itemsRepository.delete(item);
+      await this.itemsRepository.delete(item.id);
       console.log(`Deleted item with ID ${id}`);
 
       res.status(204).send();
@@ -211,7 +213,7 @@ export default class ItemsController {
     console.log(`Current user ID: ${user.id}`);
 
     const bucketName = "user-images";
-    const filePath = `${user.id}/${item.imageID}.png`;
+    const filePath = `${user.id}/${item.imageId}.png`;
     const uploadImage = this.createUserImageUploader(
       bucketName,
       imageBase64,
