@@ -1,5 +1,4 @@
-// TODO rename to Item, after removing the old one
-export class ItemEntity {
+export class Item {
   id!: string;
 
   name!: string;

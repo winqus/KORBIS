@@ -1,4 +1,4 @@
-import { ItemEntity } from "../entities/index.ts";
+import { Item } from "../entities/index.ts";
 import { Optional, Scored } from "../core/types.ts";
 
 export type SearchItemsProps = {
@@ -7,20 +7,20 @@ export type SearchItemsProps = {
 };
 
 export interface ItemsRepository {
-  create(item: Optional<ItemEntity, "id">): Promise<ItemEntity>;
+  create(item: Optional<Item, "id">): Promise<Item>;
 
   createWithImage(
-    item: Optional<ItemEntity, "id">,
+    item: Optional<Item, "id">,
     imageBase64?: string,
-  ): Promise<ItemEntity>;
+  ): Promise<Item>;
 
-  findById(id: string): Promise<ItemEntity | null>;
+  findById(id: string): Promise<Item | null>;
 
-  findAll(): Promise<ItemEntity[]>;
+  findAll(): Promise<Item[]>;
 
-  paginate(options: { limit?: number; skip?: number }): Promise<ItemEntity[]>;
+  paginate(options: { limit?: number; skip?: number }): Promise<Item[]>;
 
   delete(id: string): Promise<void>;
 
-  search(query: SearchItemsProps): Promise<Scored<ItemEntity>[]>;
+  search(query: SearchItemsProps): Promise<Scored<Item>[]>;
 }

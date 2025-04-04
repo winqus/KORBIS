@@ -5,7 +5,7 @@ import {
 } from "../interfaces/ItemsRepository.ts";
 import { WeaviateClient } from "npm:weaviate-ts-client@2.2.0";
 import { WeaviateV2BaseRepository } from "./WeaviateV2BaseRepository.ts";
-import { ItemEntity } from "../entities/Item.ts";
+import { Item } from "../entities/index.ts";
 import { itemSchema } from "../schema/index.ts";
 import { Optional } from "../core/types.ts";
 import {
@@ -15,16 +15,16 @@ import {
 import { randomUUID } from "../utils.ts";
 
 export class WeaviateV2ItemsRepository
-  extends WeaviateV2BaseRepository<ItemEntity>
+  extends WeaviateV2BaseRepository<Item>
   implements ItemsRepository {
   constructor(client: WeaviateClient) {
-    super(client, itemSchema.class, itemSchema, ItemEntity);
+    super(client, itemSchema.class, itemSchema, Item);
   }
 
   public async createWithImage(
-    item: Optional<ItemEntity, "id">,
+    item: Optional<Item, "id">,
     imageBase64?: string,
-  ): Promise<ItemEntity> {
+  ): Promise<Item> {
     const imageId = imageBase64 ? randomUUID() : undefined;
 
     const itemCreator = this.client.data.creator()
@@ -52,7 +52,7 @@ export class WeaviateV2ItemsRepository
 
   public paginate(
     options: { limit?: number; skip?: number },
-  ): Promise<ItemEntity[]> {
+  ): Promise<Item[]> {
     return this.findMany({
       limit: options.limit || 50,
       offset: options.skip || 0,
@@ -60,7 +60,7 @@ export class WeaviateV2ItemsRepository
     });
   }
 
-  public async findAll(): Promise<ItemEntity[]> {
+  public async findAll(): Promise<Item[]> {
     return await this.findMany({
       limit: 100,
       offset: 0,
@@ -70,7 +70,7 @@ export class WeaviateV2ItemsRepository
 
   public async search(
     query: SearchItemsProps,
-  ): Promise<Array<ItemEntity & { score: number }>> {
+  ): Promise<Array<Item & { score: number }>> {
     try {
       const { queryText, queryImageBase64 } = query;
       if (!queryText && !queryImageBase64) {
@@ -79,7 +79,7 @@ export class WeaviateV2ItemsRepository
         );
       }
 
-      const imageBasedResults: WeaviateScoredSearchResult<ItemEntity>[] = [];
+      const imageBasedResults: WeaviateScoredSearchResult<Item>[] = [];
       if (queryImageBase64 && queryImageBase64.length > 0) {
         this.log(
           "search",
@@ -107,7 +107,7 @@ export class WeaviateV2ItemsRepository
         );
 
         const rawItems = (result.data.Get.Item || []).map((
-          item: WeaviateNearImageSearchResult<ItemEntity>,
+          item: WeaviateNearImageSearchResult<Item>,
         ) => ({
           ...item,
           _additional: {
@@ -119,7 +119,7 @@ export class WeaviateV2ItemsRepository
         imageBasedResults.push(...rawItems);
       }
 
-      const textBasedResults: WeaviateScoredSearchResult<ItemEntity>[] = [];
+      const textBasedResults: WeaviateScoredSearchResult<Item>[] = [];
       if (queryText && queryText.trim().length > 0) {
         this.log("search", "searching by text:", queryText.slice(0, 20));
 
@@ -149,13 +149,13 @@ export class WeaviateV2ItemsRepository
         );
 
         const rawItems = (result.data.Get.Item || []).map(
-          (item: WeaviateScoredSearchResult<ItemEntity>) => ({
+          (item: WeaviateScoredSearchResult<Item>) => ({
             ...item,
             _additional: {
               id: item._additional.id,
               score: +item._additional.score, /* Convert string to number */
             },
-          } satisfies WeaviateScoredSearchResult<ItemEntity>),
+          } satisfies WeaviateScoredSearchResult<Item>),
         );
 
         textBasedResults.push(...rawItems);
@@ -163,7 +163,7 @@ export class WeaviateV2ItemsRepository
 
       const idToBestScoredItem = new Map<
         string,
-        WeaviateScoredSearchResult<ItemEntity>
+        WeaviateScoredSearchResult<Item>
       >();
       for (const item of [...imageBasedResults, ...textBasedResults]) {
         const id = item._additional.id;
@@ -192,7 +192,7 @@ export class WeaviateV2ItemsRepository
         description: item.description,
         imageId: item.imageId,
         score: item._additional.score,
-      } satisfies ItemEntity & { score: number }));
+      } satisfies Item & { score: number }));
 
       this.log("search", "items found:", items.length);
 
