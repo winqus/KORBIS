@@ -7,10 +7,12 @@ import { WeaviateClient } from "npm:weaviate-ts-client@2.2.0";
 import { WeaviateV2BaseRepository } from "./WeaviateV2BaseRepository.ts";
 import { ItemEntity } from "../entities/Item.ts";
 import { itemSchema } from "../schema/index.ts";
+import { Optional } from "../core/types.ts";
 import {
   WeaviateNearImageSearchResult,
   WeaviateScoredSearchResult,
 } from "./index.ts";
+import { randomUUID } from "../utils.ts";
 
 export class WeaviateV2ItemsRepository
   extends WeaviateV2BaseRepository<ItemEntity>
@@ -19,13 +21,42 @@ export class WeaviateV2ItemsRepository
     super(client, itemSchema.class, itemSchema, ItemEntity);
   }
 
+  public async createWithImage(
+    item: Optional<ItemEntity, "id">,
+    imageBase64?: string,
+  ): Promise<ItemEntity> {
+    const imageId = imageBase64 ? randomUUID() : undefined;
+
+    const itemCreator = this.client.data.creator()
+      .withClassName(this.className)
+      .withProperties({
+        name: item.name,
+        description: item.description,
+        image: imageBase64 || undefined,
+        imageId: imageId,
+      });
+
+    const newObject = await itemCreator.do()
+      .catch(async (error) => {
+        if (this.isClassNotFoundInSchemaError(error)) {
+          await this.initializeClass();
+
+          return itemCreator.do();
+        }
+
+        throw error;
+      });
+
+    return this.mapObject2Entity(newObject);
+  }
+
   public paginate(
     options: { limit?: number; skip?: number },
   ): Promise<ItemEntity[]> {
     return this.findMany({
       limit: options.limit || 50,
       offset: options.skip || 0,
-      fields: "name description imageID _additional{id}",
+      fields: "name description imageId _additional{id}",
     });
   }
 
@@ -33,7 +64,7 @@ export class WeaviateV2ItemsRepository
     return await this.findMany({
       limit: 100,
       offset: 0,
-      fields: "name description imageID _additional{id}",
+      fields: "name description imageId _additional{id}",
     });
   }
 
@@ -58,7 +89,7 @@ export class WeaviateV2ItemsRepository
 
         const result = await this.client.graphql.get()
           .withClassName("Item")
-          .withFields("name description imageID _additional{id distance}")
+          .withFields("name description imageId _additional{id distance}")
           .withNearImage({ image: queryImageBase64 })
           .withLimit(10)
           .do();
@@ -95,7 +126,7 @@ export class WeaviateV2ItemsRepository
         const result = await this.client.graphql.get()
           .withClassName("Item")
           .withFields(
-            "name description imageID _additional{id score}",
+            "name description imageId _additional{id score}",
           )
           .withHybrid({
             query: queryText,

@@ -24,7 +24,7 @@ export const itemSchema = {
             "dataType": ["blob"],
         },
         {
-            "name": "imageID",
+            "name": "imageId",
             "dataType": ["uuid"],
         },
         {

@@ -17,3 +17,7 @@ export function throwIfMissing(
     throw new Error(`Missing required ${subject}: ${missing.join(", ")}`);
   }
 }
+
+export function randomUUID() {
+  return crypto.randomUUID();
+}

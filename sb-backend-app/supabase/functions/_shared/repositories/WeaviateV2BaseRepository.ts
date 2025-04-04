@@ -141,29 +141,35 @@ export class WeaviateV2BaseRepository<T> {
   }
 
   protected mapObject2Entity(data: any): T {
-    const flattenedProperties = {
-      ...data,
-      ...data["properties"],
-      ...data["_additional"],
-    };
-
     return plainToInstance<T, T>(
       this.entity,
-      flattenedProperties,
+      this.flattenAndFilterProperties(data),
     ) as any;
   }
 
   protected mapObjects2Entities(data: any[]): T[] {
-    const flattenedProperties = data.map((item) => ({
+    return plainToInstance<T, T[]>(
+      this.entity,
+      data.map((item) => this.flattenAndFilterProperties(item)),
+    ) as T[];
+  }
+
+  protected flattenAndFilterProperties(item: any, keys?: string[]): any {
+    const flattenedItem = {
       ...item,
       ...item["properties"],
       ...item["_additional"],
-    }));
+    };
 
-    return plainToInstance<T, T[]>(
-      this.entity,
-      flattenedProperties,
-    ) as T[];
+    const entityKeys = keys || Object.getOwnPropertyNames(new this.entity());
+
+    Object.keys(flattenedItem).forEach((key) => {
+      if (!entityKeys.includes(key)) {
+        delete flattenedItem[key];
+      }
+    });
+
+    return flattenedItem;
   }
 
   protected isClassNotFoundInSchemaError(error: any) {
