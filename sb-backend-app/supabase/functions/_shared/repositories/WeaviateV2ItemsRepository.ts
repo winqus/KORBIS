@@ -20,9 +20,13 @@ export class WeaviateV2ItemsRepository
   }
 
   public paginate(
-    _options: { limit?: number; skip?: number },
+    options: { limit?: number; skip?: number },
   ): Promise<ItemEntity[]> {
-    throw new Error("Method not implemented.");
+    return this.findMany({
+      limit: options.limit || 50,
+      offset: options.skip || 0,
+      fields: "name description imageID _additional{id}",
+    });
   }
 
   public async findAll(): Promise<ItemEntity[]> {

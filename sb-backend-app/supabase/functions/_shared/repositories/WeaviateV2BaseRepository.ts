@@ -36,7 +36,7 @@ export class WeaviateV2BaseRepository<T> {
       return null;
     }
 
-    const result = await this.client.data.getterById()
+    const object = await this.client.data.getterById()
       .withClassName(this.className)
       .withId(id)
       .do().catch((error) => {
@@ -52,11 +52,13 @@ export class WeaviateV2BaseRepository<T> {
         return null;
       });
 
-    if (!result || !result.properties) {
+    if (!object || !object.properties) {
       return null;
     }
 
-    return this.mapObject2Entity(result.properties);
+    const entity = this.mapObject2Entity(object);
+
+    return entity;
   }
 
   public async update(id: string, data: Partial<T>): Promise<T | null> {
@@ -64,7 +66,8 @@ export class WeaviateV2BaseRepository<T> {
       return null;
     }
 
-    const result = await this.client.data
+    /* Does not return the updated object */
+    await this.client.data
       .merger()
       .withClassName(this.className)
       .withId(id)
@@ -80,15 +83,17 @@ export class WeaviateV2BaseRepository<T> {
         return null;
       });
 
-    if (!result || !result.properties) {
-      return null;
+    const updatedObject = await this.findById(id);
+    if (!updatedObject) {
+      this.error("update", `Failed retrieving updated item (${id})`);
     }
 
-    return this.mapObject2Entity(result.properties);
+    return updatedObject;
   }
 
   public async delete(id: string): Promise<void> {
     await this.client.data.deleter()
+      .withClassName(this.className)
       .withId(id)
       .do().catch((error) => {
         if (this.isItemNotFoundError(error)) {
@@ -136,7 +141,11 @@ export class WeaviateV2BaseRepository<T> {
   }
 
   protected mapObject2Entity(data: any): T {
-    const flattenedProperties = { ...data, ...data["properties"] };
+    const flattenedProperties = {
+      ...data,
+      ...data["properties"],
+      ...data["_additional"],
+    };
 
     return plainToInstance<T, T>(
       this.entity,
@@ -148,6 +157,7 @@ export class WeaviateV2BaseRepository<T> {
     const flattenedProperties = data.map((item) => ({
       ...item,
       ...item["properties"],
+      ...item["_additional"],
     }));
 
     return plainToInstance<T, T[]>(
