@@ -1,10 +1,7 @@
-import { SupabaseClient, User } from "@supabase/supabase-js";
-import { createClient } from "@supabase/supabase-js";
 import * as postgres from "postgres";
 import { StorageError } from "@supabase/storage-js";
 import { ConfigService } from "../interfaces/index.ts";
-import { decode as decodeBase64 } from "base64-arraybuffer";
-import { correctLocalPublicUrl } from "../utils.ts";
+import { base64StringToArrayBuffer, correctLocalPublicUrl } from "../utils.ts";
 import { isLocalEnv } from "../utils.ts";
 import { inject, injectable } from "@needle-di/core";
 import {
@@ -26,6 +23,22 @@ export class SupabaseService {
   ) {
   }
 
+  public async uploadFileAsAdmin(
+    bucketName: string,
+    fileBuffer: ArrayBuffer,
+    filePath: string,
+    contentType: string,
+  ) {
+    const uploadFile = this.createAdminFileUploader(
+      bucketName,
+      fileBuffer,
+      filePath,
+      contentType,
+    );
+
+    return await uploadFile();
+  }
+
   /**
    * Creates a function to upload a file to storage
    * @param bucketName Storage bucket name
@@ -36,15 +49,14 @@ export class SupabaseService {
    * Example: "application/json", "image/png", "image/jpeg", "text/plain", "application/pdf", "application/zip", etc.
    * @returns Async function that performs the upload
    */
-  public createFileUploader(
+  public createAdminFileUploader(
     bucketName: string,
     fileBuffer: ArrayBuffer,
     filePath: string,
     contentType: string,
   ) {
-    const storageFileApi = this.client()
-      .storage
-      .from(bucketName);
+    const client = this.adminClient();
+    const storageFileApi = client.storage.from(bucketName);
 
     const uploadFile = async () => {
       const uploadResult = await storageFileApi.upload(filePath, fileBuffer, {
@@ -86,21 +98,6 @@ export class SupabaseService {
     return url;
   }
 
-  public async getCurrentUser(): Promise<User> {
-    const { data: { user }, error } = await this.client().auth.getUser();
-
-    if (error) {
-      console.error("Error getting user:", error.message);
-      throw new Error("Failed to get current user");
-    }
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    return user;
-  }
-
   public ensureFileBase64UploadToBucket(options: {
     bucketName: string;
     fileBase64: string;
@@ -112,7 +109,7 @@ export class SupabaseService {
       fileSizeLimit?: string;
     };
   }) {
-    const fileBuffer = this.base64StringToArrayBuffer(options.fileBase64);
+    const fileBuffer = base64StringToArrayBuffer(options.fileBase64);
 
     return this.ensureFileUploadToBucket({
       ...options,
@@ -152,7 +149,7 @@ export class SupabaseService {
       bucketOptions,
     } = options;
 
-    const uploadFile = await this.createFileUploader(
+    const uploadFile = this.createAdminFileUploader(
       bucketName,
       fileBuffer,
       filePath,
@@ -167,7 +164,7 @@ export class SupabaseService {
 
     /* If bucket not found, create it */
     try {
-      const { error: createBucketError } = await this.client().storage
+      const { error: createBucketError } = await this.adminClient().storage
         .createBucket(
           bucketName,
           {
@@ -199,7 +196,7 @@ export class SupabaseService {
   }
 
   public async deleteBucket(bucketName: string): Promise<void> {
-    const admin = this.getAdminClient();
+    const admin = this.adminClient();
     const { error } = await admin.storage.deleteBucket(bucketName);
 
     if (error) {
@@ -213,7 +210,8 @@ export class SupabaseService {
   }
 
   public createUserFolderPolicy(bucketName: string): Promise<any> {
-    const policyName = `Allow upload to ${bucketName} bucket personal folder`;
+    const policyName = `Allow upload to ${bucketName} bucket personal folder`
+      .slice(0, 50);
 
     const policyCreationQuery = `
       CREATE POLICY "${policyName}"
@@ -247,16 +245,5 @@ export class SupabaseService {
     } finally {
       connection.release();
     }
-  }
-
-  /**
-   * @returns An ArrayBuffer representing the decoded data, compatible with the `FileBody` type used by `StorageFileApi`.
-   */
-  public base64StringToArrayBuffer(base64String: string): ArrayBuffer {
-    return decodeBase64(base64String);
-  }
-
-  protected getAdminClient(): SupabaseClient {
-    return this.adminClient();
   }
 }

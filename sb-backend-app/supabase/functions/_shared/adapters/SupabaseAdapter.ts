@@ -4,8 +4,14 @@ import { inject, injectable } from "@needle-di/core";
 
 @injectable()
 export class SupabaseAdapter implements DomainCdnService {
-  private readonly bucketName = "domains";
-  
+  private readonly config = {
+    bucketName: "domains",
+    imageContentType : "image/png",
+    imageSizeLimit: "20mb",
+    imageAllowedMimeTypes: ["image/*"],
+    imageExtension: "png",
+  };
+
   constructor(
     private readonly supabaseService: SupabaseService = inject(SupabaseService),
   ) {
@@ -16,19 +22,26 @@ export class SupabaseAdapter implements DomainCdnService {
     imageId: string,
     imageBase64: string,
   ): Promise<{ imageUrl: string }> {
-    this.supabaseService.ensureFileBase64UploadToBucket(
+    const uploadResult = await this.supabaseService.ensureFileBase64UploadToBucket(
       {
-        bucketName: this.bucketName,
+        bucketName: this.config.bucketName,
         fileBase64: imageBase64,
         filePath: this.formFilePath(domainId, imageId),
-        contentType: "image/png",
+        contentType: this.config.bucketName,
         bucketOptions: {
           public: true,
-          allowedMimeTypes: ["image/png"],
-          fileSizeLimit: "20mb",
+          allowedMimeTypes: this.config.imageAllowedMimeTypes,
+          fileSizeLimit: this.config.imageSizeLimit,
         },
       },
     );
+
+    if (uploadResult.error) {
+      console.error("Error uploading image to CDN", uploadResult.error.message);
+      throw new Error(
+        `Error uploading image to CDN: ${uploadResult.error.message}`,
+      );
+    }
 
     const { imageUrl } = await this.getImageUrl(domainId, imageId)!;
 
@@ -48,6 +61,6 @@ export class SupabaseAdapter implements DomainCdnService {
   }
 
   private formFilePath(domainId: string, imageId: string): string {
-    return `${domainId}/${imageId}.png`;
+    return `${domainId}/${imageId}.${this.config.imageExtension}`;
   }
 }

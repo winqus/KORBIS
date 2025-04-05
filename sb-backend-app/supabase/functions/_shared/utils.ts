@@ -1,3 +1,5 @@
+import { decode as decodeBase64 } from "base64-arraybuffer";
+
 export const isLocalEnv = () =>
   Deno.env.get("SUPABASE_URL") === "http://kong:8000";
 
@@ -96,4 +98,8 @@ export function flatten(obj: any) {
   processValue("", obj);
 
   return result;
+}
+
+export function base64StringToArrayBuffer(base64String: string): ArrayBuffer {
+  return decodeBase64(base64String);
 }

@@ -2,13 +2,26 @@ import { ItemsRepository } from "../../interfaces/index.ts";
 import { CreateItemCommand } from "./CreateItemCommand.ts";
 import { DomainCdnService } from "../../interfaces/DomainCdnService.ts";
 import { inject, injectable } from "@needle-di/core";
-import { ITEMS_REPOSITORY, DOMAIN_CDN_SERVICE } from "../../injection-tokens.ts";
+import {
+  DOMAIN_CDN_SERVICE,
+  ITEMS_REPOSITORY,
+  JWT,
+  SUPABASE_ADMIN,
+} from "../../injection-tokens.ts";
+import { createClient } from "@supabase/supabase-js";
+import { decode } from "base64-arraybuffer";
+import { SupabaseService } from "../../services/index.ts";
 
 @injectable()
 export class CreateItem {
   constructor(
-    private readonly itemsRepository: ItemsRepository = inject(ITEMS_REPOSITORY),
-    private readonly domainCdnService: DomainCdnService = inject(DOMAIN_CDN_SERVICE),
+    private readonly itemsRepository: ItemsRepository = inject(
+      ITEMS_REPOSITORY,
+    ),
+    private readonly domainCdnService: DomainCdnService = inject(
+      DOMAIN_CDN_SERVICE,
+    ),
+    private readonly supabase = inject(SupabaseService),
   ) {}
 
   public async execute(command: CreateItemCommand) {
