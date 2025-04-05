@@ -38,6 +38,16 @@ export const itemSchema = {
     },
     /* End of Base VirtualAsset properties */
     {
+      name: "parentId",
+      dataType: ["text"],
+      description: "ID of parent VirtualAsset",
+    },
+    {
+      name: "parentType",
+      dataType: ["text"],
+      description: "Type of parent VirtualAsset",
+    },
+    {
       name: "description",
       dataType: ["text"],
       description: "Item description/notes",

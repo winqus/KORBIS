@@ -6,7 +6,7 @@ import {
 } from "jsr:@std/assert";
 import { WeaviateV2ItemsRepository } from "../../../_shared/repositories/WeaviateV2ItemsRepository.ts";
 import { createWeaviateClientV2 } from "../../../_shared/drivers/weaviateDriver.ts";
-import { generateUuid5 } from "weaviate-ts-client";
+import { generateUUID5 } from "../../../_shared/utils.ts";
 
 const client = createWeaviateClientV2({
   scheme: "http",
@@ -25,7 +25,7 @@ Deno.test(
   async () => {
     const repo = new WeaviateV2ItemsRepository(client);
     const item = await repo.create({
-      ownerId: generateUuid5("test-owner-id"), 
+      ownerId: generateUUID5("test-owner-id"), 
       name: "Test Item",
       description: "This is a test item",
     });
@@ -45,7 +45,7 @@ Deno.test(
   async () => {
     const repo = new WeaviateV2ItemsRepository(client);
     const item = await repo.create({
-      ownerId: generateUuid5("test-owner-id"),
+      ownerId: generateUUID5("test-owner-id"),
       name: "Test Item",
       description: "This is a test item",
     });
@@ -67,7 +67,7 @@ Deno.test(
   async () => {
     const repo = new WeaviateV2ItemsRepository(client);
     const item = await repo.create({
-      ownerId: generateUuid5("test-owner-id"),
+      ownerId: generateUUID5("test-owner-id"),
       name: "Test Item",
       description: "This is a test item",
     });
@@ -97,7 +97,7 @@ Deno.test("Gets paginated items", {
   const items = await Promise.all(
     Array.from({ length: 6 }, (_, i) =>
       repo.create({
-        ownerId: generateUuid5("test-owner-id"),
+        ownerId: generateUUID5("test-owner-id"),
         name: `Test Item ${i}`,
         description: `This is test item ${i}`,
       })),
@@ -127,7 +127,7 @@ Deno.test("Deletes item by ID", {
 }, async () => {
   const repo = new WeaviateV2ItemsRepository(client);
   const item = await repo.create({
-    ownerId: generateUuid5("test-owner-id"),
+    ownerId: generateUUID5("test-owner-id"),
     name: "Test Item for deletion",
     description: "This is a test item",
   });

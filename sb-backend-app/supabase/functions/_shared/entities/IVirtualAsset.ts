@@ -5,5 +5,5 @@ export interface IVirtualAsset {
 
   name: string;
 
-  type: string;
+  type: "item" | "container";
 }

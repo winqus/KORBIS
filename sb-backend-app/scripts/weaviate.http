@@ -1,5 +1,9 @@
 #### For use with REST Client ####
 
-### Delete collection
+### Delete Item collection
 DELETE http://localhost:8080/v1/schema/Item
+Authorization: Bearer xxxxxxxxxxxxxxxx_myapikey_xxxxxxxxxxxxxxxx
+
+### Delete Container collection
+DELETE http://localhost:8080/v1/schema/Container
 Authorization: Bearer xxxxxxxxxxxxxxxx_myapikey_xxxxxxxxxxxxxxxx

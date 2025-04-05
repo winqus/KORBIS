@@ -7,8 +7,8 @@ import { throwIfMissing } from "@/utils.ts";
 import { createWeaviateClientV2 } from "@/drivers/index.ts";
 import { DenoEnvConfigService, SupabaseAdapter } from "@/adapters/index.ts";
 import { ItemsController } from "@/controllers/index.ts";
-import { createClient } from "@supabase/supabase-js";
-import { BadRequestError } from "@/errors/BadRequestError.ts";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+
 import { isLocalEnv } from "@/utils.ts";
 import {
   CONFIG_SERVICE,
@@ -73,7 +73,7 @@ const itemsControllerOld = new ItemsControllerOld(
 const app = express();
 app.use(express.json({ limit: "20mb" }));
 
-app.use((req, _res, next) => {
+app.use(async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (authHeader) {
     const authToken = req.get("Authorization")!;
@@ -103,14 +103,29 @@ app.use((req, _res, next) => {
         );
       },
     });
+
+    // TODO: refactor
+    const user = await container.get(SUPABASE_ADMIN).auth.getUser(jwt);
+    console.log("User:", user.data.user);
+    let userId = user.data.user?.id;
+    if (!userId && isLocalEnv()) {
+      console.log("[DEV] No userId found in JWT, using a test userId");
+      userId = "5f19c1e9-02e9-46f8-bb65-49a74e1db21a"; // TODO: remove this line
+    }
+    (req as any).userId = userId;
+    console.log("UserId:", userId);
+
+    if (!userId) {
+      console.error("No userId found in JWT");
+      res.status(401).send("Not authorized");
+    }
   } else {
     console.error("No JWT Token provided");
+    res.status(401).send("No JWT Token provided");
   }
 
   next();
 });
-
-
 
 /* NEW */
 app.post("/items", itemsController.create.bind(itemsController));

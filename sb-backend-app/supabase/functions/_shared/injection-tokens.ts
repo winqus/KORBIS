@@ -2,6 +2,7 @@ import { InjectionToken } from "@needle-di/core";
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
   ConfigService,
+  ContainersRepository,
   DomainCdnService,
   ItemsRepository,
 } from "./interfaces/index.ts";
@@ -30,6 +31,10 @@ export const CONFIG_SERVICE = new InjectionToken<ConfigService>(
 
 export const ITEMS_REPOSITORY = new InjectionToken<ItemsRepository>(
   "ITEMS_REPOSITORY",
+);
+
+export const CONTAINERS_REPOSITORY = new InjectionToken<ContainersRepository>(
+  "CONTAINERS_REPOSITORY",
 );
 
 export const DOMAIN_CDN_SERVICE = new InjectionToken<DomainCdnService>(

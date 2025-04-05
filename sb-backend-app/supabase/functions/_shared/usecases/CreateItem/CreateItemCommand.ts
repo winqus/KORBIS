@@ -3,8 +3,6 @@ import validator from "validator";
 import { AuthenticatedCommand } from "../../core/index.ts";
 
 export class CreateItemCommand extends AuthenticatedCommand {
-  domainId!: string;
-
   name!: string;
 
   description!: string;
@@ -12,19 +10,13 @@ export class CreateItemCommand extends AuthenticatedCommand {
   imageBase64!: string;
 
   static create(data: CreateItemCommand) {
-    const { userId, domainId, name, description, imageBase64 } = data;
+    const { userId, name, description, imageBase64 } = data;
 
     this.validate(data, [
       {
         property: "userId",
         isValid: !!userId && validator.isLength(userId, { min: 1, max: 255 }),
         message: "User ID must be between 1 and 255 characters",
-      },
-      {
-        property: "domainId",
-        isValid: !!domainId &&
-          validator.isLength(domainId, { min: 1, max: 255 }),
-        message: "Domain ID must be between 1 and 255 characters",
       },
       {
         property: "name",
@@ -44,10 +36,9 @@ export class CreateItemCommand extends AuthenticatedCommand {
       },
     ]);
 
-    const command = new CreateItemCommand();
+    const command = new this();
 
     command.userId = userId;
-    command.domainId = domainId;
     command.name = name;
     command.description = description;
     command.imageBase64 = imageBase64;

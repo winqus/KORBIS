@@ -40,10 +40,9 @@ export class WeaviateV2ItemsRepository
     const itemCreator = this.client.data.creator()
       .withClassName(this.className)
       .withProperties({
-        name: item.name,
-        description: item.description,
-        image: imageBase64 || undefined,
+        ...item,
         imageId: imageId,
+        image: imageBase64 || undefined,
         type: "item",
       });
 
@@ -203,6 +202,8 @@ export class WeaviateV2ItemsRepository
         description: item.description,
         imageId: item.imageId,
         score: item._additional.score,
+        ownerId: item.ownerId,
+        type: item.type,
       } satisfies Item & { score: number }));
 
       this.log("search", "items found:", items.length);

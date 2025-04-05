@@ -13,12 +13,11 @@ export class ItemsController {
 
   public async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, description, imageBase64 } = req
-        .body as CreateItemRequestDto;
+      const { name, description, imageBase64 } = req.body as CreateItemRequestDto;
+      const userId = req["userId"] as string;
 
       const command = CreateItemCommand.create({
-        userId: "useris",
-        domainId: "domainis",
+        userId: userId,
         name,
         description,
         imageBase64,
