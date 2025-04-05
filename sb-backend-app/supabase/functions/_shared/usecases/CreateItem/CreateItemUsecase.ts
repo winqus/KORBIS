@@ -1,11 +1,14 @@
 import { ItemsRepository } from "../../interfaces/index.ts";
 import { CreateItemCommand } from "./CreateItemCommand.ts";
 import { DomainCdnService } from "../../interfaces/DomainCdnService.ts";
+import { inject, injectable } from "@needle-di/core";
+import { ITEMS_REPOSITORY, DOMAIN_CDN_SERVICE } from "../../injection-tokens.ts";
 
+@injectable()
 export class CreateItem {
   constructor(
-    private readonly itemsRepository: ItemsRepository,
-    private readonly domainCdnService: DomainCdnService,
+    private readonly itemsRepository: ItemsRepository = inject(ITEMS_REPOSITORY),
+    private readonly domainCdnService: DomainCdnService = inject(DOMAIN_CDN_SERVICE),
   ) {}
 
   public async execute(command: CreateItemCommand) {

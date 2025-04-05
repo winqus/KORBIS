@@ -3,10 +3,12 @@ import { CreateItem } from "../usecases/index.ts";
 import { CreateItemCommand } from "../usecases/index.ts";
 import { CreateItemRequestDto } from "../dtos/CreateItemRequestDto.ts";
 import { handleError } from "./errorHandler.ts";
+import { inject, injectable } from "@needle-di/core";
 
+@injectable()
 export class ItemsController {
   constructor(
-    private readonly createItemUsecase: CreateItem,
+    private readonly createItemUsecase: CreateItem = inject(CreateItem),
   ) {}
 
   public async create(req: Request, res: Response, next: NextFunction) {

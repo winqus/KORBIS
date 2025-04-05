@@ -5,14 +5,24 @@ import { StorageError } from "@supabase/storage-js";
 import { ConfigService } from "../interfaces/index.ts";
 import { decode as decodeBase64 } from "base64-arraybuffer";
 import { correctLocalPublicUrl } from "../utils.ts";
-import { isLocalEnv } from "../utils";
+import { isLocalEnv } from "../utils.ts";
+import { inject, injectable } from "@needle-di/core";
+import {
+  CONFIG_SERVICE,
+  SUPABASE_ADMIN,
+  SUPABASE_CURRENT_USER,
+} from "../injection-tokens.ts";
 
+@injectable()
 export class SupabaseService {
-  private adminClient: SupabaseClient | null = null;
-
   constructor(
-    private readonly client: SupabaseClient,
-    private readonly config: ConfigService,
+    private readonly adminClient = inject(SUPABASE_ADMIN, {
+      lazy: true,
+    }),
+    private readonly client = inject(SUPABASE_CURRENT_USER, {
+      lazy: true,
+    }),
+    private readonly config: ConfigService = inject(CONFIG_SERVICE),
   ) {
   }
 
@@ -32,7 +42,7 @@ export class SupabaseService {
     filePath: string,
     contentType: string,
   ) {
-    const storageFileApi = this.client
+    const storageFileApi = this.client()
       .storage
       .from(bucketName);
 
@@ -63,7 +73,7 @@ export class SupabaseService {
     bucketName: string,
     filePath: string,
   ): string {
-    const storageFileApi = this.client
+    const storageFileApi = this.client()
       .storage
       .from(bucketName);
 
@@ -77,7 +87,7 @@ export class SupabaseService {
   }
 
   public async getCurrentUser(): Promise<User> {
-    const { data: { user }, error } = await this.client.auth.getUser();
+    const { data: { user }, error } = await this.client().auth.getUser();
 
     if (error) {
       console.error("Error getting user:", error.message);
@@ -157,7 +167,7 @@ export class SupabaseService {
 
     /* If bucket not found, create it */
     try {
-      const { error: createBucketError } = await this.client.storage
+      const { error: createBucketError } = await this.client().storage
         .createBucket(
           bucketName,
           {
@@ -247,12 +257,6 @@ export class SupabaseService {
   }
 
   protected getAdminClient(): SupabaseClient {
-    if (!this.adminClient) {
-      this.adminClient = createClient(
-        this.config.getOrThrow("SUPABASE_URL"),
-        this.config.getOrThrow("SUPABASE_SERVICE_ROLE_KEY"),
-      );
-    }
-    return this.adminClient;
+    return this.adminClient();
   }
 }

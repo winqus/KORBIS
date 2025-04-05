@@ -8,7 +8,8 @@
     "base64-arraybuffer": "npm:base64-arraybuffer",
     "@supabase/storage-js": "npm:@supabase/storage-js@2.7.1",
     "postgres": "https://deno.land/x/postgres@v0.19.3/mod.ts",
-    "validator": "npm:validator@13.15.0"
+    "validator": "npm:validator@13.15.0",
+    "@needle-di/core": "jsr:@needle-di/core@0.12.0"
   },
   "compilerOptions": {
     "types": ["npm:@types/express", "jsr:@supabase/functions-js/edge-runtime.d.ts", "npm:@types/validator"]

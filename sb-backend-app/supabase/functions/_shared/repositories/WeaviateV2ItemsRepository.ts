@@ -13,11 +13,14 @@ import {
   WeaviateScoredSearchResult,
 } from "./index.ts";
 import { randomUUID } from "../utils.ts";
+import { inject, injectable } from "@needle-di/core";
+import { WEAVIATE_CLIENT } from "../injection-tokens.ts";
 
+@injectable()
 export class WeaviateV2ItemsRepository
   extends WeaviateV2BaseRepository<Item>
   implements ItemsRepository {
-  constructor(client: WeaviateClient) {
+  constructor(client: WeaviateClient = inject(WEAVIATE_CLIENT)) {
     super(client, itemSchema.class, itemSchema, Item);
   }
 

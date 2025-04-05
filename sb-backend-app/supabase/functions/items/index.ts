@@ -1,18 +1,24 @@
+import { Container, inject } from "@needle-di/core";
 // @ts-types="npm:@types/express"
 import express from "express";
 import { WeaviateV2ItemsRepository } from "@/repositories/index.ts";
 import ItemsControllerOld from "./controller.ts";
 import { throwIfMissing } from "@/utils.ts";
 import { createWeaviateClientV2 } from "@/drivers/index.ts";
-import { DenoEnvConfigService } from "../_shared/adapters/index.ts";
-import { ItemsController } from "../_shared/controllers/index.ts";
-import { CreateItem } from "@/usecases/index.ts";
-import { SupabaseAdapter } from "@/adapters/index.ts";
-import { SupabaseService } from "@/services/index.ts";
+import { DenoEnvConfigService, SupabaseAdapter } from "@/adapters/index.ts";
+import { ItemsController } from "@/controllers/index.ts";
 import { createClient } from "@supabase/supabase-js";
-import { BadRequestError } from "@/errors/index.ts";
-
-const port = 8000;
+import { BadRequestError } from "@/errors/BadRequestError.ts";
+import { isLocalEnv } from "@/utils.ts";
+import {
+  CONFIG_SERVICE,
+  DOMAIN_CDN_SERVICE,
+  ITEMS_REPOSITORY,
+  JWT,
+  SUPABASE_ADMIN,
+  SUPABASE_CURRENT_USER,
+  WEAVIATE_CLIENT,
+} from "@/injection-tokens.ts";
 
 throwIfMissing("env variables", Deno.env.toObject(), [
   "WEAVIATE_SCHEME",
@@ -20,36 +26,49 @@ throwIfMissing("env variables", Deno.env.toObject(), [
   "WEAVIATE_API_KEY",
 ]);
 
-const configService = new DenoEnvConfigService();
+const port = 8000;
+const container = new Container();
 
-const supabaseAdminClient = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+container.bindAll(
+  {
+    provide: CONFIG_SERVICE,
+    useClass: DenoEnvConfigService,
+  },
+  {
+    provide: SUPABASE_ADMIN,
+    useFactory: () => {
+      const configService = inject(CONFIG_SERVICE);
+      return createClient(
+        configService.getOrThrow("SUPABASE_URL"),
+        configService.getOrThrow("SUPABASE_SERVICE_ROLE_KEY"),
+      );
+    },
+  },
+  {
+    provide: WEAVIATE_CLIENT,
+    useFactory: () => {
+      const configService = inject(CONFIG_SERVICE);
+      return createWeaviateClientV2({
+        scheme: configService.getOrThrow("WEAVIATE_SCHEME"),
+        host: configService.getOrThrow("WEAVIATE_ENDPOINT"),
+        apiKey: configService.getOrThrow("WEAVIATE_API_KEY"),
+      });
+    },
+  },
+  {
+    provide: ITEMS_REPOSITORY,
+    useClass: WeaviateV2ItemsRepository,
+  },
+  {
+    provide: DOMAIN_CDN_SERVICE,
+    useClass: SupabaseAdapter,
+  },
 );
 
-
-const supabase = new SupabaseService(supabaseAdminClient, configService);
-
-const supabaseAdapter = new SupabaseAdapter(supabase);
-
-const weaviateClient = createWeaviateClientV2({
-  scheme: configService.get("WEAVIATE_SCHEME") ?? "http",
-  host: configService.get("WEAVIATE_ENDPOINT") ?? "localhost:8080",
-  apiKey: configService.get("WEAVIATE_API_KEY") ?? "",
-});
-
-// const supabaseCurrentUserClient = createClient(
-//   Deno.env.get("SUPABASE_URL")!,
-//   Deno.env.get("SUPABASE_ANON_KEY")!,
-//   { global: { headers: { Authorization: authToken } } },
-// );
-
-
-const itemsRepository = new WeaviateV2ItemsRepository(weaviateClient);
-
-const createItemUsecase = new CreateItem(itemsRepository, supabaseAdapter);
-const itemsController = new ItemsController(createItemUsecase);
-const itemsControllerOld = new ItemsControllerOld(itemsRepository);
+const itemsController = container.get(ItemsController);
+const itemsControllerOld = new ItemsControllerOld(
+  container.get(ITEMS_REPOSITORY),
+);
 
 const app = express();
 app.use(express.json({ limit: "20mb" }));
@@ -57,13 +76,41 @@ app.use(express.json({ limit: "20mb" }));
 app.use((req, _res, next) => {
   const authHeader = req.headers.authorization;
   if (authHeader) {
-    const token = authHeader.split(" ")[1];
-    console.log("JWT Token:", token);
+    const authToken = req.get("Authorization")!;
+    const jwt = authToken.replace("Bearer ", "");
+
+    if (isLocalEnv()) {
+      console.log("[DEV] User JWT token:", jwt);
+    } else {
+      console.log("User JWT:", jwt.slice(0, 10), "...");
+    }
+
+    container.bind({
+      provide: JWT,
+      useValue: jwt,
+    });
+
+    container.bind({
+      provide: SUPABASE_CURRENT_USER,
+      useFactory: () => {
+        const configService = inject(CONFIG_SERVICE);
+        const jwt = inject(JWT);
+
+        return createClient(
+          configService.getOrThrow("SUPABASE_URL"),
+          configService.getOrThrow("SUPABASE_ANON_KEY"),
+          { global: { headers: { Authorization: jwt } } },
+        );
+      },
+    });
   } else {
-    console.log("No JWT Token provided");
+    console.error("No JWT Token provided");
   }
+
   next();
 });
+
+
 
 /* NEW */
 app.post("/items", itemsController.create.bind(itemsController));
@@ -74,19 +121,6 @@ app.get("/items", itemsControllerOld.findAll.bind(itemsControllerOld));
 app.get("/items/:id", itemsControllerOld.findById.bind(itemsControllerOld));
 app.delete("/items/:id", itemsControllerOld.delete.bind(itemsControllerOld));
 app.post("/items/search", itemsControllerOld.search.bind(itemsControllerOld));
-
-app.use((err: any, req: any, res: any, next: any) => {
-  if (err instanceof BadRequestError) {
-    return res.status(400).json({
-      error: "Bad Request",
-      details: err.message
-    });
-  }
-  
-  // Handle other error types or default error response
-  console.error(err);
-  res.status(500).json({ error: "Internal Server Error" });
-});
 
 app.listen(port, (error) => {
   if (error) {

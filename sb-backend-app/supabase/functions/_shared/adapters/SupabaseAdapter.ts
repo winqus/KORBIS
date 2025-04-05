@@ -1,10 +1,14 @@
 import { SupabaseService } from "../services/index.ts";
 import { DomainCdnService } from "../interfaces/index.ts";
+import { inject, injectable } from "@needle-di/core";
 
+@injectable()
 export class SupabaseAdapter implements DomainCdnService {
   private readonly bucketName = "domains";
-
-  constructor(private readonly supabaseService: SupabaseService) {
+  
+  constructor(
+    private readonly supabaseService: SupabaseService = inject(SupabaseService),
+  ) {
   }
 
   public async uploadImage(

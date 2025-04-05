@@ -7,6 +7,7 @@ import { decode as decodeBase64 } from "npm:base64-arraybuffer";
 import { StorageError } from "npm:@supabase/storage-js@2.7.1";
 import * as postgres from "https://deno.land/x/postgres@v0.19.3/mod.ts";
 import { Item } from "@/entities/index.ts";
+import { injectable } from "@needle-di/core";
 
 type CreateItemDTO = {
   name: string;
@@ -14,6 +15,7 @@ type CreateItemDTO = {
   imageBase64?: string;
 };
 
+@injectable()
 export default class ItemsControllerOld {
   constructor(private readonly itemsRepository: ItemsRepository) {}
 
