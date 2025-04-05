@@ -24,8 +24,15 @@ export class WeaviateV2ItemsRepository
     super(client, itemSchema.class, itemSchema, Item);
   }
 
+  public override create(item: Optional<Item, "id" | "type">): Promise<Item> {
+    return super.create({
+      ...item,
+      type: "item",
+    });
+  } 
+
   public async createWithImage(
-    item: Optional<Item, "id">,
+    item: Optional<Item, "id" | "type">,
     imageBase64?: string,
   ): Promise<Item> {
     const imageId = imageBase64 ? randomUUID() : undefined;
@@ -37,6 +44,7 @@ export class WeaviateV2ItemsRepository
         description: item.description,
         image: imageBase64 || undefined,
         imageId: imageId,
+        type: "item",
       });
 
     const newObject = await itemCreator.do()

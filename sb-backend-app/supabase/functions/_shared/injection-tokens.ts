@@ -1,6 +1,10 @@
 import { InjectionToken } from "@needle-di/core";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { ConfigService, ItemsRepository, DomainCdnService } from "./interfaces/index.ts";
+import {
+  ConfigService,
+  DomainCdnService,
+  ItemsRepository,
+} from "./interfaces/index.ts";
 import { WeaviateClient } from "weaviate-ts-client";
 
 /* SUPABASE */
@@ -15,13 +19,19 @@ export const SUPABASE_CURRENT_USER = new InjectionToken<SupabaseClient>(
 );
 
 /* ADAPTERS */
-export const WEAVIATE_CLIENT = new InjectionToken<WeaviateClient>("WEAVIATE_CLIENT");
+export const WEAVIATE_CLIENT = new InjectionToken<WeaviateClient>(
+  "WEAVIATE_CLIENT",
+);
 
 /* CORE */
 export const CONFIG_SERVICE = new InjectionToken<ConfigService>(
   "CONFIG_SERVICE",
 );
 
-export const ITEMS_REPOSITORY = new InjectionToken<ItemsRepository>("ITEMS_REPOSITORY");
+export const ITEMS_REPOSITORY = new InjectionToken<ItemsRepository>(
+  "ITEMS_REPOSITORY",
+);
 
-export const DOMAIN_CDN_SERVICE = new InjectionToken<DomainCdnService>("DOMAIN_CDN_SERVICE");
+export const DOMAIN_CDN_SERVICE = new InjectionToken<DomainCdnService>(
+  "DOMAIN_CDN_SERVICE",
+);

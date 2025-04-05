@@ -1,43 +1,59 @@
 export const itemSchema = {
-    class: "Item",
-    vectorizer: "multi2vec-clip",
-    vectorIndexType: "hnsw",
-    moduleConfig: {
-        /* https://weaviate.github.io/typescript-client/types/Multi2VecClipConfig.html (v2) */
-        "multi2vec-clip": {
-            imageFields: [
-                "image",
-            ],
-            textFields: [
-                "name",
-                "description",
-            ],
-            weights: {
-                imageFields: [0.9],
-                textFields: [0.1, 0.1],
-            },
-        },
+  class: "Item",
+  description: "Asset of type 'item'",
+  vectorizer: "multi2vec-clip",
+  vectorIndexType: "hnsw",
+  moduleConfig: {
+    /* https://weaviate.github.io/typescript-client/types/Multi2VecClipConfig.html (v2) */
+    "multi2vec-clip": {
+      imageFields: [
+        "image",
+      ],
+      textFields: [
+        "name",
+        "description",
+      ],
+      weights: {
+        imageFields: [0.9],
+        textFields: [0.1, 0.1],
+      },
     },
-    properties: [
-        {
-            "name": "image",
-            "dataType": ["blob"],
-        },
-        {
-            "name": "imageId",
-            "dataType": ["uuid"],
-        },
-        {
-            "name": "name",
-            "dataType": ["string"],
-        },
-        {
-            "name": "description",
-            "dataType": ["string"],
-        },
-    ],
+  },
+  properties: [
+    /* Base VirtualAsset properties */
+    {
+      name: "ownerId",
+      dataType: ["uuid"],
+      description: "Asset owner (user) ID",
+    },
+    {
+      name: "name",
+      dataType: ["text"],
+      description: "Asset name",
+    },
+    {
+      name: "type",
+      dataType: ["text"],
+      description: "Asset type",
+    },
+    /* End of Base VirtualAsset properties */
+    {
+      name: "description",
+      dataType: ["text"],
+      description: "Item description/notes",
+    },
+    {
+      name: "imageId",
+      dataType: ["uuid"],
+      description: "ID of the item image",
+    },
+    {
+      name: "image",
+      dataType: ["blob"],
+      description: "Image in base64 of the item",
+    },
+  ],
 };
-
 
 // export const itemSchema = {
 //     class: "Item",

@@ -17,12 +17,14 @@
     "ffi",
     "fs",
     "http",
-    "net"
+    "net",
+    "detect-cjs"
   ],
   "deno.codeLens.testArgs": ["--allow-all", "--no-check", "-c", "supabase/functions/deno.json"],
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
   "workbench.colorCustomizations": {
     "activityBar.activeBackground": "#34a975",
     "activityBar.background": "#34a975",
