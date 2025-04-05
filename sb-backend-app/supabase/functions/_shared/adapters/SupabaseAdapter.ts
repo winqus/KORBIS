@@ -5,7 +5,7 @@ import { inject, injectable } from "@needle-di/core";
 @injectable()
 export class SupabaseAdapter implements DomainCdnService {
   private readonly config = {
-    bucketName: "domains",
+    imageBucketName: "domain-images",
     imageContentType : "image/png",
     imageSizeLimit: "20mb",
     imageAllowedMimeTypes: ["image/*"],
@@ -24,10 +24,10 @@ export class SupabaseAdapter implements DomainCdnService {
   ): Promise<{ imageUrl: string }> {
     const uploadResult = await this.supabaseService.ensureFileBase64UploadToBucket(
       {
-        bucketName: this.config.bucketName,
+        bucketName: this.config.imageBucketName,
         fileBase64: imageBase64,
         filePath: this.formFilePath(domainId, imageId),
-        contentType: this.config.bucketName,
+        contentType: this.config.imageContentType,
         bucketOptions: {
           public: true,
           allowedMimeTypes: this.config.imageAllowedMimeTypes,
@@ -53,7 +53,7 @@ export class SupabaseAdapter implements DomainCdnService {
     imageId: string,
   ): Promise<{ imageUrl?: string }> {
     const imageUrl = this.supabaseService.getFilePublicUrl(
-      this.bucketName,
+      this.config.imageBucketName,
       this.formFilePath(domainId, imageId),
     );
 

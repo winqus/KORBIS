@@ -5,11 +5,7 @@ import { inject, injectable } from "@needle-di/core";
 import {
   DOMAIN_CDN_SERVICE,
   ITEMS_REPOSITORY,
-  JWT,
-  SUPABASE_ADMIN,
 } from "../../injection-tokens.ts";
-import { createClient } from "@supabase/supabase-js";
-import { decode } from "base64-arraybuffer";
 import { SupabaseService } from "../../services/index.ts";
 
 @injectable()
