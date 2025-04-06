@@ -147,15 +147,17 @@ function createAuthMiddleware(container: Container) {
         },
       });
 
-      // TODO: refactor
       const user = await container.get(SUPABASE_ADMIN).auth.getUser(jwt);
-      console.log("User:", user.data.user);
+
       let userId = user.data.user?.id;
       if (!userId && isLocalEnv()) {
-        console.log("[DEV] No userId found in JWT, using a test userId");
-        userId = "5f19c1e9-02e9-46f8-bb65-49a74e1db21a"; // TODO: remove this line
+        console.log(
+          "[DEV] No userId found in JWT, using LOCAL_TEST_USER_ID from .env",
+        );
+        userId = Deno.env.get("LOCAL_TEST_USER_ID") || undefined;
       }
       (req as any).userId = userId;
+
       console.log("UserId:", userId);
 
       if (!userId) {
