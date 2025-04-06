@@ -17,41 +17,42 @@ import { inject, injectable } from "@needle-di/core";
 import { WEAVIATE_CLIENT } from "../injection-tokens.ts";
 
 @injectable()
-export class WeaviateV2ItemsRepository
-  extends WeaviateV2BaseRepository<Item>
+export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
   implements ItemsRepository {
+  protected readonly assetType = "item";
+
   constructor(client: WeaviateClient = inject(WEAVIATE_CLIENT)) {
     super(client, itemSchema.class, itemSchema, Item);
   }
 
-  public override create(item: Optional<Item, "id" | "type">): Promise<Item> {
+  public override create(data: Optional<Item, "id" | "type">): Promise<Item> {
     return super.create({
-      ...item,
-      type: "item",
+      ...data,
+      type: this.assetType,
     });
-  } 
+  }
 
   public async createWithImage(
-    item: Optional<Item, "id" | "type">,
+    data: Optional<Item, "id" | "type">,
     imageBase64?: string,
   ): Promise<Item> {
     const imageId = imageBase64 ? randomUUID() : undefined;
 
-    const itemCreator = this.client.data.creator()
+    const creator = this.client.data.creator()
       .withClassName(this.className)
       .withProperties({
-        ...item,
+        ...data,
         imageId: imageId,
         image: imageBase64 || undefined,
-        type: "item",
+        type: this.assetType,
       });
 
-    const newObject = await itemCreator.do()
+    const newObject = await creator.do()
       .catch(async (error) => {
         if (this.isClassNotFoundInSchemaError(error)) {
           await this.initializeClass();
 
-          return itemCreator.do();
+          return creator.do();
         }
 
         throw error;

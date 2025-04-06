@@ -7,10 +7,10 @@ export type SearchItemsProps = {
 };
 
 export interface ItemsRepository {
-  create(item: Optional<Item, "id" | "type">): Promise<Item>;
+  create(data: Optional<Item, "id" | "type">): Promise<Item>;
 
   createWithImage(
-    item: Optional<Item, "id" | "type">,
+    data: Optional<Item, "id" | "type">,
     imageBase64: string,
   ): Promise<Item & Pick<Item, "imageId">>;
 
