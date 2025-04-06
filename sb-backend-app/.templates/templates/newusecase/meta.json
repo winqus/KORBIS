@@ -1,0 +1,6 @@
+{
+  "name": "NewUsecase",
+  "fileTemplateName": "{{name}}Usecase.ts",
+  "onlyAsPartOfGroup": false,
+  "disabled": false
+}
