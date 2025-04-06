@@ -36,7 +36,6 @@ const app = express();
 const port = 8000;
 app.use(express.json());
 
-
 function getPublicImageUrl(picturePath: string): string {
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
@@ -66,12 +65,15 @@ function getPublicImageUrl(picturePath: string): string {
 async function deletePublicImage(picturePath: string) {
   const supabaseAdminClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   );
 
-  const { error} = await supabaseAdminClient.storage.from("public-bucket").remove([picturePath]);
+  const { error } = await supabaseAdminClient.storage.from("public-bucket")
+    .remove([picturePath]);
   if (isStorageError(error)) {
-    console.error(`Failed to delete image ${picturePath} from public bucket: ${error.message}`);
+    console.error(
+      `Failed to delete image ${picturePath} from public bucket: ${error.message}`,
+    );
   }
 }
 
@@ -103,7 +105,9 @@ function mapSerpapiResponseToMatches(response: BaseResponse): VisualMatch[] {
   return matches ?? [];
 }
 
-async function findVisualMatches(picturePublicUrl: string): Promise<VisualMatch[] | null> {
+async function findVisualMatches(
+  picturePublicUrl: string,
+): Promise<VisualMatch[] | null> {
   let matches: VisualMatch[] = [];
   if (Deno.env.get("USE_SERPAPI") !== "true") {
     console.log(`USING EXAMPLE SERPAPI RESPONSE FOR IMAGE ${picturePublicUrl}`);

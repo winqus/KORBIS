@@ -1,8 +1,9 @@
 {
-  "deno.enablePaths": [
-    "supabase/functions"
-  ],
+  "deno.enable": true,
+  "deno.config": "supabase/functions/deno.json",
+  "deno.enablePaths": ["supabase/functions"],
   "deno.lint": true,
+  "deno.codeLens.test": true,
   "deno.unstable": [
     "bare-node-builtins",
     "byonm",
@@ -16,11 +17,14 @@
     "ffi",
     "fs",
     "http",
-    "net"
+    "net",
+    "detect-cjs"
   ],
+  "deno.codeLens.testArgs": ["--allow-all", "--no-check", "-c", "supabase/functions/deno.json"],
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
   "workbench.colorCustomizations": {
     "activityBar.activeBackground": "#34a975",
     "activityBar.background": "#34a975",
@@ -40,5 +44,7 @@
     "titleBar.inactiveBackground": "#28825a99",
     "titleBar.inactiveForeground": "#e7e7e799"
   },
-  "peacock.color": "#28825a"
+  "peacock.color": "#28825a",
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "modificationsIfAvailable"
 }

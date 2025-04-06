@@ -1,0 +1,6 @@
+{
+  "name": "NewCommand",
+  "fileTemplateName": "{{name}}Command.ts",
+  "onlyAsPartOfGroup": false,
+  "disabled": false
+}

@@ -1,39 +1,53 @@
 // @ts-types="npm:@types/express"
 import express from "express";
-import { WeaviateV2ItemsRepository } from "@/adapters/index.ts";
-import ItemsController from "./controller.ts";
-import { throwIfMissing } from "@/utils.ts";
-import { createWeaviateClientV2 } from "@/drivers/index.ts";
+import {
+  WeaviateV2ContainersRepository,
+  WeaviateV2ItemsRepository,
+} from "@/repositories/index.ts";
+import ItemsControllerOld from "./controller.ts";
+import { ItemsController } from "@/controllers/index.ts";
+import { bootstrap } from "@/bootstrap.ts";
+import { CONTAINERS_REPOSITORY, ITEMS_REPOSITORY } from "@/injection-tokens.ts";
 
-const port = 8000;
+const port = 8000; // Default port for Supabase functions
 
-throwIfMissing("env variables", Deno.env.toObject(), [
-  "WEAVIATE_SCHEME",
-  "WEAVIATE_ENDPOINT",
-  "WEAVIATE_API_KEY",
-]);
-
-const weaviateClient = createWeaviateClientV2({
-  scheme: Deno.env.get("WEAVIATE_SCHEME") ?? "http",
-  host: Deno.env.get("WEAVIATE_ENDPOINT") ?? "localhost:8080",
-  apiKey: Deno.env.get("WEAVIATE_API_KEY") ?? "",
+const { container, app } = bootstrap({
+  requiredEnvVars: [
+    "WEAVIATE_SCHEME",
+    "WEAVIATE_ENDPOINT",
+    "WEAVIATE_API_KEY",
+  ],
+  repositories: [
+    { token: ITEMS_REPOSITORY, repository: WeaviateV2ItemsRepository },
+    {
+      token: CONTAINERS_REPOSITORY,
+      repository: WeaviateV2ContainersRepository,
+    },
+  ],
+  controllers: [],
+  extraBindings: [],
 });
-const itemsRepository = new WeaviateV2ItemsRepository(weaviateClient);
-const itemsController = new ItemsController(itemsRepository);
 
-const app = express();
-app.use(express.json({ limit : "10mb" }));
+const itemsController = container.get(ItemsController);
+const itemsControllerOld = new ItemsControllerOld(
+  container.get(ITEMS_REPOSITORY),
+);
 
+/* NEW */
 app.post("/items", itemsController.create.bind(itemsController));
-app.get("/items", itemsController.findAll.bind(itemsController));
-app.get("/items/:id", itemsController.findById.bind(itemsController));
+app.get("/items/:id", itemsController.get.bind(itemsController));
 app.delete("/items/:id", itemsController.delete.bind(itemsController));
-app.post("/items/search", itemsController.search.bind(itemsController));
 
-app.listen(port, (error) => {
+/* OLD */
+app.get("/items", itemsControllerOld.findAll.bind(itemsControllerOld));
+app.post("/items/search", itemsControllerOld.search.bind(itemsControllerOld));
+
+// Start the server
+app.listen(port, (error: any) => {
   if (error) {
     return console.error(`Error listening: ${error}`);
   }
+  console.log(`Server started on port ${port}`);
 });
 
 /* To invoke locally:
