@@ -9,8 +9,12 @@ export class CreateItemCommand extends AuthenticatedCommand {
 
   imageBase64!: string;
 
+  parentType?: string;
+
+  parentId?: string;
+
   static create(data: CreateItemCommand) {
-    const { userId, name, description, imageBase64 } = data;
+    const { userId, name, description, imageBase64, parentId, parentType } = data;
 
     this.validate(data, [
       {
@@ -26,13 +30,35 @@ export class CreateItemCommand extends AuthenticatedCommand {
       {
         property: "description",
         isValid: !!description &&
-          validator.isLength(description, { min: 0, max: 255 }),
-        message: "Description cannot exceed 255 characters",
+          validator.isLength(description, { min: 0, max: 1000 }),
+        message: "Description cannot exceed 1000 characters",
       },
       {
         property: "imageBase64",
         isValid: !!imageBase64 && validator.isLength(imageBase64, { min: 1 }),
         message: "Image base64 data is required",
+      },
+      {
+        property: "parentType",
+        isValid: !parentType || validator.isIn(parentType, [
+          "container",
+        ]),
+        message: "Parent type must be 'container'",
+      },
+      {
+        property: "parentId",
+        isValid: !parentId || validator.isLength(userId, { min: 1, max: 255 }),
+        message: "Parent ID must be between 1 and 255 characters",
+      },
+      {
+        property: "parentId",
+        isValid: !parentId || !!parentType,
+        message: "Parent ID must be provided if parent type is provided",
+      },
+      {
+        property: "parentType",
+        isValid: !parentType || !!parentId,
+        message: "Parent type must be provided if parent ID is provided",
       },
     ]);
 
@@ -42,6 +68,8 @@ export class CreateItemCommand extends AuthenticatedCommand {
     command.name = name;
     command.description = description;
     command.imageBase64 = imageBase64;
+    command.parentType = parentType;
+    command.parentId = parentId;
 
     return command;
   }

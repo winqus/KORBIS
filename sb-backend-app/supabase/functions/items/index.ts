@@ -1,10 +1,13 @@
 // @ts-types="npm:@types/express"
 import express from "express";
-import { WeaviateV2ItemsRepository } from "@/repositories/index.ts";
+import {
+  WeaviateV2ContainersRepository,
+  WeaviateV2ItemsRepository,
+} from "@/repositories/index.ts";
 import ItemsControllerOld from "./controller.ts";
 import { ItemsController } from "@/controllers/index.ts";
 import { bootstrap } from "@/bootstrap.ts";
-import { ITEMS_REPOSITORY } from "@/injection-tokens.ts";
+import { CONTAINERS_REPOSITORY, ITEMS_REPOSITORY } from "@/injection-tokens.ts";
 
 const port = 8000; // Default port for Supabase functions
 
@@ -16,6 +19,10 @@ const { container, app } = bootstrap({
   ],
   repositories: [
     { token: ITEMS_REPOSITORY, repository: WeaviateV2ItemsRepository },
+    {
+      token: CONTAINERS_REPOSITORY,
+      repository: WeaviateV2ContainersRepository,
+    },
   ],
   controllers: [],
   extraBindings: [],

@@ -12,4 +12,6 @@ export interface ContainersRepository {
   findById(id: string): Promise<Container | null>;
 
   delete(id: string): Promise<void>;
+
+  update(id: string, data: Partial<Container>): Promise<Container | null>
 }
