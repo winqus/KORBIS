@@ -35,11 +35,10 @@ const itemsControllerOld = new ItemsControllerOld(
 
 /* NEW */
 app.post("/items", itemsController.create.bind(itemsController));
+app.get("/items/:id", itemsController.get.bind(itemsController));
 
 /* OLD */
-app.post("/items", itemsControllerOld.create.bind(itemsControllerOld));
 app.get("/items", itemsControllerOld.findAll.bind(itemsControllerOld));
-app.get("/items/:id", itemsControllerOld.findById.bind(itemsControllerOld));
 app.delete("/items/:id", itemsControllerOld.delete.bind(itemsControllerOld));
 app.post("/items/search", itemsControllerOld.search.bind(itemsControllerOld));
 

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { CreateItem } from "../usecases/index.ts";
+import { CreateItem, GetItem } from "../usecases/index.ts";
 import { CreateItemCommand } from "../usecases/index.ts";
 import { handleError } from "./errorHandler.ts";
 import { inject, injectable } from "@needle-di/core";
@@ -8,6 +8,7 @@ import { inject, injectable } from "@needle-di/core";
 export class ItemsController {
   constructor(
     private readonly createItemUsecase = inject(CreateItem),
+    private readonly getItemUsecase = inject(GetItem),
   ) {}
 
   public async create(req: Request, res: Response, next: NextFunction) {
@@ -27,6 +28,19 @@ export class ItemsController {
       const result = await this.createItemUsecase.execute(command);
 
       res.status(201).json(result);
+    } catch (error) {
+      handleError(error, req, res, next);
+    }
+  }
+
+  public async get(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const userId = req["userId"] as string;
+
+      const result = await this.getItemUsecase.execute({ itemId: id, userId });
+
+      res.status(200).json(result);
     } catch (error) {
       handleError(error, req, res, next);
     }
