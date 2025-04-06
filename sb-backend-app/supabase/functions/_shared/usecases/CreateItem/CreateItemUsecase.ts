@@ -59,7 +59,7 @@ export class CreateItem {
       name: newItem.name,
       description: newItem.description,
       parentId: parentContainer?.id || null,
-      parentType: parentContainer?.type || null,
+      parentType: parentContainer ? "container" : null,
       imageId: newItem.imageId || null,
       imageUrl: imageUrl || null,
     };

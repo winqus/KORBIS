@@ -28,31 +28,33 @@ export class WeaviateV2ContainersRepository
   }
 
   public async createWithImage(
-      data: Optional<Container, "id" | "type">,
-      imageBase64?: string,
-    ): Promise<Container> {
-      const imageId = imageBase64 ? randomUUID() : undefined;
-  
-      const creator = this.client.data.creator()
-        .withClassName(this.className)
-        .withProperties({
+    data: Optional<Container, "id" | "type">,
+    imageBase64?: string,
+  ): Promise<Container> {
+    const imageId = imageBase64 ? randomUUID() : undefined;
+
+    const creator = this.client.data.creator()
+      .withClassName(this.className)
+      .withProperties(
+        {
           ...data,
-          imageId: imageId,
+          imageId,
           image: imageBase64 || undefined,
           type: this.assetType,
-        });
-  
-      const newObject = await creator.do()
-        .catch(async (error) => {
-          if (this.isClassNotFoundInSchemaError(error)) {
-            await this.initializeClass();
-  
-            return creator.do();
-          }
-  
-          throw error;
-        });
-  
-      return this.mapObject2Entity(newObject);
-    }
+        } satisfies ((typeof data) & { image?: string }),
+      );
+
+    const newObject = await creator.do()
+      .catch(async (error) => {
+        if (this.isClassNotFoundInSchemaError(error)) {
+          await this.initializeClass();
+
+          return creator.do();
+        }
+
+        throw error;
+      });
+
+    return this.mapObject2Entity(newObject);
+  }
 }

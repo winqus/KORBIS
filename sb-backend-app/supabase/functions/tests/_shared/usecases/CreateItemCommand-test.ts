@@ -11,7 +11,6 @@ Deno.test("Creates CreateItemCommand", () => {
 
   const command = CreateItemCommand.create({
     userId: "useris",
-    domainId: "amongus",
     name: "Test Item",
     description: "This is a test item",
     imageBase64:

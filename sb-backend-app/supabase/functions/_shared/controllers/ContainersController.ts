@@ -12,7 +12,7 @@ export class ContainersController {
 
   public async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, description, imageBase64 } = req.body;
+      const { name, description, imageBase64, parentId, parentType } = req.body;
       const userId = req["userId"] as string;
 
       const command = CreateContainerCommand.create({
@@ -20,6 +20,8 @@ export class ContainersController {
         name,
         description,
         imageBase64,
+        parentId,
+        parentType,
       });
 
       const result = await this.createContainerUsecase.execute(command);

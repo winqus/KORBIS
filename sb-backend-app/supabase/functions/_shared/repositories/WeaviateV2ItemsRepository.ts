@@ -40,12 +40,14 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
 
     const creator = this.client.data.creator()
       .withClassName(this.className)
-      .withProperties({
-        ...data,
-        imageId: imageId,
-        image: imageBase64 || undefined,
-        type: this.assetType,
-      });
+      .withProperties(
+        {
+          ...data,
+          imageId: imageId,
+          image: imageBase64 || undefined,
+          type: this.assetType,
+        } satisfies ((typeof data) & { image?: string }),
+      );
 
     const newObject = await creator.do()
       .catch(async (error) => {
