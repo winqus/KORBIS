@@ -1,0 +1,48 @@
+### Variables
+@baseUrl = http://127.0.0.1:54321/functions/v1
+@createdItemId = {{createItem.response.body.$.id}}
+@authToken = {{$dotenv AUTH_TOKEN}}
+
+
+### Step 1: Create a new item
+# @name createItem
+POST {{baseUrl}}/items
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Test Item",
+  "description": "This is a test item created with REST Client",
+  "imageBase64": "{{$dotenv IMAGE0BASE64}}"
+}
+
+### Step 2: Get the created item to verify
+# @name getItem
+GET {{baseUrl}}/items/{{createdItemId}}
+Authorization: Bearer {{authToken}}
+
+### Step 3: Update the item
+# @name updateItem
+PUT {{baseUrl}}/items/{{createdItemId}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Updated Test Item",
+  "description": "This item has been updated with REST Client",
+}
+
+### Step 4: Verify the item was updated
+# @name getUpdatedItem
+GET {{baseUrl}}/items/{{createdItemId}}
+Authorization: Bearer {{authToken}}
+
+### Step 5: Delete the item
+# @name deleteItem
+DELETE {{baseUrl}}/items/{{createdItemId}}
+Authorization: Bearer {{authToken}}
+
+### Step 6: Verify the item was deleted (should return 404)
+# @name verifyDeleted
+GET {{baseUrl}}/items/{{createdItemId}}
+Authorization: Bearer {{authToken}}
