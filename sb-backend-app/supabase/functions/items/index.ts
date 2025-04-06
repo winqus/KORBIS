@@ -1,131 +1,30 @@
-import { Container, inject } from "@needle-di/core";
 // @ts-types="npm:@types/express"
 import express from "express";
 import { WeaviateV2ItemsRepository } from "@/repositories/index.ts";
 import ItemsControllerOld from "./controller.ts";
-import { throwIfMissing } from "@/utils.ts";
-import { createWeaviateClientV2 } from "@/drivers/index.ts";
-import { DenoEnvConfigService, SupabaseAdapter } from "@/adapters/index.ts";
 import { ItemsController } from "@/controllers/index.ts";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { bootstrap } from "@/bootstrap.ts";
+import { ITEMS_REPOSITORY } from "@/injection-tokens.ts";
 
-import { isLocalEnv } from "@/utils.ts";
-import {
-  CONFIG_SERVICE,
-  DOMAIN_CDN_SERVICE,
-  ITEMS_REPOSITORY,
-  JWT,
-  SUPABASE_ADMIN,
-  SUPABASE_CURRENT_USER,
-  WEAVIATE_CLIENT,
-} from "@/injection-tokens.ts";
+const port = 8000; // Default port for Supabase functions
 
-throwIfMissing("env variables", Deno.env.toObject(), [
-  "WEAVIATE_SCHEME",
-  "WEAVIATE_ENDPOINT",
-  "WEAVIATE_API_KEY",
-]);
-
-const port = 8000;
-const container = new Container();
-
-container.bindAll(
-  {
-    provide: CONFIG_SERVICE,
-    useClass: DenoEnvConfigService,
-  },
-  {
-    provide: SUPABASE_ADMIN,
-    useFactory: () => {
-      const configService = inject(CONFIG_SERVICE);
-      return createClient(
-        configService.getOrThrow("SUPABASE_URL"),
-        configService.getOrThrow("SUPABASE_SERVICE_ROLE_KEY"),
-      );
-    },
-  },
-  {
-    provide: WEAVIATE_CLIENT,
-    useFactory: () => {
-      const configService = inject(CONFIG_SERVICE);
-      return createWeaviateClientV2({
-        scheme: configService.getOrThrow("WEAVIATE_SCHEME"),
-        host: configService.getOrThrow("WEAVIATE_ENDPOINT"),
-        apiKey: configService.getOrThrow("WEAVIATE_API_KEY"),
-      });
-    },
-  },
-  {
-    provide: ITEMS_REPOSITORY,
-    useClass: WeaviateV2ItemsRepository,
-  },
-  {
-    provide: DOMAIN_CDN_SERVICE,
-    useClass: SupabaseAdapter,
-  },
-);
+const { container, app } = bootstrap({
+  requiredEnvVars: [
+    "WEAVIATE_SCHEME",
+    "WEAVIATE_ENDPOINT",
+    "WEAVIATE_API_KEY",
+  ],
+  repositories: [
+    { token: ITEMS_REPOSITORY, repository: WeaviateV2ItemsRepository },
+  ],
+  controllers: [],
+  extraBindings: [],
+});
 
 const itemsController = container.get(ItemsController);
 const itemsControllerOld = new ItemsControllerOld(
   container.get(ITEMS_REPOSITORY),
 );
-
-const app = express();
-app.use(express.json({ limit: "20mb" }));
-
-app.use(async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader) {
-    const authToken = req.get("Authorization")!;
-    const jwt = authToken.replace("Bearer ", "");
-
-    if (isLocalEnv()) {
-      console.log("[DEV] User JWT token:", jwt);
-    } else {
-      console.log("User JWT:", jwt.slice(0, 10), "...");
-    }
-
-    container.bind({
-      provide: JWT,
-      useValue: jwt,
-    });
-
-    container.bind({
-      provide: SUPABASE_CURRENT_USER,
-      useFactory: () => {
-        const configService = inject(CONFIG_SERVICE);
-        const jwt = inject(JWT);
-
-        return createClient(
-          configService.getOrThrow("SUPABASE_URL"),
-          configService.getOrThrow("SUPABASE_ANON_KEY"),
-          { global: { headers: { Authorization: jwt } } },
-        );
-      },
-    });
-
-    // TODO: refactor
-    const user = await container.get(SUPABASE_ADMIN).auth.getUser(jwt);
-    console.log("User:", user.data.user);
-    let userId = user.data.user?.id;
-    if (!userId && isLocalEnv()) {
-      console.log("[DEV] No userId found in JWT, using a test userId");
-      userId = "5f19c1e9-02e9-46f8-bb65-49a74e1db21a"; // TODO: remove this line
-    }
-    (req as any).userId = userId;
-    console.log("UserId:", userId);
-
-    if (!userId) {
-      console.error("No userId found in JWT");
-      res.status(401).send("Not authorized");
-    }
-  } else {
-    console.error("No JWT Token provided");
-    res.status(401).send("No JWT Token provided");
-  }
-
-  next();
-});
 
 /* NEW */
 app.post("/items", itemsController.create.bind(itemsController));
@@ -137,10 +36,12 @@ app.get("/items/:id", itemsControllerOld.findById.bind(itemsControllerOld));
 app.delete("/items/:id", itemsControllerOld.delete.bind(itemsControllerOld));
 app.post("/items/search", itemsControllerOld.search.bind(itemsControllerOld));
 
-app.listen(port, (error) => {
+// Start the server
+app.listen(port, (error: any) => {
   if (error) {
     return console.error(`Error listening: ${error}`);
   }
+  console.log(`Server started on port ${port}`);
 });
 
 /* To invoke locally:
