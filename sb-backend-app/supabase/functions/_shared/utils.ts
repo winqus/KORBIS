@@ -1,5 +1,5 @@
 import { decode as decodeBase64 } from "base64-arraybuffer";
-import { generateUuid5 } from "weaviate-ts-client";
+import { generateUuid5 } from "npm:weaviate-ts-client@2.2.0";
 
 export const isLocalEnv = () =>
   Deno.env.get("SUPABASE_URL") === "http://kong:8000";
