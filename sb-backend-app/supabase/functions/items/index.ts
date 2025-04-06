@@ -36,10 +36,10 @@ const itemsControllerOld = new ItemsControllerOld(
 /* NEW */
 app.post("/items", itemsController.create.bind(itemsController));
 app.get("/items/:id", itemsController.get.bind(itemsController));
+app.delete("/items/:id", itemsController.delete.bind(itemsController));
 
 /* OLD */
 app.get("/items", itemsControllerOld.findAll.bind(itemsControllerOld));
-app.delete("/items/:id", itemsControllerOld.delete.bind(itemsControllerOld));
 app.post("/items/search", itemsControllerOld.search.bind(itemsControllerOld));
 
 // Start the server

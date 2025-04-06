@@ -9,7 +9,7 @@ import { isLocalEnv } from "../utils.ts";
 
 export function handleError(
   error: unknown,
-  _req: express.Request,
+  req: express.Request,
   res: express.Response,
   _next: express.NextFunction,
 ): void {
@@ -43,14 +43,12 @@ export function handleError(
       ...(isDevelopment && { __devInfo: error.message }),
     });
   } else if (error instanceof NoPermissionError) {
-    const message = typeof error.message === "string"
-    ? JSON.parse(error.message)
-    : error.message;
+    const message = error.message;
     console.error("NoPermissionError:", message);
     res.status(403).json({
       error: "Forbidden",
-      details: message,
-      ...(isDevelopment && { __devInfo: error.message }),
+      details: { message },
+      ...(isDevelopment && { __devInfo: { message, userId: req["userId"] } }),
     });
   } else if (error instanceof Error) {
     console.error("Error:", error.message);
