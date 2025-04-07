@@ -306,36 +306,14 @@ export async function getItemById({ ID }: Pick<Item, "ID">) {
       throw new Error("No item ID provided");
     }
 
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error("No user data found. User is not authenticated.");
-    }
+    const user = await requireAuthentication();
 
-    const { data: item, error: funcError } = await supabase.functions.invoke(
-      `items/${ID}`,
-      {
-        method: "GET",
-      },
-    );
-
-    if (funcError instanceof FunctionsHttpError) {
-      const errorMessage = await funcError.context.json();
-      console.log("Function returned an error", errorMessage);
-    } else if (funcError instanceof FunctionsRelayError) {
-      console.log("Relay error:", funcError.message);
-    } else if (funcError instanceof FunctionsFetchError) {
-      console.log("Fetch error:", funcError.message);
-    }
-
-    if (funcError) {
-      throw new Error("Failed to get item");
-    }
-
-    console.log(`getItemById retrieved "${item.id}"`);
+    const item = await invokeFunction<any>(`items/${ID}`, { method: "GET" });
 
     if (!item) {
       throw new Error("Returned item is null");
     }
+    console.log(`getItemById retrieved "${item.id}"`);
 
     return mapAny2Item(item, user, config);
   } catch (error) {
@@ -402,6 +380,29 @@ export async function searchItems({
   }
 }
 
+export async function deleteItem({ ID }: Pick<Item, "ID">) {
+  try {
+    if (!ID) {
+      throw new Error("No item ID provided");
+    }
+
+    await requireAuthentication();
+
+    await invokeFunction(`items/${ID}`, { method: "DELETE" });
+
+    console.log(`Successfully deleted item with ID: ${ID}`);
+
+    return true;
+  } catch (error) {
+    console.error("deleteItem error", error);
+    return false;
+  }
+}
+
+/*
+ * HELPERS
+ */
+
 function mapAny2Item(
   item: any,
   user: { id: string },
@@ -434,6 +435,51 @@ function mapAny2Items(
   config: { projectUrl: string },
 ): Item[] {
   return items.map((item) => mapAny2Item(item, user, config));
+}
+
+async function requireAuthentication() {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("No user data found. User is not authenticated.");
+  }
+  return user;
+}
+
+async function invokeFunction<T>(
+  functionPath: string,
+  options: {
+    method: "POST" | "GET" | "PUT" | "PATCH" | "DELETE";
+    body?: any;
+    headers?: { [key: string]: string };
+  },
+): Promise<T | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke(
+      functionPath,
+      options,
+    );
+
+    if (error) {
+      handleFunctionsError(error);
+      throw new Error(`Failed to invoke function: ${functionPath}`);
+    }
+
+    return data as T;
+  } catch (error) {
+    console.error(`Error invoking ${functionPath}:`, error);
+    return null;
+  }
+}
+
+async function handleFunctionsError(funcError: any): Promise<void> {
+  if (funcError instanceof FunctionsHttpError) {
+    const errorMessage = await funcError.context.json();
+    console.log("Function returned an error", errorMessage);
+  } else if (funcError instanceof FunctionsRelayError) {
+    console.log("Relay error:", funcError.message);
+  } else if (funcError instanceof FunctionsFetchError) {
+    console.log("Fetch error:", funcError.message);
+  }
 }
 
 // Tells Supabase Auth to continuously refresh the session automatically
