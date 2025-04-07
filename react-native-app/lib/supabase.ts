@@ -331,7 +331,7 @@ export async function getItemById({ ID }: Pick<Item, "ID">) {
       throw new Error("Failed to get item");
     }
 
-    console.log(`getItemById retrieved "${item.ID}"`);
+    console.log(`getItemById retrieved "${item.id}"`);
 
     if (!item) {
       throw new Error("Returned item is null");
@@ -411,16 +411,20 @@ function mapAny2Item(
     throw new Error("Returned item is null");
   }
 
-  const imageURI = item.imageID
-    ? `${config.projectUrl}/storage/v1/object/public/user-images/${user.id}/${item.imageID}.png`
+  // TODO: remove this temp imageURI when the get many API is fixed
+  const imageURI = item.imageId
+    ? `${config.projectUrl}/storage/v1/object/public/domain-images/${user.id}/${item.imageId}.png`
     : undefined;
-
+  // console.log(">>>>Received raw ITEM", item);
   return {
-    ID: item.ID || "NO-ID",
-    name: item.name || "NO-NAME",
-    description: item.description ?? "NO-DESCRIPTION",
-    imageID: item.imageID,
-    imageURI: imageURI,
+    ID: item.id,
+    ownerId: item.ownerId,
+    name: item.name,
+    description: item.description,
+    imageID: item.imageId,
+    imageURI: item.imageUrl || imageURI,
+    parentType: item.parentType,
+    parentId: item.parentId,
   } satisfies Item;
 }
 

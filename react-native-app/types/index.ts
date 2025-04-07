@@ -6,8 +6,11 @@ export interface GeneratedItemMetadata {
 
 export interface Item {
   ID: string;
+  ownerId: string;
   name: string;
   description: string;
   imageID?: string;
   imageURI?: string;
+  parentType?: string;
+  parentId?: string;
 }
