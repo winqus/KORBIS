@@ -1,4 +1,4 @@
-import { View, ScrollView, TouchableOpacity, Alert, Image } from "react-native";
+import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import { mostRecentlyTakenPictureUri } from "@/lib/signals";
 import icons from "@/constants/icons";
@@ -13,6 +13,7 @@ import { createItem, generateItemMetadataFromPicture } from "@/lib/supabase";
 import * as ImagePicker from "expo-image-picker";
 import { GeneratedItemMetadata } from "@/types";
 import { getPictureBase64FromLocalUri } from "@/lib/utils";
+import { ParentAssetInfo } from "@/components/ParentAssetInfo";
 
 const ItemCreation = () => {
   const router = useRouter();
@@ -27,6 +28,7 @@ const ItemCreation = () => {
     name: "",
     description: "",
   });
+  const [parentAsset, setParentAsset] = useState({ name: "My box" });
 
   const fieldMap = {
     name: "shorthand",
@@ -152,6 +154,9 @@ const ItemCreation = () => {
     }
   };
 
+  const handleParentAssetPress = () => {
+    console.log("Select parent asset");
+  };
   return (
     <View className="h-full bg-white">
       <TouchableOpacity
@@ -175,7 +180,18 @@ const ItemCreation = () => {
           showPickerIcon={uri === ""}
           onPickerPress={pickImage}
         />
-        <View>
+        {/* FIELDS */}
+        <View className="flex flex-col items-start p-0 border-t border-accent">
+          {/* ContainerNameTags Field */}
+          <View className="flex flex-col w-full justify-center items-start py-2 px-5 gap-2.5">
+            {/* Container and Quantity Row */}
+            <View className="flex flex-row w-full justify-between items-center py-0.5 gap-2.5">
+              <ParentAssetInfo
+                parentName={parentAsset.name}
+                onPress={handleParentAssetPress}
+              />
+            </View>
+          </View>
           <GenerativeInputField
             label="Name"
             placeholder="Enter the name"
