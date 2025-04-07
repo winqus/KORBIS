@@ -14,12 +14,13 @@ export class GetItems {
   ) {}
 
   public async execute(command: GetItemsCommand) {
-    const { userId, limit = 50, skip = 0 } = command;
+    const { userId, limit = 50, skip = 0, parentId } = command;
 
     const items = await this.itemsRepository.paginate({
       ownerId: userId,
       limit,
       skip,
+      parentId
     });
 
     const result = items.map((item) => {
