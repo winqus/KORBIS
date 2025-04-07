@@ -23,8 +23,9 @@ export interface Item {
   quantity: number;
   imageID?: string;
   imageURI?: string;
-  parentType?: "container";
   parentId?: string;
+  parentName?: string;
+  parentType?: "container";
 }
 
 export interface Container extends IVirtualAsset {

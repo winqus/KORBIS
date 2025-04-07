@@ -1,5 +1,6 @@
 import { GetItemCommand } from "./GetItemCommand.ts";
 import { inject, injectable } from "@needle-di/core";
+import { Item } from "../../entities/index.ts";
 import {
   DOMAIN_CDN_SERVICE,
   ITEMS_REPOSITORY,
@@ -43,6 +44,7 @@ export class GetItem {
       imageUrl: imageUrl,
       parentId: item.parentId,
       parentType: item.parentType,
-    };
+      parentName: item.parentName,
+    } satisfies Item & { imageUrl?: string };
   }
 }

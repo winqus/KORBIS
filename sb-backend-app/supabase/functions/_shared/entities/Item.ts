@@ -17,5 +17,7 @@ export class Item implements IVirtualAsset {
 
   parentType?: string;
 
+  parentName?: string;
+
   imageId?: string;
 }

@@ -38,6 +38,7 @@ export class GetItems {
         quantity: item.quantity,
         imageId: item.imageId,
         imageUrl: imageUrl,
+        parentName: item.parentName,
         parentId: item.parentId,
         parentType: item.parentType,
       } satisfies Item & { imageUrl?: string };

@@ -107,7 +107,7 @@ const Item = () => {
             <View className="flex flex-row w-full justify-between items-center py-0.5 gap-2.5">
               <ParentAssetInfo
                 parentType={item?.parentType}
-                parentName={"Homa Doma"}
+                parentName={item?.parentName || "My Home"}
               />
               {item?.quantity! > 1 ? (
                 <Quantity mode="read" value={item!.quantity} />
