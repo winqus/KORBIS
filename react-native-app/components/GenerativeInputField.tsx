@@ -16,7 +16,7 @@ import React from "react";
 import icons from "@/constants/icons";
 
 interface GenerativeInputFieldProps extends TextInputProps {
-  label: string;
+  label?: string;
   placeholder: string;
   value: string;
   isLoading?: boolean;
@@ -48,28 +48,37 @@ const GenerativeInputField = ({
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View className="flex flex-col w-full justify-center items-start py-1.5 px-5 gap-2.5 border-t border-accent ">
-          <Text className={`text-xl font-rubik-semibold ${labelClass || ""}`}>
-            {label}
-          </Text>
+        <View className="flex flex-col w-full justify-center items-start py-1.5 px-5">
+          {label && (
+            <Text className={`text-xl font-rubik-semibold ${labelClass || ""}`}>
+              {label}
+            </Text>
+          )}
           <View
             className={`flex flex-row justify-start items-center relative gap-1 min-h-14 ${containerClass}`}
           >
-            {icon && <Image source={icon} className={`size-6 ${iconClass}`} />}
+            {icon && (
+              <Image
+                source={icon}
+                className={`size-6 ${iconClass}`}
+                tintColor="#0061FF"
+              />
+            )}
             {!isLoading && (
               <TextInput
-                className={`text-3xl font-rubik flex-1 items-center ${inputClass} text-left`}
+                className={`flex-1 font-rubik text-justify ${inputClass || "text-black-200 text-3xl leading-[3rem]"} `}
                 placeholder={placeholder}
                 onChangeText={onChangeText}
                 value={value}
                 importantForAutofill="no"
                 autoComplete="off"
+                placeholderTextColor="#8C8E98"
                 {...props}
               />
             )}
             {isLoading && (
               <View className="flex-1 w-full items-start">
-                <ActivityIndicator size="large" color="#000000" />
+                <ActivityIndicator size="large" color="#0061FF" />
               </View>
             )}
             {onClear && value && (
