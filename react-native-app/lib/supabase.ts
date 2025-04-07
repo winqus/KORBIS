@@ -222,11 +222,13 @@ export async function createItem({
   description,
   pictureBase64,
   parent,
+  quantity,
 }: {
   name: string;
   description: string;
   pictureBase64?: string;
   parent?: Pick<IVirtualAsset, "type" | "id">;
+  quantity?: number;
 }) {
   try {
     const user = await getCurrentUser();
@@ -243,6 +245,7 @@ export async function createItem({
           imageBase64: pictureBase64 || undefined,
           parentType: parent?.type || undefined,
           parentId: parent?.id || undefined,
+          quantity: quantity || 1,
         },
       });
 
@@ -430,6 +433,7 @@ function mapAny2Item(
     imageURI: item.imageUrl || imageURI,
     type: item.parentType,
     parentId: item.parentId,
+    quantity: item.quantity,
   } satisfies Item;
 }
 

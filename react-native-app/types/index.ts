@@ -18,11 +18,12 @@ export interface Item {
   ID: string;
   ownerId: string;
   name: string;
-  description: string;
   type: "item";
+  description: string;
+  quantity: number;
   imageID?: string;
   imageURI?: string;
-  parentType?: string;
+  parentType?: "container";
   parentId?: string;
 }
 
@@ -33,7 +34,7 @@ export interface Container extends IVirtualAsset {
 
   parentId?: string;
 
-  parentType?: string;
+  parentType?: "container";
 
   childCount: number;
 

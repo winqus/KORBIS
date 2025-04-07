@@ -17,6 +17,8 @@ import images from "@/constants/images";
 import { DocumentPill } from "@/components/DocumentPill";
 import { TagPill } from "@/components/TagPill";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import { ParentAssetInfo } from "@/components/ParentAssetInfo";
+import { Quantity } from "@/components/AssetQuantity";
 
 const Item = () => {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -102,6 +104,15 @@ const Item = () => {
         <View className="flex flex-col px-5 py-6 gap-8">
           {/* Name and Tags*/}
           <View className="flex flex-col items-start gap-3">
+            <View className="flex flex-row w-full justify-between items-center py-0.5 gap-2.5">
+              <ParentAssetInfo
+                parentType={item?.parentType}
+                parentName={"Homa Doma"}
+              />
+              {item?.quantity! > 1 ? (
+                <Quantity mode="read" value={item!.quantity} />
+              ) : null}
+            </View>
             <Text className="text-2xl font-rubik-bold" selectable={true}>
               {item?.name}
             </Text>
