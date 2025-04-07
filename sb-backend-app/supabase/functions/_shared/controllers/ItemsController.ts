@@ -64,13 +64,14 @@ export class ItemsController {
 
   public async getPaginated(req: Request, res: Response, next: NextFunction) {
     try {
-      const { limit = 50, skip = 0 } = req.query;
+      const { limit = 50, skip = 0, parentId } = req.query;
       const userId = req["userId"] as string;
 
       const command = GetItemsCommand.create({
         userId,
         limit: Number(limit),
         skip: Number(skip),
+        parentId,
       });
 
       const result = await this.getItemsUsecase.execute(command);

@@ -4,9 +4,10 @@ import { AuthenticatedCommand } from "../../core/index.ts";
 export class GetItemsCommand extends AuthenticatedCommand {
   skip?: number;
   limit?: number;
+  parentId?: string;
 
   static create(data: GetItemsCommand) {
-    const { userId, skip, limit } = data;
+    const { userId, skip, limit, parentId } = data;
 
     this.validate(data, [
       {
@@ -24,6 +25,11 @@ export class GetItemsCommand extends AuthenticatedCommand {
         isValid: !limit || (Number.isInteger(limit) && limit > 0),
         message: "Limit must be a positive integer",
       },
+      {
+        property: "parentId",
+        isValid: !parentId || validator.isUUID(parentId),
+        message: "Parent ID must be a valid UUID",
+      },
     ]);
 
     const command = new this();
@@ -31,6 +37,7 @@ export class GetItemsCommand extends AuthenticatedCommand {
     command.userId = userId;
     command.skip = skip;
     command.limit = limit;
+    command.parentId = parentId;
 
     return command;
   }
