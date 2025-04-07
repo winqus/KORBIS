@@ -10,12 +10,13 @@ import {
 } from "react-native";
 import React from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { getItemById } from "@/lib/supabase";
+import { deleteItem, getItemById } from "@/lib/supabase";
 import { useSupabase } from "@/lib/useSupabase";
 import icons from "@/constants/icons";
 import images from "@/constants/images";
 import { DocumentPill } from "@/components/DocumentPill";
 import { TagPill } from "@/components/TagPill";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 
 const Item = () => {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -34,6 +35,23 @@ const Item = () => {
       ID: id!,
     },
   });
+
+  const handleDelete = () => {
+    Alert.alert("Delete Item", "Are you sure you want to delete this item?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Delete",
+        onPress: async () => {
+          await deleteItem({ ID: id! });
+          router.replace("/");
+        },
+        style: "destructive",
+      },
+    ]);
+  };
 
   return (
     <View>
@@ -150,6 +168,16 @@ const Item = () => {
                 ID: {item?.ID}
               </Text>
             </View>
+          </View>
+
+          {/* Delete Button */}
+          <View className="flex flex-col items-center justify-center py-8 gap-1 w-full">
+            <TouchableOpacity
+              onPress={handleDelete}
+              className="flex flex-row items-center justify-center py-1.5 px-4 gap-1.5 w-32 h-9 border border-red-500 rounded-full"
+            >
+              <FontAwesome5 name="trash-alt" size={18} color="#FF0000" />
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
