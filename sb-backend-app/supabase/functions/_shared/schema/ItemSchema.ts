@@ -53,6 +53,11 @@ export const itemSchema = {
       description: "Item description/notes",
     },
     {
+      name: "quantity",
+      dataType: ["number"],
+      description: "Quantity of this item",
+    },
+    {
       name: "imageId",
       dataType: ["uuid"],
       description: "ID of the item image",
