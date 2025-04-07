@@ -13,6 +13,8 @@ export class CreateItemCommand extends AuthenticatedCommand {
 
   parentId?: string;
 
+  quantity?: number;
+
   static create(data: CreateItemCommand) {
     const {
       userId,
@@ -21,6 +23,7 @@ export class CreateItemCommand extends AuthenticatedCommand {
       imageBase64,
       parentId,
       parentType,
+      quantity = 1,
     } = data;
 
     this.validate(data, [
@@ -66,6 +69,11 @@ export class CreateItemCommand extends AuthenticatedCommand {
         isValid: !parentType || !!parentId,
         message: "Parent type must be provided if parent ID is provided",
       },
+      {
+        property: "quantity",
+        isValid: !!quantity && validator.isInt(quantity.toString(), { min: 0, max: 4294967295 }),
+        message: "Quantity must be a positive integer or 0",
+      },
     ]);
 
     const command = new this();
@@ -76,6 +84,7 @@ export class CreateItemCommand extends AuthenticatedCommand {
     command.imageBase64 = imageBase64;
     command.parentType = parentType;
     command.parentId = parentId;
+    command.quantity = quantity;
 
     return command;
   }

@@ -20,7 +20,7 @@ export class ItemsController {
 
   public async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, description, imageBase64, parentId, parentType } = req.body;
+      const { name, description, imageBase64, parentId, parentType, quantity } = req.body;
       const userId = req["userId"] as string;
 
       const command = CreateItemCommand.create({
@@ -30,6 +30,7 @@ export class ItemsController {
         imageBase64,
         parentId,
         parentType,
+        quantity,
       });
 
       const result = await this.createItemUsecase.execute(command);

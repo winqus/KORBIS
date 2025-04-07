@@ -11,6 +11,8 @@ export class Item implements IVirtualAsset {
 
   description!: string;
 
+  quantity!: number;
+
   parentId?: string;
 
   parentType?: string;

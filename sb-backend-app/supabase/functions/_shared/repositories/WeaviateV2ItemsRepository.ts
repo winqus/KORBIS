@@ -207,6 +207,7 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
         score: item._additional.score,
         ownerId: item.ownerId,
         type: item.type,
+        quantity: item.quantity,
       } satisfies Item & { score: number }));
 
       this.log("search", "items found:", items.length);

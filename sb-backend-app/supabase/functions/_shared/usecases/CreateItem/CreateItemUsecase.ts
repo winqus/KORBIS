@@ -20,7 +20,7 @@ export class CreateItem {
   ) {}
 
   public async execute(command: CreateItemCommand) {
-    const { name, description, imageBase64, userId, parentId, parentType } =
+    const { name, description, imageBase64, userId, parentId, parentType, quantity = 1 } =
       command;
 
     let parentContainer: Container | null = null;
@@ -45,6 +45,7 @@ export class CreateItem {
       description,
       parentId: parentContainer?.id,
       parentType: parentContainer?.type, 
+      quantity,
     }, imageBase64);
 
     const { imageUrl } = await this.domainCdnService.uploadImage(
