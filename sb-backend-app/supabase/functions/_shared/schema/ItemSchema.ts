@@ -48,6 +48,11 @@ export const itemSchema = {
       description: "Type of parent VirtualAsset",
     },
     {
+      name: "parentName",
+      dataType: ["text"],
+      description: "Name of parent VirtualAsset",
+    },
+    {
       name: "description",
       dataType: ["text"],
       description: "Item description/notes",

@@ -45,6 +45,7 @@ export class CreateItem {
       description,
       parentId: parentContainer?.id,
       parentType: parentContainer?.type, 
+      parentName: parentContainer?.name,
       quantity,
     }, imageBase64);
 
