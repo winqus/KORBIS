@@ -426,6 +426,8 @@ function mapAny2Item(
     imageURI: item.imageUrl || imageURI,
     type: item.parentType,
     parentId: item.parentId,
+    parentType: item.parentType,
+    parentName: item.parentName,
     quantity: item.quantity,
   } satisfies Item;
 }
