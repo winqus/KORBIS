@@ -46,3 +46,33 @@ Authorization: Bearer {{authToken}}
 # @name verifyDeleted
 GET {{baseUrl}}/items/{{createdItemId}}
 Authorization: Bearer {{authToken}}
+
+### Get Paginated items
+### Expect status 200 and some items in the response (if enough items exist)
+# @name getPaginatedItems
+GET {{baseUrl}}/items
+?limit=2
+&skip=0
+Authorization: Bearer {{authToken}}
+
+### Get Paginated items - Test with default values
+### Expect status 200 and some items in the response (if enough items exist)
+# @name getPaginatedItemsDefault
+GET {{baseUrl}}/items
+Authorization: Bearer {{authToken}}
+
+### Get Paginated items - Test pagination with different values
+### Expect status 200 and some items in the response (if enough items exist)
+# @name getPaginatedItemsPage2
+GET {{baseUrl}}/items
+?limit=5
+&skip=5
+Authorization: Bearer {{authToken}}
+
+### Get Paginated items - Test with invalid values (should handle conversion errors)
+### Expect 200 with default limit and skip values, should return some items in the response (if enough items exist)
+# @name getPaginatedItemsInvalidParams
+GET {{baseUrl}}/items
+?limit=invalid
+&skip=invalid
+Authorization: Bearer {{authToken}}

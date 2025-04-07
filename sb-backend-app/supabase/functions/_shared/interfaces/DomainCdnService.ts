@@ -8,5 +8,5 @@ export interface DomainCdnService {
   getImageUrl(
     domainId: string,
     imageId: string,
-  ): Promise<{ imageUrl?: string }>;
+  ): { imageUrl?: string };
 }

@@ -6,7 +6,7 @@ import { inject, injectable } from "@needle-di/core";
 export class SupabaseAdapter implements DomainCdnService {
   private readonly config = {
     imageBucketName: "domain-images",
-    imageContentType : "image/png",
+    imageContentType: "image/png",
     imageSizeLimit: "20mb",
     imageAllowedMimeTypes: ["image/*"],
     imageExtension: "png",
@@ -22,19 +22,20 @@ export class SupabaseAdapter implements DomainCdnService {
     imageId: string,
     imageBase64: string,
   ): Promise<{ imageUrl: string }> {
-    const uploadResult = await this.supabaseService.ensureFileBase64UploadToBucket(
-      {
-        bucketName: this.config.imageBucketName,
-        fileBase64: imageBase64,
-        filePath: this.formFilePath(domainId, imageId),
-        contentType: this.config.imageContentType,
-        bucketOptions: {
-          public: true,
-          allowedMimeTypes: this.config.imageAllowedMimeTypes,
-          fileSizeLimit: this.config.imageSizeLimit,
+    const uploadResult = await this.supabaseService
+      .ensureFileBase64UploadToBucket(
+        {
+          bucketName: this.config.imageBucketName,
+          fileBase64: imageBase64,
+          filePath: this.formFilePath(domainId, imageId),
+          contentType: this.config.imageContentType,
+          bucketOptions: {
+            public: true,
+            allowedMimeTypes: this.config.imageAllowedMimeTypes,
+            fileSizeLimit: this.config.imageSizeLimit,
+          },
         },
-      },
-    );
+      );
 
     if (uploadResult.error) {
       console.error("Error uploading image to CDN", uploadResult.error.message);
@@ -43,15 +44,19 @@ export class SupabaseAdapter implements DomainCdnService {
       );
     }
 
-    const { imageUrl } = await this.getImageUrl(domainId, imageId)!;
+    const { imageUrl } = this.getImageUrl(domainId, imageId)!;
 
     return { imageUrl: imageUrl! };
   }
 
-  public async getImageUrl(
+  public getImageUrl(
     domainId: string,
     imageId: string,
-  ): Promise<{ imageUrl?: string }> {
+  ): { imageUrl?: string } {
+    if (!imageId) {
+      return { imageUrl: undefined };
+    }
+
     const imageUrl = this.supabaseService.getFilePublicUrl(
       this.config.imageBucketName,
       this.formFilePath(domainId, imageId),

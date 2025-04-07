@@ -18,7 +18,14 @@ export interface ItemsRepository {
 
   findAll(): Promise<Item[]>;
 
-  paginate(options: { limit?: number; skip?: number }): Promise<Item[]>;
+  paginate(
+    options: {
+      limit?: number;
+      skip?: number;
+      ownerId: string;
+      parentId?: string;
+    },
+  ): Promise<Item[]>;
 
   delete(id: string): Promise<void>;
 
