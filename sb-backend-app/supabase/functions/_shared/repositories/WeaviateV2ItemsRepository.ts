@@ -20,6 +20,9 @@ import { WEAVIATE_CLIENT } from "../injection-tokens.ts";
 export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
   implements ItemsRepository {
   protected readonly assetType = "item";
+  protected readonly classProperties = itemSchema.properties.map((property) =>
+    property.name
+  ).filter((property) => property !== "image");
 
   constructor(client: WeaviateClient = inject(WEAVIATE_CLIENT)) {
     super(client, itemSchema.class, itemSchema, Item);
@@ -63,21 +66,57 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
     return this.mapObject2Entity(newObject);
   }
 
-  public paginate(
-    options: { limit?: number; skip?: number },
+  public async paginate(
+    options: {
+      limit?: number;
+      skip?: number;
+      ownerId: string;
+      parentId?: string;
+    },
   ): Promise<Item[]> {
-    return this.findMany({
-      limit: options.limit || 50,
-      offset: options.skip || 0,
-      fields: "name description imageId _additional{id}",
-    });
+    try {
+      const { limit, skip, ownerId, parentId } = options;
+
+      let query = this.client.graphql.get()
+        .withClassName(this.className)
+        .withFields(`${this.classProperties} _additional{id}`)
+        .withLimit(limit || 50)
+        .withOffset(skip || 0);
+
+      query = query.withWhere({
+        path: ["ownerId"],
+        operator: "Equal",
+        valueString: ownerId,
+      });
+
+      if (parentId) {
+        query = query.withWhere({
+          path: ["parentId"],
+          operator: "Equal",
+          valueString: parentId,
+        });
+      }
+
+      const objects = await query.do();
+
+      if (!objects || !objects.data) {
+        return [];
+      }
+
+      return this.mapObjects2Entities(
+        objects.data.Get[this.className] || [],
+      );
+    } catch (error: any) {
+      this.error("paginate", "Failed retrieving items:", error?.message);
+      return [];
+    }
   }
 
   public async findAll(): Promise<Item[]> {
     return await this.findMany({
       limit: 100,
       offset: 0,
-      fields: "name description imageId _additional{id}",
+      fields: `${this.classProperties} _additional{id}`,
     });
   }
 
@@ -102,7 +141,7 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
 
         const result = await this.client.graphql.get()
           .withClassName("Item")
-          .withFields("name description imageId _additional{id distance}")
+          .withFields(`${this.classProperties} _additional{id distance}`)
           .withNearImage({ image: queryImageBase64 })
           .withLimit(10)
           .do();
@@ -139,7 +178,7 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
         const result = await this.client.graphql.get()
           .withClassName("Item")
           .withFields(
-            "name description imageId _additional{id score}",
+            `${this.classProperties} _additional{id score}`,
           )
           .withHybrid({
             query: queryText,

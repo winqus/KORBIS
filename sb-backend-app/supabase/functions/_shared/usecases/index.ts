@@ -7,4 +7,6 @@ export * from "./DeleteItem/DeleteItemCommand.ts";
 export * from "./DeleteItem/DeleteItemUsecase.ts";
 export * from "./GetItem/GetItemCommand.ts";
 export * from "./GetItem/GetItemUsecase.ts";
+export * from "./GetItems/GetItemsCommand.ts";
+export * from "./GetItems/GetItemsUsecase.ts";
 // @endindex

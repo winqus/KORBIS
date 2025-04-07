@@ -271,32 +271,25 @@ export async function createItem({
   }
 }
 
-export async function getItems() {
+export async function getItems(options?: {
+  limit: number;
+  offset: number;
+  parentId?: string;
+}) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error("No user data found. User is not authenticated.");
+    const { limit = 50, offset = 0, parentId } = options || {};
+
+    const user = await requireAuthentication();
+
+    let queryString = `items?limit=${limit}&skip=${offset}`;
+
+    if (parentId) {
+      queryString += `&parentId=${parentId}`;
     }
 
-    const { data: items, error: funcError } = await supabase.functions.invoke(
-      "items",
-      {
-        method: "GET",
-      },
-    );
-
-    if (funcError instanceof FunctionsHttpError) {
-      const errorMessage = await funcError.context.json();
-      console.log("Function returned an error", errorMessage);
-    } else if (funcError instanceof FunctionsRelayError) {
-      console.log("Relay error:", funcError.message);
-    } else if (funcError instanceof FunctionsFetchError) {
-      console.log("Fetch error:", funcError.message);
-    }
-
-    if (funcError) {
-      throw new Error("Failed to get items");
-    }
+    const items = await invokeFunction<any>(queryString, {
+      method: "GET",
+    });
 
     console.log(`getItems retrieved ${items.length} items`);
 

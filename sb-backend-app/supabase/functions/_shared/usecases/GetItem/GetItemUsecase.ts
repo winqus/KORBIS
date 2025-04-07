@@ -28,7 +28,7 @@ export class GetItem {
       throw new NoPermissionError();
     }
 
-    const { imageUrl } = await this.domainCdnService.getImageUrl(
+    const { imageUrl } = this.domainCdnService.getImageUrl(
       userId,
       item.imageId!,
     );
