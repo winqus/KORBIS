@@ -14,7 +14,14 @@ export class CreateItemCommand extends AuthenticatedCommand {
   parentId?: string;
 
   static create(data: CreateItemCommand) {
-    const { userId, name, description, imageBase64, parentId, parentType } = data;
+    const {
+      userId,
+      name,
+      description = "",
+      imageBase64,
+      parentId,
+      parentType,
+    } = data;
 
     this.validate(data, [
       {
@@ -29,8 +36,7 @@ export class CreateItemCommand extends AuthenticatedCommand {
       },
       {
         property: "description",
-        isValid: !!description &&
-          validator.isLength(description, { min: 0, max: 1000 }),
+        isValid: validator.isLength(description, { min: 0, max: 1000 }),
         message: "Description cannot exceed 1000 characters",
       },
       {
