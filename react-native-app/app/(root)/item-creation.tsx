@@ -1,6 +1,6 @@
 import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
 import React, { useEffect, useState } from "react";
-import { mostRecentlyTakenPictureUri } from "@/lib/signals";
+import { currentParentAsset, mostRecentlyTakenPictureUri } from "@/lib/signals";
 import icons from "@/constants/icons";
 import IconButton from "@/components/IconButton";
 import PrimaryButton from "@/components/PrimaryButton";
@@ -14,6 +14,7 @@ import * as ImagePicker from "expo-image-picker";
 import { GeneratedItemMetadata } from "@/types";
 import { getPictureBase64FromLocalUri } from "@/lib/utils";
 import { ParentAssetInfo } from "@/components/ParentAssetInfo";
+import detectNewline from "detect-newline";
 
 const ItemCreation = () => {
   const router = useRouter();
@@ -28,7 +29,12 @@ const ItemCreation = () => {
     name: "",
     description: "",
   });
-  const [parentAsset, setParentAsset] = useState({ name: "My box" });
+
+  const [parentAsset, setParentAsset] = useState({
+    name: currentParentAsset.value.name || "My Home",
+    type: currentParentAsset.value.type || undefined,
+    id: currentParentAsset.value.id || undefined,
+  });
 
   const fieldMap = {
     name: "shorthand",
@@ -187,30 +193,43 @@ const ItemCreation = () => {
             {/* Container and Quantity Row */}
             <View className="flex flex-row w-full justify-between items-center py-0.5 gap-2.5">
               <ParentAssetInfo
+                parentType={parentAsset.type}
                 parentName={parentAsset.name}
                 onPress={handleParentAssetPress}
               />
             </View>
           </View>
           <GenerativeInputField
-            label="Name"
-            placeholder="Enter the name"
+            placeholder="Give it a name"
             value={form.name}
             icon={showGenerationIcon("name") ? icons.shines : undefined}
             onChangeText={(value) => setForm({ ...form, name: value })}
             onClear={() => setForm({ ...form, name: "" })}
             isLoading={isGenerating}
+            maxLength={50}
           />
-          <GenerativeInputField
-            label="Description"
-            placeholder="Enter the description"
-            value={form.description}
-            icon={showGenerationIcon("description") ? icons.shines : undefined}
-            onChangeText={(value) => setForm({ ...form, description: value })}
-            onClear={() => setForm({ ...form, description: "" })}
-            isLoading={isGenerating}
-            multiline
-          />
+          <View className="border-t border-accent w-full">
+            <GenerativeInputField
+              label="Notes"
+              placeholder="Describe the item"
+              inputClass={
+                form.description?.length > 20 ||
+                !!detectNewline(form.description)
+                  ? "text-black-200 text-base leading-5"
+                  : ""
+              }
+              value={form.description}
+              icon={
+                showGenerationIcon("description") ? icons.shines : undefined
+              }
+              onChangeText={(value) => setForm({ ...form, description: value })}
+              onClear={() => setForm({ ...form, description: "" })}
+              isLoading={isGenerating}
+              multiline={true}
+              scrollEnabled={true}
+              maxLength={999}
+            />
+          </View>
           <View className="h-40"></View>
         </View>
       </ScrollView>

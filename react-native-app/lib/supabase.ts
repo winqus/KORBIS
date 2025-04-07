@@ -13,7 +13,7 @@ import { getPictureBase64FromLocalUri, throwIfMissing } from "@/lib/utils";
 import { openAuthSessionAsync } from "expo-web-browser";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
 import { decode } from "base64-arraybuffer";
-import { GeneratedItemMetadata, Item } from "@/types";
+import { GeneratedItemMetadata, Item, IVirtualAsset } from "@/types";
 
 throwIfMissing("env variables", process.env, [
   "EXPO_PUBLIC_SUPABASE_PROJECT_URL",
@@ -221,10 +221,12 @@ export async function createItem({
   name,
   description,
   pictureBase64,
+  parent,
 }: {
   name: string;
   description: string;
   pictureBase64?: string;
+  parent?: Pick<IVirtualAsset, "type" | "id">;
 }) {
   try {
     const user = await getCurrentUser();
@@ -239,6 +241,8 @@ export async function createItem({
           name,
           description,
           imageBase64: pictureBase64 || undefined,
+          parentType: parent?.type || undefined,
+          parentId: parent?.id || undefined,
         },
       });
 
@@ -424,7 +428,7 @@ function mapAny2Item(
     description: item.description,
     imageID: item.imageId,
     imageURI: item.imageUrl || imageURI,
-    parentType: item.parentType,
+    type: item.parentType,
     parentId: item.parentId,
   } satisfies Item;
 }
