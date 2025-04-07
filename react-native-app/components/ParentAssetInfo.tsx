@@ -25,6 +25,7 @@ export const ParentAssetInfo = ({
     <TouchableOpacity
       onPress={onPress}
       className="flex flex-row items-center gap-2.5"
+      disabled={!onPress}
     >
       {iconMap[parentType]}
       <Text className="text-base font-rubik-medium text-black-200 bg-">

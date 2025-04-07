@@ -13,6 +13,7 @@ import { createItem, generateItemMetadataFromPicture } from "@/lib/supabase";
 import * as ImagePicker from "expo-image-picker";
 import { GeneratedItemMetadata } from "@/types";
 import { getPictureBase64FromLocalUri } from "@/lib/utils";
+import { Quantity } from "@/components/AssetQuantity";
 import { ParentAssetInfo } from "@/components/ParentAssetInfo";
 import detectNewline from "detect-newline";
 
@@ -29,12 +30,12 @@ const ItemCreation = () => {
     name: "",
     description: "",
   });
-
   const [parentAsset, setParentAsset] = useState({
     name: currentParentAsset.value.name || "My Home",
     type: currentParentAsset.value.type || undefined,
     id: currentParentAsset.value.id || undefined,
   });
+  const [quantity, setQuantity] = useState(1);
 
   const fieldMap = {
     name: "shorthand",
@@ -125,6 +126,11 @@ const ItemCreation = () => {
       name: form.name,
       description: form.description,
       pictureBase64: pictureBase64 || undefined,
+      parent: parentAsset.id && {
+        id: parentAsset.id,
+        type: parentAsset.type,
+      },
+      quantity: quantity,
     });
 
     if (!newItem) {
@@ -160,9 +166,14 @@ const ItemCreation = () => {
     }
   };
 
-  const handleParentAssetPress = () => {
-    console.log("Select parent asset");
+  const handleQuantityDecrease = () => {
+    setQuantity((prev) => Math.max(1, prev - 1));
   };
+
+  const handleQuantityIncrease = () => {
+    setQuantity((prev) => prev + 1);
+  };
+
   return (
     <View className="h-full bg-white">
       <TouchableOpacity
@@ -195,7 +206,12 @@ const ItemCreation = () => {
               <ParentAssetInfo
                 parentType={parentAsset.type}
                 parentName={parentAsset.name}
-                onPress={handleParentAssetPress}
+              />
+              <Quantity
+                mode="edit"
+                value={quantity}
+                onDecrease={handleQuantityDecrease}
+                onIncrease={handleQuantityIncrease}
               />
             </View>
           </View>
