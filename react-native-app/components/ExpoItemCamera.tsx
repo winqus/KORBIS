@@ -8,16 +8,28 @@ import {
   BottomSectionItemCameraControls,
   CameraItemOption,
 } from "@/components/ItemCameraControls";
+import * as ImagePicker from "expo-image-picker";
+import { useImage } from "expo-image";
 
 export const ExpoItemCamera = () => {
+  const router = useRouter();
   const camRef = useRef<CameraView>(null);
   const [camFacing, setCamFacing] = useState<CameraType>("back");
   const [camPermission, requestPermission] = useCameraPermissions();
   const [activeOption, setActiveOption] = useState<CameraItemOption>("add");
-  const router = useRouter();
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const imageRef = useImage(
+    imageUri || "",
+    {
+      onError(error: Error, retry: () => void) {
+        /* No image at first, so doing nothing */
+      },
+    },
+    [imageUri],
+  );
 
   if (!camPermission) {
-    // Camera permissions are still loading.
+    /* Camera permissions are still loading. */
     return <ActivityIndicator size="large" className="text-primary-300 mt-5" />;
   }
 
@@ -30,18 +42,47 @@ export const ExpoItemCamera = () => {
     );
   }
 
-  const toggleCameraFacing = () => {
+  const handleToggleCameraFacing = () => {
     setCamFacing((current) => (current === "back" ? "front" : "back"));
   };
 
-  const takePicture = async () => {
-    console.log("takePicture");
+  const handleTakePicture = async () => {
+    const response = await camRef.current?.takePictureAsync({
+      quality: 0.5,
+      exif: false,
+      shutterSound: false,
+    });
+
+    if (response?.uri) {
+      const uri = response.uri;
+      setImageUri(uri);
+      console.log("Image captured:", uri);
+    }
   };
+
+  const handlePickImageFromGallery = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: false,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setImageUri(uri);
+      console.log("Image selected from gallery:", uri);
+    }
+  };
+
+  if (imageRef) {
+    console.log("Image ref:", imageRef);
+    // TODO: return PreviewPicture
+  }
 
   return (
     <View className="flex-[1] justify-center">
       <CameraView ref={camRef} style={{ flex: 1 }} facing={camFacing}>
-        {/* Guidance text at the top */}
         <GuidanceHoverText
           text={
             activeOption === "add"
@@ -50,12 +91,12 @@ export const ExpoItemCamera = () => {
           }
         />
 
-        {/* Bottom control section */}
         <BottomSectionItemCameraControls
           activeOption={activeOption}
           onChangeOption={(option) => setActiveOption(option)}
-          onPressFlip={toggleCameraFacing}
-          onPressCapture={takePicture}
+          onPressFlip={handleToggleCameraFacing}
+          onPressCapture={handleTakePicture}
+          onPressGallery={handlePickImageFromGallery}
         />
       </CameraView>
     </View>
