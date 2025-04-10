@@ -18,7 +18,11 @@ export const ExpoItemCamera = () => {
   const [camFacing, setCamFacing] = useState<CameraType>("back");
   const [camPermission, requestPermission] = useCameraPermissions();
   const [activeOption, setActiveOption] = useState<CameraItemOption>("add");
-  const [image, setImage] = useState<ImageSource | null>(null);
+  const [image, setImage] = useState<{
+    uri: string;
+    width: number;
+    height: number;
+  } | null>(null);
 
   if (!camPermission) {
     /* Camera permissions are still loading. */
@@ -43,12 +47,13 @@ export const ExpoItemCamera = () => {
       quality: 0.5,
       exif: false,
       shutterSound: false,
+      // skipProcessing: true,
     });
 
     if (response?.uri) {
-      const uri = response.uri;
-      setImage({ uri });
-      console.log("Image captured:", uri);
+      const image = response;
+      setImage({ uri: image.uri, width: image.width, height: image.height });
+      console.log("Image captured:", image.uri);
     }
   };
 
@@ -61,9 +66,9 @@ export const ExpoItemCamera = () => {
     });
 
     if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      setImage({ uri });
-      console.log("Image selected from gallery:", uri);
+      const image = result.assets[0];
+      setImage({ uri: image.uri, width: image.width, height: image.height });
+      console.log("Image selected from gallery:", image.uri);
     }
   };
 
