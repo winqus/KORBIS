@@ -9,7 +9,8 @@ import {
   CameraItemOption,
 } from "@/components/ItemCameraControls";
 import * as ImagePicker from "expo-image-picker";
-import { useImage } from "expo-image";
+import { ImageSource, useImage } from "expo-image";
+import { PicturePreview } from "@/components/PicturePreview";
 
 export const ExpoItemCamera = () => {
   const router = useRouter();
@@ -17,16 +18,7 @@ export const ExpoItemCamera = () => {
   const [camFacing, setCamFacing] = useState<CameraType>("back");
   const [camPermission, requestPermission] = useCameraPermissions();
   const [activeOption, setActiveOption] = useState<CameraItemOption>("add");
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const imageRef = useImage(
-    imageUri || "",
-    {
-      onError(error: Error, retry: () => void) {
-        /* No image at first, so doing nothing */
-      },
-    },
-    [imageUri],
-  );
+  const [image, setImage] = useState<ImageSource | null>(null);
 
   if (!camPermission) {
     /* Camera permissions are still loading. */
@@ -55,7 +47,7 @@ export const ExpoItemCamera = () => {
 
     if (response?.uri) {
       const uri = response.uri;
-      setImageUri(uri);
+      setImage({ uri });
       console.log("Image captured:", uri);
     }
   };
@@ -70,14 +62,21 @@ export const ExpoItemCamera = () => {
 
     if (!result.canceled) {
       const uri = result.assets[0].uri;
-      setImageUri(uri);
+      setImage({ uri });
       console.log("Image selected from gallery:", uri);
     }
   };
 
-  if (imageRef) {
-    console.log("Image ref:", imageRef);
-    // TODO: return PreviewPicture
+  if (image) {
+    return (
+      <PicturePreview
+        mode="add"
+        image={image}
+        onCancel={() => setImage(null)}
+        onAutoCreate={() => {}}
+        onManualAdd={() => {}}
+      />
+    );
   }
 
   return (
