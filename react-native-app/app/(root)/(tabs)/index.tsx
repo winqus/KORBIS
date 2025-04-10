@@ -5,12 +5,17 @@ import { useSupabase } from "@/lib/useSupabase";
 import ItemList from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import icons from "@/constants/icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { Item } from "@/types";
 import SearchBar from "@/components/SearchBar";
 import React, { useEffect } from "react";
 
 export default function Index() {
+  // TODO: remove
+  console.debug("[REMOVE LATER] Redirecting to /camera from /index");
+  return <Redirect href="/camera" />;
+  /* REMOVE UNTIL HERE */
+
   const { user } = useGlobalContext();
   const params = useLocalSearchParams<{
     queryText?: string;

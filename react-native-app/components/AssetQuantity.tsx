@@ -29,7 +29,6 @@ const EditQuantity = ({
 
       <TouchableOpacity
         onPress={onIncrease}
-        on
         className="w-6 h-6 rounded-full justify-center items-center bg-primary-100"
       >
         <Entypo name="plus" size={16} color="black" />

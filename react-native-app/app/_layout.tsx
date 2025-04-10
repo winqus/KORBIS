@@ -5,6 +5,11 @@ import * as SplashScreen from "expo-splash-screen";
 import "./global.css";
 import GlobalProvider from "@/lib/global-provider";
 
+import { Image } from "expo-image";
+import { cssInterop } from "nativewind";
+
+cssInterop(Image, { className: "style" });
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     "Rubik-Bold": require("../assets/fonts/Rubik-Bold.ttf"),
