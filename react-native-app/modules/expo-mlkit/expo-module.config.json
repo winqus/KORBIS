@@ -1,0 +1,21 @@
+{
+  "platforms": [
+    "apple",
+    "android",
+    "web"
+  ],
+  "apple": {
+    "modules": [
+      "ExpoMLKitModule"
+    ]
+  },
+  "android": {
+    "modules": [
+      "expo.modules.mlkit.ExpoMLKitModule",
+      "expo.modules.mlkit.TextRecognitionV2Module",
+      "expo.modules.mlkit.ObjectDetectionTrackingModule",
+      "expo.modules.mlkit.ImageLabelerModule",
+      "expo.modules.mlkit.SubjectSegmentationModule"
+    ]
+  }
+}
