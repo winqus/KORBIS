@@ -1,8 +1,10 @@
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import { Image } from "expo-image";
+import { View, Text, TouchableOpacity } from "react-native";
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 interface PicturePreviewProps {
+  mode: "add" | "search";
   pictureUri: string;
   onCancel: () => void;
   onSubmit: () => void;
