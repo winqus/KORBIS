@@ -14,6 +14,7 @@ export default function Index() {
   // TODO: remove
   console.debug("[REMOVE LATER] Redirecting to /camera from /index");
   return <Redirect href="/camera" />;
+  /* REMOVE UNTIL HERE */
 
   const { user } = useGlobalContext();
   const params = useLocalSearchParams<{
