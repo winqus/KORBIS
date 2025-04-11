@@ -9,7 +9,6 @@ import {
   CameraItemOption,
 } from "@/components/ItemCameraControls";
 import * as ImagePicker from "expo-image-picker";
-import { ImageSource, useImage } from "expo-image";
 import { PicturePreview } from "@/components/PicturePreview";
 
 export const ExpoItemCamera = () => {
