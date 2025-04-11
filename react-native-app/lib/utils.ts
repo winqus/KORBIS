@@ -1,4 +1,10 @@
 import * as FileSystem from "expo-file-system";
+import {
+  Frame,
+  ObjectDetectionResult,
+  SubjectSegmentationResult,
+} from "@/modules/expo-mlkit";
+import * as ImageManipulator from "expo-image-manipulator";
 
 export function throwIfMissing(
   subject: string,
@@ -40,3 +46,173 @@ export async function getPictureBase64FromLocalUri(pictureUri: string) {
     encoding: "base64",
   });
 }
+
+export const expandFrameIfPossible = (
+  frame: Frame,
+  multiplier: number,
+  inputImageWidth: number,
+  inputImageHeight: number,
+): { frame: Frame; wasExpanded: boolean } => {
+  const { left, top, width, height } = frame;
+  if (!multiplier || multiplier <= 1) {
+    return { frame, wasExpanded: false };
+  }
+  const centerX = left + width / 2;
+  const centerY = top + height / 2;
+  const newWidth = width * multiplier;
+  const newHeight = height * multiplier;
+  const expandedLeft = centerX - newWidth / 2;
+  const expandedTop = centerY - newHeight / 2;
+  if (
+    expandedLeft >= 0 &&
+    expandedTop >= 0 &&
+    expandedLeft + newWidth <= inputImageWidth &&
+    expandedTop + newHeight <= inputImageHeight
+  ) {
+    return {
+      frame: {
+        left: Math.round(expandedLeft),
+        top: Math.round(expandedTop),
+        width: Math.round(newWidth),
+        height: Math.round(newHeight),
+      },
+      wasExpanded: true,
+    };
+  }
+  return { frame, wasExpanded: false };
+};
+export const frameToSquareIfPossible = (
+  frame: Frame,
+  inputImageWidth: number,
+  inputImageHeight: number,
+): { frame: Frame; wasSquared: boolean } => {
+  const { left, top, width, height } = frame;
+  const centerX = left + width / 2;
+  const centerY = top + height / 2;
+  const squareSize = Math.max(width, height);
+  const squareLeft = centerX - squareSize / 2;
+  const squareTop = centerY - squareSize / 2;
+  if (
+    squareLeft >= 0 &&
+    squareTop >= 0 &&
+    squareLeft + squareSize <= inputImageWidth &&
+    squareTop + squareSize <= inputImageHeight
+  ) {
+    return {
+      frame: {
+        left: Math.round(squareLeft),
+        top: Math.round(squareTop),
+        width: Math.round(squareSize),
+        height: Math.round(squareSize),
+      },
+      wasSquared: true,
+    };
+  }
+  return { frame, wasSquared: false };
+};
+export const cropImage = async (
+  imageUri: string,
+  frame: Frame,
+): Promise<{ uri: string; width: number; height: number }> => {
+  return await ImageManipulator.manipulateAsync(
+    imageUri,
+    [
+      {
+        crop: {
+          originX: frame.left,
+          originY: frame.top,
+          width: frame.width,
+          height: frame.height,
+        },
+      },
+    ],
+    {
+      compress: 1,
+      format: ImageManipulator.SaveFormat.PNG,
+    },
+  );
+};
+export const generateCroppedImages = async (
+  result: SubjectSegmentationResult,
+  imageUri: string,
+  options?: {
+    cropAsSquare?: boolean;
+    multiplier?: number;
+    log?: boolean;
+  },
+): Promise<{ uri: string; frame: Frame }[]> => {
+  const processedFrames: { uri: string; frame: Frame }[] = [];
+  const { cropAsSquare = true, multiplier = 1.05, log } = options || {};
+
+  for (let i = 0; i < result.frames.length; i++) {
+    let frame = result.frames[i];
+
+    const { frame: expandedFrame, wasExpanded } = expandFrameIfPossible(
+      frame,
+      multiplier,
+      result.inputImageWidth,
+      result.inputImageHeight,
+    );
+
+    if (wasExpanded && log) {
+      console.log(
+        `[Frame${i}] Expanded to ${expandedFrame.width}x${expandedFrame.height}`,
+      );
+    }
+
+    frame = expandedFrame;
+
+    if (cropAsSquare) {
+      const { frame: squaredFrame, wasSquared } = frameToSquareIfPossible(
+        frame,
+        result.inputImageWidth,
+        result.inputImageHeight,
+      );
+      if (wasSquared && log) {
+        console.log(
+          `[Frame${i}] Cropping as square ${squaredFrame.width}x${squaredFrame.height}`,
+        );
+      }
+      frame = squaredFrame;
+    }
+
+    const cropped = await cropImage(imageUri, frame);
+
+    if (log) {
+      console.log(`[Frame${i}] Cropped to ${cropped.width}x${cropped.height}`);
+    }
+
+    processedFrames.push({ uri: cropped.uri, frame });
+  }
+  return processedFrames;
+};
+
+export const convertDetectionFramesToParentDomain = (
+  result: ObjectDetectionResult,
+  cropFrame: Frame,
+): ObjectDetectionResult => {
+  const scaleX = cropFrame.width / result.width;
+  const scaleY = cropFrame.height / result.height;
+
+  const convertedObjects = result.detectedObjects.map((obj) => {
+    const { frame, ...rest } = obj;
+
+    const convertedFrame = {
+      top: cropFrame.top + frame.top * scaleY,
+      left: cropFrame.left + frame.left * scaleX,
+      width: frame.width * scaleX,
+      height: frame.height * scaleY,
+    };
+
+    return {
+      frame: convertedFrame,
+      ...rest,
+    };
+  });
+
+  return {
+    width: cropFrame.width,
+    height: cropFrame.height,
+    detectedObjects: convertedObjects,
+  };
+};
