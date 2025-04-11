@@ -6,10 +6,15 @@ import {
   Dimensions,
   BackHandler,
 } from "react-native";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { CameraItemOption } from "@/components/ItemCameraControls";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SubjectSegmentationResponseRenderer,
+  SubjectSegmentationResult,
+  useSubjectSegmentation,
+} from "@/modules/expo-mlkit";
 
 interface PicturePreviewProps {
   mode: CameraItemOption;
@@ -30,6 +35,10 @@ export const PicturePreview = ({
     throw new Error("Picture is missing");
   }
 
+  const segmentator = useSubjectSegmentation();
+  const [segmentationResult, setSegmentationResult] =
+    useState<SubjectSegmentationResult | null>(null);
+
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
@@ -41,6 +50,21 @@ export const PicturePreview = ({
     );
     return () => backHandler.remove();
   }, [onCancel]);
+
+  useEffect(() => {
+    if (segmentator.isInitialized) {
+      console.log("SEGMENTING", segmentator.isInitialized);
+      segmentator
+        .segmentSubjects(image.uri)
+        .then((result) => {
+          console.log("RESULT", result);
+          setSegmentationResult(result);
+        })
+        .catch((error) => {
+          console.error("Error during segmentation:", error);
+        });
+    }
+  }, [image.uri, segmentator.isInitialized]);
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
   const displayHeight = image.height * (screenWidth / image.width);
@@ -63,6 +87,29 @@ export const PicturePreview = ({
             style={{ width: screenWidth, height: displayHeight }}
             contentFit="contain"
           />
+
+          {segmentationResult && (
+            <Image
+              source={{ uri: segmentationResult.mask.fileUri }}
+              style={{
+                position: "absolute",
+                width: screenWidth,
+                height: displayHeight,
+                opacity: 0.7,
+              }}
+              contentFit="contain"
+            />
+          )}
+
+          {segmentationResult && (
+            <SubjectSegmentationResponseRenderer
+              result={segmentationResult}
+              displayWidth={screenWidth}
+              displayHeight={displayHeight}
+              borderColor="blue"
+              scale={1}
+            />
+          )}
         </View>
         <ActionButtons
           mode={mode}

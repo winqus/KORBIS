@@ -47,7 +47,6 @@ export const ExpoItemCamera = () => {
       quality: 0.5,
       exif: false,
       shutterSound: false,
-      // skipProcessing: true,
     });
 
     if (response?.uri) {
