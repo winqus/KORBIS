@@ -1,15 +1,43 @@
 import { Image } from "expo-image";
 import {
-  View,
+  BackHandler,
+  Dimensions,
+  ImageSourcePropType,
   Text,
   TouchableOpacity,
-  Dimensions,
-  BackHandler,
+  View,
 } from "react-native";
-import React, { useEffect } from "react";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import React, { useEffect, useRef, useState } from "react";
 import { CameraItemOption } from "@/components/ItemCameraControls";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Frame,
+  ObjectDetectionResult,
+  SubjectSegmentationResult,
+  useObjectDetectionTracking,
+  useSubjectSegmentation,
+} from "@/modules/expo-mlkit";
+import { DebugModal } from "@/components/DebugModal";
+import { cropImage, generateCroppedImages } from "@/lib/utils";
+import { SmallImageList } from "@/components/SmallImageList";
+import {
+  OutlinedButton,
+  AutoCreateButton,
+  CloseButton,
+  ManualAddButton,
+} from "@/components/Buttons";
+import { SmartItemFrame } from "@/components/SmartItemFrame";
+import { AssetType } from "@/types";
+import { GuidanceHoverText } from "@/components/GuidanceHoverText";
+
+type CandidateAsset = {
+  id: string;
+  state: "suggested" | "selected" | "dismissed";
+  image: { uri: string; width: number; height: number };
+  frame: Frame;
+  type: AssetType;
+  count?: number;
+};
 
 interface PicturePreviewProps {
   mode: CameraItemOption;
@@ -17,6 +45,7 @@ interface PicturePreviewProps {
   onCancel: () => void;
   onAutoCreate: () => void;
   onManualAdd: () => void;
+  debug?: boolean;
 }
 
 export const PicturePreview = ({
@@ -25,10 +54,23 @@ export const PicturePreview = ({
   onCancel,
   onAutoCreate,
   onManualAdd,
+  debug = false,
 }: PicturePreviewProps) => {
   if (!image) {
     throw new Error("Picture is missing");
   }
+
+  const segmentator = useSubjectSegmentation();
+
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [images, setImages] = useState<ImageSourcePropType[]>([]);
+
+  const lastImageUriRef = useRef<string | null>(null);
+
+  const [segmentationResult, setSegmentationResult] =
+    useState<SubjectSegmentationResult | null>(null);
+
+  const [candidates, setCandidates] = useState<CandidateAsset[]>([]);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
@@ -42,6 +84,48 @@ export const PicturePreview = ({
     return () => backHandler.remove();
   }, [onCancel]);
 
+  useEffect(() => {
+    if (!segmentator.isInitialized || !image?.uri) return;
+    if (lastImageUriRef.current === image.uri) return;
+
+    lastImageUriRef.current = image.uri;
+
+    console.log("SEGMENTING", segmentator.isInitialized);
+    segmentator
+      .segmentSubjects(image.uri)
+      .then(async (result) => {
+        setSegmentationResult(result);
+
+        const croppedImages = await generateCroppedImages(
+          result.frames,
+          image,
+          {
+            cropAsSquare: false,
+            frameExpansionMultiplier: 1,
+          },
+        );
+
+        setImages(croppedImages.map((i) => i.image));
+
+        const frames = result.frames.map(
+          (frame, i) =>
+            ({
+              id: `subject-${i + 1}`,
+              frame: croppedImages[i].frame,
+              image: croppedImages[i].image,
+              type: "item",
+              count: undefined,
+              state: "suggested",
+            }) satisfies CandidateAsset,
+        );
+
+        setCandidates(frames);
+      })
+      .catch((error) => {
+        console.error("Error during segmentation:", error);
+      });
+  }, [image.uri, segmentator, segmentator.isInitialized]);
+
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
   const displayHeight = image.height * (screenWidth / image.width);
   const buttonsHeight = 120;
@@ -49,8 +133,74 @@ export const PicturePreview = ({
   const availableHeight = screenHeight - topSafeArea - buttonsHeight;
   const canFitBelowImage = displayHeight <= availableHeight;
 
+  const updateCandidate = (id: string, update: Partial<CandidateAsset>) => {
+    setCandidates((prev) =>
+      prev.map((candidate) => {
+        if (candidate.id === id) {
+          const updatedCandidate = { ...candidate, ...update };
+          // TODO future: If the frame was updated, trigger recropping
+          // if (update.frame) {
+          //   recropCandidate(id, update.frame);
+          // }
+          return updatedCandidate;
+        }
+        return candidate;
+      }),
+    );
+  };
+
+  const dismissSuggestedCandidates = () => {
+    console.log("Dismiss suggested candidates");
+    setCandidates((prev) =>
+      prev.map((candidate) =>
+        candidate.state === "suggested"
+          ? { ...candidate, state: "dismissed" }
+          : candidate,
+      ),
+    );
+  };
+
+  //  TODO future: Implement recropping of candidates, integrate with frame resizing
+  // const recropCandidate = async (id: string, newFrame: Frame) => {
+  //   try {
+  //     const cropped = await cropImage(image.uri, newFrame);
+  //     setCandidates((prev) =>
+  //       prev.map((candidate) =>
+  //         candidate.id === id
+  //           ? { ...candidate, croppedImage: cropped }
+  //           : candidate,
+  //       ),
+  //     );
+  //   } catch (error) {
+  //     console.error("Error during recropping candidate", id, error);
+  //   }
+  // };
+
+  const handleSelectAll = () => {
+    setCandidates((prev) =>
+      prev.map((candidate) => ({
+        ...candidate,
+        state: "selected",
+      })),
+    );
+  };
+
+  const selectedCandidatesCount = candidates.filter(
+    (c) => c.state === "selected",
+  ).length;
+
+  const canAutoCreate = candidates.some((c) => c.state === "selected");
+
+  const framesAvailableCount = candidates.filter(
+    (c) => c.state !== "dismissed" && c.frame,
+  ).length;
+
   return (
     <SafeAreaView className="flex-1 bg-black">
+      <GuidanceHoverText
+        text="Tap on items you want to add to your collection"
+        textContainerClassName="max-w-[70%]"
+      />
       <View className="flex-1">
         <CloseButton absolute={canFitBelowImage} onCancel={onCancel} />
         <View
@@ -62,72 +212,112 @@ export const PicturePreview = ({
             source={image}
             style={{ width: screenWidth, height: displayHeight }}
             contentFit="contain"
+            onTouchStart={() => {
+              dismissSuggestedCandidates();
+            }}
+          />
+
+          {debug && segmentationResult && (
+            <Image
+              source={{ uri: segmentationResult.mask.fileUri }}
+              style={{
+                position: "absolute",
+                width: screenWidth,
+                height: displayHeight,
+                opacity: 0.7,
+              }}
+              contentFit="contain"
+            />
+          )}
+
+          {candidates
+            .filter((c) => c.state !== "dismissed")
+            .map((c, i) => (
+              <SmartItemFrame
+                key={c.id}
+                id={c.id}
+                state={c.state}
+                croppedImage={c.image}
+                frame={c.frame}
+                count={c.count}
+                displayWidth={screenWidth}
+                displayHeight={displayHeight}
+                parentImage={image}
+                borderColor="white"
+                onSelect={() => {
+                  updateCandidate(c.id, { state: "selected" });
+                }}
+                onChangeCount={(count: number) => {
+                  updateCandidate(c.id, { count });
+                }}
+                onDismiss={() => {
+                  console.log("Candidate dismissed:", c.id);
+                }}
+              />
+            ))}
+        </View>
+        <View
+          className={`${
+            !canFitBelowImage
+              ? "absolute bottom-10 left-0 right-0 px-6"
+              : "px-10 mb-10"
+          }`}
+        >
+          {selectedCandidatesCount === 0 ? (
+            <OutlinedButton
+              text={
+                framesAvailableCount === 0
+                  ? "No selection"
+                  : "Select all suggestions"
+              }
+              onPress={handleSelectAll}
+              containerClassName="mb-4"
+              disabled={framesAvailableCount === 0}
+            />
+          ) : (
+            <AutoCreateButton
+              onPress={() => {}}
+              text={
+                selectedCandidatesCount <= 1
+                  ? "Auto add item"
+                  : `Auto add ${selectedCandidatesCount} items`
+              }
+              disabled={!canAutoCreate || selectedCandidatesCount === 0}
+            />
+          )}
+
+          <ManualAddButton
+            onPress={onManualAdd}
+            text={
+              selectedCandidatesCount > 1
+                ? `or customize each item`
+                : "or customize the item"
+            }
+            disabled={false}
           />
         </View>
-        <ActionButtons
-          mode={mode}
-          absolute={!canFitBelowImage}
-          onAutoCreate={onAutoCreate}
-          onManualAdd={onManualAdd}
-        />
       </View>
+      {debug && (
+        <>
+          <TouchableOpacity
+            className="bg-white/50 items-center"
+            onPress={() => setIsModalVisible(true)}
+          >
+            <Text>Open Images Modal</Text>
+          </TouchableOpacity>
+          <DebugModal
+            isVisible={isModalVisible}
+            onClose={() => setIsModalVisible(false)}
+            title={`Images ${images.length}`}
+          >
+            <SmallImageList
+              onSelect={() => {}}
+              onCloseModal={() => {}}
+              images={images}
+            />
+          </DebugModal>
+        </>
+      )}
     </SafeAreaView>
   );
-};
-
-type ActionButtonsProps = {
-  mode: string;
-  absolute?: boolean;
-  onAutoCreate: () => void;
-  onManualAdd: () => void;
-};
-
-export const ActionButtons = ({
-  mode,
-  absolute,
-  onAutoCreate,
-  onManualAdd,
-}: ActionButtonsProps) => {
-  if (mode !== "add") return null;
-
-  return (
-    <View
-      className={`${
-        absolute ? "absolute bottom-10 left-0 right-0 px-6" : "px-10 mb-10"
-      }`}
-    >
-      <TouchableOpacity
-        onPress={onAutoCreate}
-        className="bg-primary-300 py-4 rounded-full items-center mb-4"
-      >
-        <Text className="text-white font-semibold text-base">
-          Auto create item
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        onPress={onManualAdd}
-        className="py-3 items-center m-auto px-6"
-      >
-        <Text className="text-white text-sm">or manually add items</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-type CloseButtonProps = {
-  absolute?: boolean;
-  onCancel: () => void;
-};
-
-export const CloseButton = ({ absolute, onCancel }: CloseButtonProps) => {
-  const className = `p-2 ${absolute ? "" : "absolute top-12 left-4 z-10 p-2 bg-primary-200 rounded-full items-center justify-center size-12"}`;
-
-  const button = (
-    <TouchableOpacity onPress={onCancel} className={className}>
-      <Ionicons name="close" size={28} color="white" />
-    </TouchableOpacity>
-  );
-
-  return absolute ? <View className="pt-2 pl-4 pb-2">{button}</View> : button;
 };

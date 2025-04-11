@@ -9,7 +9,6 @@ import {
   CameraItemOption,
 } from "@/components/ItemCameraControls";
 import * as ImagePicker from "expo-image-picker";
-import { ImageSource, useImage } from "expo-image";
 import { PicturePreview } from "@/components/PicturePreview";
 
 export const ExpoItemCamera = () => {
@@ -47,7 +46,6 @@ export const ExpoItemCamera = () => {
       quality: 0.5,
       exif: false,
       shutterSound: false,
-      // skipProcessing: true,
     });
 
     if (response?.uri) {
