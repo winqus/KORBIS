@@ -1,27 +1,26 @@
 import { Image } from "expo-image";
 import {
-  View,
+  BackHandler,
+  Dimensions,
+  FlatList,
+  ImageSourcePropType,
+  Pressable,
   Text,
   TouchableOpacity,
-  Dimensions,
-  BackHandler,
-  Modal,
-  Pressable,
-  StyleSheet,
-  ImageSourcePropType,
-  FlatList,
+  View,
 } from "react-native";
-import React, { PropsWithChildren, useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { CameraItemOption } from "@/components/ItemCameraControls";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   SubjectSegmentationResponseRenderer,
   SubjectSegmentationResult,
+  useObjectDetectionTracking,
   useSubjectSegmentation,
 } from "@/modules/expo-mlkit";
-import { MaterialIcons } from "@expo/vector-icons";
 import * as ImageManipulator from "expo-image-manipulator";
+import { DebugModal } from "@/components/DebugModal";
 
 interface PicturePreviewProps {
   mode: CameraItemOption;
@@ -41,10 +40,15 @@ export const PicturePreview = ({
   if (!image) {
     throw new Error("Picture is missing");
   }
+
+  const segmentator = useSubjectSegmentation();
+  const objectDetector = useObjectDetectionTracking();
+
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [images, setImages] = useState<ImageSourcePropType[]>([image]);
 
-  const segmentator = useSubjectSegmentation();
+  const lastImageUriRef = useRef<string | null>(null);
+
   const [segmentationResult, setSegmentationResult] =
     useState<SubjectSegmentationResult | null>(null);
 
@@ -61,23 +65,26 @@ export const PicturePreview = ({
   }, [onCancel]);
 
   useEffect(() => {
-    if (segmentator.isInitialized) {
-      console.log("SEGMENTING", segmentator.isInitialized);
-      segmentator
-        .segmentSubjects(image.uri)
-        .then((result) => {
-          console.log("RESULT", result);
-          setSegmentationResult(result);
-          generateCroppedImages(result, image.uri).then((croppedImages) => {
-            setImages([image, ...croppedImages]);
-            setIsModalVisible(true);
-          });
-        })
-        .catch((error) => {
-          console.error("Error during segmentation:", error);
+    if (!segmentator.isInitialized || !image?.uri) return;
+    if (lastImageUriRef.current === image.uri) return;
+
+    lastImageUriRef.current = image.uri;
+
+    console.log("SEGMENTING", segmentator.isInitialized);
+    segmentator
+      .segmentSubjects(image.uri)
+      .then((result) => {
+        setSegmentationResult(result);
+
+        generateCroppedImages(result, image.uri).then((croppedImages) => {
+          setImages([...croppedImages]);
+          setIsModalVisible(true);
         });
-    }
-  }, [image, segmentator.isInitialized]);
+      })
+      .catch((error) => {
+        console.error("Error during segmentation:", error);
+      });
+  }, [image.uri, segmentator, segmentator.isInitialized]);
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
   const displayHeight = image.height * (screenWidth / image.width);
@@ -136,8 +143,7 @@ export const PicturePreview = ({
         onClose={() => setIsModalVisible(false)}
         title={`Images ${images.length}`}
       >
-        {/* A list of emoji component will go here */}
-        <EmojiList
+        <SmallImageList
           onSelect={() => {}}
           onCloseModal={() => {}}
           images={images}
@@ -204,33 +210,6 @@ export const CloseButton = ({ absolute, onCancel }: CloseButtonProps) => {
   return absolute ? <View className="pt-2 pl-4 pb-2">{button}</View> : button;
 };
 
-export const DebugModal = ({
-  isVisible,
-  children,
-  onClose,
-  title,
-}: PropsWithChildren<{
-  isVisible: boolean;
-  onClose: () => void;
-  title?: string;
-}>) => {
-  return (
-    <View>
-      <Modal animationType="slide" transparent={true} visible={isVisible}>
-        <View className="absolute bottom-0 h-1/4 w-full bg-[#25292e] rounded-t-xl">
-          <View className="h-[16%] bg-[#464C55] rounded-t-lg px-5 flex-row items-center justify-between">
-            <Text className="text-white text-base">{title || "Items"}</Text>
-            <Pressable onPress={onClose}>
-              <MaterialIcons name="close" color="#fff" size={22} />
-            </Pressable>
-          </View>
-          {children}
-        </View>
-      </Modal>
-    </View>
-  );
-};
-
 // const SmallItemCard = ({
 //   imageSize,
 //   imageSource,
@@ -248,7 +227,7 @@ export const DebugModal = ({
 //   );
 // };
 
-const EmojiList = ({
+const SmallImageList = ({
   onSelect,
   onCloseModal,
   images,
