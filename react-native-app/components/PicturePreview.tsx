@@ -25,6 +25,7 @@ import {
 } from "@/modules/expo-mlkit";
 import * as ImageManipulator from "expo-image-manipulator";
 import { DebugModal } from "@/components/DebugModal";
+import icons from "@/constants/icons";
 
 interface PicturePreviewProps {
   mode: CameraItemOption;
@@ -125,6 +126,9 @@ export const PicturePreview = ({
             source={image}
             style={{ width: screenWidth, height: displayHeight }}
             contentFit="contain"
+            onTouchStart={() => {
+              console.log("TOUCHING IMAGE (TODO: clear AI suggestion frames)");
+            }}
           />
 
           {debug && segmentationResult && (
@@ -233,6 +237,7 @@ export const SmartItemFrame = (props: SmartItemFrameProps) => {
     debug = false,
   } = props;
 
+  const [selected, setSelected] = useState(false);
   const lastImageUriRef = useRef<string | null>(null);
   const { detectObjects, isInitialized: isDetectorInitialized } =
     useObjectDetectionTracking();
@@ -303,16 +308,32 @@ export const SmartItemFrame = (props: SmartItemFrameProps) => {
 
   return (
     <>
-      <Pressable
-        onPress={onFrameSelect}
+      <TouchableOpacity
+        // onPress={onFrameSelect}
+        onPress={() => setSelected(true)}
         className="absolute"
         style={{
           borderColor,
           borderRadius: 12,
           borderWidth: 3,
+          opacity: selected ? 1 : 0.5,
           ...rect,
         }}
+        disabled={selected}
       />
+      {!selected && (
+        <Image
+          source={icons.shines}
+          className="absolute size-6"
+          tintColor="white"
+          style={{
+            left: rect.left + 6,
+            top: rect.top + 6,
+            opacity: selected ? 1 : 0.5,
+          }}
+          contentFit="contain"
+        />
+      )}
       {debug && (
         <Text
           className="absolute bg-white/20 text-black text-xs font-medium rounded-lg py-1 px-2 z-10"
