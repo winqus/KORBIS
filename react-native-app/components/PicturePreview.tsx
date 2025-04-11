@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import {
   BackHandler,
+  ColorValue,
   Dimensions,
   FlatList,
   ImageSourcePropType,
@@ -9,11 +10,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { CameraItemOption } from "@/components/ItemCameraControls";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  Frame,
+  ObjectDetectionResponseRenderer,
+  ObjectDetectionResult,
   SubjectSegmentationResponseRenderer,
   SubjectSegmentationResult,
   useObjectDetectionTracking,
@@ -28,6 +32,7 @@ interface PicturePreviewProps {
   onCancel: () => void;
   onAutoCreate: () => void;
   onManualAdd: () => void;
+  debug?: boolean;
 }
 
 export const PicturePreview = ({
@@ -36,6 +41,7 @@ export const PicturePreview = ({
   onCancel,
   onAutoCreate,
   onManualAdd,
+  debug = false,
 }: PicturePreviewProps) => {
   if (!image) {
     throw new Error("Picture is missing");
@@ -45,12 +51,14 @@ export const PicturePreview = ({
   const objectDetector = useObjectDetectionTracking();
 
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-  const [images, setImages] = useState<ImageSourcePropType[]>([image]);
+  const [images, setImages] = useState<ImageSourcePropType[]>([]);
 
   const lastImageUriRef = useRef<string | null>(null);
 
   const [segmentationResult, setSegmentationResult] =
     useState<SubjectSegmentationResult | null>(null);
+  const [detectionResult, setDetectionResult] =
+    useState<ObjectDetectionResult | null>(null);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
@@ -73,18 +81,29 @@ export const PicturePreview = ({
     console.log("SEGMENTING", segmentator.isInitialized);
     segmentator
       .segmentSubjects(image.uri)
-      .then((result) => {
+      .then(async (result) => {
         setSegmentationResult(result);
 
-        generateCroppedImages(result, image.uri).then((croppedImages) => {
+        await generateCroppedImages(result, image.uri).then((croppedImages) => {
           setImages([...croppedImages]);
-          setIsModalVisible(true);
+          // setIsModalVisible(true);
         });
       })
       .catch((error) => {
         console.error("Error during segmentation:", error);
       });
   }, [image.uri, segmentator, segmentator.isInitialized]);
+
+  // TODO REMOVE LATER
+  useEffect(() => {
+    if (!objectDetector.isInitialized || !image?.uri) return;
+
+    console.log("DETECTING", objectDetector.isInitialized);
+
+    objectDetector.detectObjects(image.uri).then((result) => {
+      setDetectionResult(result);
+    });
+  }, [image.uri, objectDetector.isInitialized]);
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
   const displayHeight = image.height * (screenWidth / image.width);
@@ -108,7 +127,7 @@ export const PicturePreview = ({
             contentFit="contain"
           />
 
-          {segmentationResult && (
+          {debug && segmentationResult && (
             <Image
               source={{ uri: segmentationResult.mask.fileUri }}
               style={{
@@ -121,15 +140,46 @@ export const PicturePreview = ({
             />
           )}
 
-          {segmentationResult && (
-            <SubjectSegmentationResponseRenderer
-              result={segmentationResult}
+          {/* TODO remove if not needed */}
+          {/*{segmentationResult && (*/}
+          {/*  <SubjectSegmentationResponseRenderer*/}
+          {/*    result={segmentationResult}*/}
+          {/*    displayWidth={screenWidth}*/}
+          {/*    displayHeight={displayHeight}*/}
+          {/*    borderColor="blue"*/}
+          {/*    scale={1}*/}
+          {/*  />*/}
+          {/*)}*/}
+
+          {segmentationResult?.frames.map((frame, i) => (
+            <SmartItemFrame
+              key={`frame-${i + 1}`}
+              index={`subject-${i + 1}`}
+              frame={frame}
               displayWidth={screenWidth}
               displayHeight={displayHeight}
-              borderColor="blue"
-              scale={1}
+              parentImage={image}
+              borderColor="white"
+              onObjectDetectionDone={(result) => {
+                console.log(`Object-${result.index} detection result:`, result);
+                // setDetectionResult(result);
+              }}
+              onFrameSelect={() => {
+                console.log("Frame selected:", frame);
+              }}
             />
-          )}
+          ))}
+
+          {/*{detectionResult && (*/}
+          {/*  <ObjectDetectionResponseRenderer*/}
+          {/*    result={detectionResult}*/}
+          {/*    imageWidth={detectionResult.width}*/}
+          {/*    imageHeight={detectionResult.height}*/}
+          {/*    displayWidth={screenWidth}*/}
+          {/*    displayHeight={displayHeight}*/}
+          {/*    borderColor="rgba(0, 0, 0, 0.2)"*/}
+          {/*  />*/}
+          {/*)}*/}
         </View>
         <ActionButtons
           mode={mode}
@@ -138,6 +188,7 @@ export const PicturePreview = ({
           onManualAdd={onManualAdd}
         />
       </View>
+      {/* TODO remove later */}
       <DebugModal
         isVisible={isModalVisible}
         onClose={() => setIsModalVisible(false)}
@@ -151,6 +202,179 @@ export const PicturePreview = ({
       </DebugModal>
     </SafeAreaView>
   );
+};
+
+type SmartItemFrameProps = {
+  index: number | string;
+  frame: Frame;
+  displayWidth: number;
+  displayHeight: number;
+  borderColor?: ColorValue;
+  parentImage: { uri: string; width: number; height: number };
+  onObjectDetectionDone: (result: {
+    index: number;
+    count: number;
+    frames: Frame[];
+  }) => void;
+  onFrameSelect: () => void;
+  debug?: boolean;
+};
+
+export const SmartItemFrame = (props: SmartItemFrameProps) => {
+  const {
+    index,
+    frame,
+    displayWidth,
+    displayHeight,
+    borderColor = "white",
+    parentImage,
+    onObjectDetectionDone,
+    onFrameSelect,
+    debug = false,
+  } = props;
+
+  const lastImageUriRef = useRef<string | null>(null);
+  const { detectObjects, isInitialized: isDetectorInitialized } =
+    useObjectDetectionTracking();
+  const [detectionResult, setDetectionResult] =
+    useState<ObjectDetectionResult | null>(null);
+  const [croppedImage, setCroppedImage] = useState<{
+    uri: string;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const adjustedFrame = useMemo(() => {
+    const { frame: expanded } = expandFrameIfPossible(
+      frame,
+      1,
+      parentImage.width,
+      parentImage.height,
+    );
+    return expanded;
+  }, [frame, parentImage]);
+
+  const rect = useMemo(
+    () => ({
+      left: (adjustedFrame.left / parentImage.width) * displayWidth,
+      top: (adjustedFrame.top / parentImage.height) * displayHeight,
+      width: (adjustedFrame.width / parentImage.width) * displayWidth,
+      height: (adjustedFrame.height / parentImage.height) * displayHeight,
+    }),
+    [adjustedFrame, displayWidth, displayHeight, parentImage],
+  );
+
+  useEffect(() => {
+    /* NOT SURE IF NEEDED */
+    // if (lastImageUriRef.current === parentImage.uri) return;
+
+    let isCancelled = false;
+    lastImageUriRef.current = parentImage.uri;
+
+    (async () => {
+      const cropped = await cropImage(parentImage.uri, adjustedFrame);
+      console.log(
+        `[${index}] Cropped image: ${cropped.width} x ${cropped.height}`,
+      );
+      if (!isCancelled) setCroppedImage(cropped);
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [parentImage.uri, adjustedFrame]);
+
+  useEffect(() => {
+    if (!isDetectorInitialized || !croppedImage) return;
+
+    detectObjects(croppedImage.uri).then((result) => {
+      console.log(
+        `[${index}] 🔍 Detection count:`,
+        result.detectedObjects.length,
+      );
+
+      const converted = convertDetectionFramesToParentDomain(
+        result,
+        adjustedFrame,
+      );
+      setDetectionResult(converted);
+    });
+  }, [croppedImage, isDetectorInitialized, adjustedFrame]);
+
+  return (
+    <>
+      <Pressable
+        onPress={onFrameSelect}
+        className="absolute"
+        style={{
+          borderColor,
+          borderRadius: 12,
+          borderWidth: 3,
+          ...rect,
+        }}
+      />
+      {debug && (
+        <Text
+          className="absolute bg-white/20 text-black text-xs font-medium rounded-lg py-1 px-2 z-10"
+          style={{ ...rect, height: "auto" }}
+        >
+          {`${index}`}
+        </Text>
+      )}
+      <View
+        className="absolute items-center"
+        style={{
+          left: rect.left,
+          top: rect.top + rect.height + 2,
+          width: rect.width,
+        }}
+      >
+        <Text className="bg-white text-black text-xs font-medium rounded-lg py-1 px-2 z-10">
+          {`(${detectionResult?.detectedObjects.length || 0})`}
+        </Text>
+      </View>
+      {/* DEBUG */}
+      {debug && detectionResult && (
+        <ObjectDetectionResponseRenderer
+          result={detectionResult}
+          imageWidth={parentImage.width}
+          imageHeight={parentImage.height}
+          displayWidth={displayWidth}
+          displayHeight={displayHeight}
+        />
+      )}
+    </>
+  );
+};
+
+export const convertDetectionFramesToParentDomain = (
+  result: ObjectDetectionResult,
+  cropFrame: Frame,
+): ObjectDetectionResult => {
+  const scaleX = cropFrame.width / result.width;
+  const scaleY = cropFrame.height / result.height;
+
+  const convertedObjects = result.detectedObjects.map((obj) => {
+    const { frame, ...rest } = obj;
+
+    const convertedFrame = {
+      top: cropFrame.top + frame.top * scaleY,
+      left: cropFrame.left + frame.left * scaleX,
+      width: frame.width * scaleX,
+      height: frame.height * scaleY,
+    };
+
+    return {
+      frame: convertedFrame,
+      ...rest,
+    };
+  });
+
+  return {
+    width: cropFrame.width,
+    height: cropFrame.height,
+    detectedObjects: convertedObjects,
+  };
 };
 
 type ActionButtonsProps = {
@@ -271,6 +495,94 @@ const SmallImageList = ({
   );
 };
 
+export const expandFrameIfPossible = (
+  frame: Frame,
+  multiplier: number,
+  inputImageWidth: number,
+  inputImageHeight: number,
+): { frame: Frame; wasExpanded: boolean } => {
+  const { left, top, width, height } = frame;
+  if (!multiplier || multiplier <= 1) {
+    return { frame, wasExpanded: false };
+  }
+  const centerX = left + width / 2;
+  const centerY = top + height / 2;
+  const newWidth = width * multiplier;
+  const newHeight = height * multiplier;
+  const expandedLeft = centerX - newWidth / 2;
+  const expandedTop = centerY - newHeight / 2;
+  if (
+    expandedLeft >= 0 &&
+    expandedTop >= 0 &&
+    expandedLeft + newWidth <= inputImageWidth &&
+    expandedTop + newHeight <= inputImageHeight
+  ) {
+    return {
+      frame: {
+        left: Math.round(expandedLeft),
+        top: Math.round(expandedTop),
+        width: Math.round(newWidth),
+        height: Math.round(newHeight),
+      },
+      wasExpanded: true,
+    };
+  }
+  return { frame, wasExpanded: false };
+};
+
+export const frameToSquareIfPossible = (
+  frame: Frame,
+  inputImageWidth: number,
+  inputImageHeight: number,
+): { frame: Frame; wasSquared: boolean } => {
+  const { left, top, width, height } = frame;
+  const centerX = left + width / 2;
+  const centerY = top + height / 2;
+  const squareSize = Math.max(width, height);
+  const squareLeft = centerX - squareSize / 2;
+  const squareTop = centerY - squareSize / 2;
+  if (
+    squareLeft >= 0 &&
+    squareTop >= 0 &&
+    squareLeft + squareSize <= inputImageWidth &&
+    squareTop + squareSize <= inputImageHeight
+  ) {
+    return {
+      frame: {
+        left: Math.round(squareLeft),
+        top: Math.round(squareTop),
+        width: Math.round(squareSize),
+        height: Math.round(squareSize),
+      },
+      wasSquared: true,
+    };
+  }
+  return { frame, wasSquared: false };
+};
+
+export const cropImage = async (
+  imageUri: string,
+  frame: Frame,
+): Promise<{ uri: string; width: number; height: number }> => {
+  return await ImageManipulator.manipulateAsync(
+    imageUri,
+    [
+      {
+        crop: {
+          originX: frame.left,
+          originY: frame.top,
+          width: frame.width,
+          height: frame.height,
+        },
+      },
+    ],
+    {
+      compress: 1,
+      format: ImageManipulator.SaveFormat.PNG,
+    },
+  );
+};
+
 export const generateCroppedImages = async (
   result: SubjectSegmentationResult,
   imageUri: string,
@@ -279,89 +591,49 @@ export const generateCroppedImages = async (
     multiplier?: number;
     log?: boolean;
   },
-): Promise<{ uri: string }[]> => {
-  const croppedUris: { uri: string }[] = [];
-
-  const { cropAsSquare = true, multiplier = 1.05, log = true } = options || {};
+): Promise<{ uri: string; frame: Frame }[]> => {
+  const processedFrames: { uri: string; frame: Frame }[] = [];
+  const { cropAsSquare = true, multiplier = 1.05, log } = options || {};
 
   for (let i = 0; i < result.frames.length; i++) {
-    const frame = result.frames[i];
-    let { left, top, width, height } = frame;
+    let frame = result.frames[i];
 
-    const centerX = left + width / 2;
-    const centerY = top + height / 2;
-
-    /* (Expand the frame if requested and possible) */
-    if (multiplier && multiplier > 1) {
-      const newWidth = width * multiplier;
-      const newHeight = height * multiplier;
-
-      const expandedLeft = centerX - newWidth / 2;
-      const expandedTop = centerY - newHeight / 2;
-
-      if (
-        expandedLeft >= 0 &&
-        expandedTop >= 0 &&
-        expandedLeft + newWidth <= result.inputImageWidth &&
-        expandedTop + newHeight <= result.inputImageHeight
-      ) {
-        left = Math.round(expandedLeft);
-        top = Math.round(expandedTop);
-        width = Math.round(newWidth);
-        height = Math.round(newHeight);
-
-        if (log) {
-          console.log(`[Frame${i}] Expanded to ${width}x${height}`);
-        }
-      }
-    }
-
-    if (cropAsSquare) {
-      const squareSize = Math.max(width, height);
-
-      const squareLeft = centerX - squareSize / 2;
-      const squareTop = centerY - squareSize / 2;
-
-      if (
-        squareLeft >= 0 &&
-        squareTop >= 0 &&
-        squareLeft + squareSize <= result.inputImageWidth &&
-        squareTop + squareSize <= result.inputImageHeight
-      ) {
-        left = Math.round(squareLeft);
-        top = Math.round(squareTop);
-        width = Math.round(squareSize);
-        height = Math.round(squareSize);
-
-        if (log) {
-          console.log(`[Frame${i}] Cropping as square ${width}x${height}`);
-        }
-      }
-    }
-
-    const cropped = await ImageManipulator.manipulateAsync(
-      imageUri,
-      [
-        {
-          crop: {
-            originX: Math.round(left),
-            originY: Math.round(top),
-            width: Math.round(width),
-            height: Math.round(height),
-          },
-        },
-      ],
-      {
-        compress: 1,
-        format: ImageManipulator.SaveFormat.PNG,
-      },
+    const { frame: expandedFrame, wasExpanded } = expandFrameIfPossible(
+      frame,
+      multiplier,
+      result.inputImageWidth,
+      result.inputImageHeight,
     );
 
-    if (log) {
-      console.log(`[Frame${i}] Cropped as ${cropped.width}x${cropped.height}`);
+    if (wasExpanded && log) {
+      console.log(
+        `[Frame${i}] Expanded to ${expandedFrame.width}x${expandedFrame.height}`,
+      );
     }
-    croppedUris.push({ uri: cropped.uri });
-  }
 
-  return croppedUris;
+    frame = expandedFrame;
+
+    if (cropAsSquare) {
+      const { frame: squaredFrame, wasSquared } = frameToSquareIfPossible(
+        frame,
+        result.inputImageWidth,
+        result.inputImageHeight,
+      );
+      if (wasSquared && log) {
+        console.log(
+          `[Frame${i}] Cropping as square ${squaredFrame.width}x${squaredFrame.height}`,
+        );
+      }
+      frame = squaredFrame;
+    }
+
+    const cropped = await cropImage(imageUri, frame);
+
+    if (log) {
+      console.log(`[Frame${i}] Cropped to ${cropped.width}x${cropped.height}`);
+    }
+
+    processedFrames.push({ uri: cropped.uri, frame });
+  }
+  return processedFrames;
 };

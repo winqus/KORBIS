@@ -20,7 +20,7 @@ interface UseObjectDetectionTrackingResult {
  */
 export const useObjectDetectionTracking = (
   options: ObjectDetectorOptions = {
-    shouldEnableClassification: true,
+    shouldEnableClassification: false,
     shouldEnableMultipleObjects: true,
     detectorMode: "singleImage",
   },
