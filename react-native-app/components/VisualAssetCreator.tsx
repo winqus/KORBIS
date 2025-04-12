@@ -8,31 +8,22 @@ import {
   View,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
-import { CameraItemOption } from "@/components/ItemCameraControls";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Frame,
-  ObjectDetectionResult,
   SubjectSegmentationResult,
-  useObjectDetectionTracking,
   useSubjectSegmentation,
-} from "@/modules/expo-mlkit";
-import { DebugModal } from "@/components/DebugModal";
-import { cropImage, generateCroppedImages } from "@/lib/utils";
-import { SmallImageList } from "@/components/SmallImageList";
-import {
-  OutlinedButton,
-  AutoCreateButton,
-  CloseButton,
-  ManualAddButton,
-} from "@/components/Buttons";
-import { SmartItemFrame } from "@/components/SmartItemFrame";
-import { AssetType } from "@/types";
-import { GuidanceHoverText } from "@/components/GuidanceHoverText";
-import { enqueueJobs } from "@/signals/queue";
-import { useRouter } from "expo-router";
+} from "../modules/expo-mlkit";
+import { DebugModal } from "./DebugModal";
+import { generateCroppedImages } from "../lib/utils";
+import { SmallImageList } from "./SmallImageList";
+import { OutlinedButton, AutoCreateButton, ManualAddButton } from "./Buttons";
+import { SmartItemFrame } from "./SmartItemFrame";
+import { AssetType } from "../types";
+import { GuidanceHoverText } from "./GuidanceHoverText";
+import { AutoCreateItemsPayload } from "../signals/queue";
 
-type CandidateAsset = {
+type CreationCandidateAsset = {
   id: string;
   state: "suggested" | "selected" | "dismissed";
   image: { uri: string; width: number; height: number };
@@ -41,39 +32,32 @@ type CandidateAsset = {
   quantity?: number;
 };
 
-interface PicturePreviewProps {
-  mode: CameraItemOption;
+interface VisualAssetCreatorProps {
   image: { uri: string; width: number; height: number };
   onCancel: () => void;
-  onAutoCreate: () => void;
-  onManualAdd: () => void;
+  onAutoCreate: (payload: AutoCreateItemsPayload) => void;
+  onManualAdd: (candidates: { quantity: number; imageUri: string }[]) => void;
   debug?: boolean;
 }
 
-export const PicturePreview = ({
-  mode,
+export const VisualAssetCreator = ({
   image,
   onCancel,
   onAutoCreate,
   onManualAdd,
   debug = false,
-}: PicturePreviewProps) => {
+}: VisualAssetCreatorProps) => {
   if (!image) {
     throw new Error("Picture is missing");
   }
 
-  const router = useRouter();
   const segmentator = useSubjectSegmentation();
-
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [images, setImages] = useState<ImageSourcePropType[]>([]);
-
   const lastImageUriRef = useRef<string | null>(null);
-
   const [segmentationResult, setSegmentationResult] =
     useState<SubjectSegmentationResult | null>(null);
-
-  const [candidates, setCandidates] = useState<CandidateAsset[]>([]);
+  const [candidates, setCandidates] = useState<CreationCandidateAsset[]>([]);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
@@ -119,7 +103,7 @@ export const PicturePreview = ({
               type: "item",
               quantity: undefined,
               state: "suggested",
-            }) satisfies CandidateAsset,
+            }) satisfies CreationCandidateAsset,
         );
 
         setCandidates(frames);
@@ -136,7 +120,10 @@ export const PicturePreview = ({
   const availableHeight = screenHeight - topSafeArea - buttonsHeight;
   const canFitBelowImage = displayHeight <= availableHeight;
 
-  const updateCandidate = (id: string, update: Partial<CandidateAsset>) => {
+  const updateCandidate = (
+    id: string,
+    update: Partial<CreationCandidateAsset>,
+  ) => {
     setCandidates((prev) =>
       prev.map((candidate) => {
         if (candidate.id === id) {
@@ -189,7 +176,7 @@ export const PicturePreview = ({
   };
 
   const handleAutoAdd = () => {
-    const jobs = candidates
+    const payload = candidates
       .filter((c) => c.state === "selected")
       .map((candidate) => ({
         candidate: {
@@ -198,10 +185,22 @@ export const PicturePreview = ({
         imageUri: candidate.image.uri,
       }));
 
-    enqueueJobs(jobs);
     setCandidates([]);
 
-    router.push("/");
+    onAutoCreate(payload);
+  };
+
+  const handleManualAdd = () => {
+    const payload = candidates
+      .filter((c) => c.state === "selected")
+      .map((candidate) => ({
+        quantity: candidate.quantity || 1,
+        imageUri: candidate.image.uri,
+      }));
+
+    setCandidates([]);
+
+    onManualAdd(payload);
   };
 
   const selectedCandidatesCount = candidates.filter(
@@ -221,7 +220,7 @@ export const PicturePreview = ({
         textContainerClassName="max-w-[70%]"
       />
       <View className="flex-1">
-        <CloseButton absolute={canFitBelowImage} onCancel={onCancel} />
+        {canFitBelowImage && <View style={{ paddingTop: topSafeArea }} />}
         <View
           className={`flex-1 ${
             canFitBelowImage ? "justify-start" : "justify-center"
@@ -306,7 +305,7 @@ export const PicturePreview = ({
           )}
 
           <ManualAddButton
-            onPress={onManualAdd}
+            onPress={handleManualAdd}
             text={
               selectedCandidatesCount > 1
                 ? `or customize each item`

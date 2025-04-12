@@ -47,3 +47,9 @@ export interface Container extends IVirtualAsset {
 
   imageId?: string;
 }
+
+export type ImageType = {
+  uri: string;
+  width: number;
+  height: number;
+};

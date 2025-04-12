@@ -3,10 +3,12 @@ import { Item } from "../types";
 import { getPictureBase64FromLocalUri, randomUUIDv4 } from "@/lib/utils";
 import { createItem, generateItemMetadataFromPicture } from "@/lib/supabase";
 
-type AutoCreateItemPayload = {
+export type AutoCreateItemPayload = {
   candidate: Partial<Item>;
   imageUri: string;
 };
+
+export type AutoCreateItemsPayload = AutoCreateItemPayload[];
 
 type Job<T> = T & {
   id: string;
@@ -21,7 +23,7 @@ export const isProcessing = signal(false);
 export const pendingJobsCount = computed(() => jobQueue.value.length);
 export const failedJobsCount = computed(() => failedJobs.value.length);
 
-export function enqueueJobs(jobs: AutoCreateItemPayload[]) {
+export function enqueueJobs(jobs: AutoCreateItemsPayload) {
   jobs.forEach((job) => {
     enqueueJob(job);
   });
