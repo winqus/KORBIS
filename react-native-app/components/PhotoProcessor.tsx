@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { BackHandler, View } from "react-native";
 import { VisualAssetCreator } from "./VisualAssetCreator";
 import { VisualAssetFinder } from "./VisualAssetFinder";
 import { AddFindOptionsSegment } from "@/components/ItemCameraControls";
 import { CloseButton } from "@/components/Buttons";
 import { AutoCreateItemsPayload } from "@/signals/queue";
+import { Item } from "@/types";
 
 type ProcessMode = "add" | "find";
 
@@ -13,7 +14,7 @@ interface PhotoProcessorProps {
   onCancel: () => void;
   onAutoCreate: (payload: AutoCreateItemsPayload) => void;
   onManualAdd: (candidates: { quantity: number; imageUri: string }[]) => void;
-  onItemFound: (foundItem: any) => void;
+  onItemSelect: (item: Item) => void;
   initialMode?: ProcessMode;
   debug?: boolean;
 }
@@ -23,11 +24,23 @@ export const PhotoProcessor = ({
   onCancel,
   onAutoCreate,
   onManualAdd,
-  onItemFound,
+  onItemSelect,
   initialMode = "add",
   debug = false,
 }: PhotoProcessorProps) => {
   const [mode, setMode] = useState<ProcessMode>(initialMode);
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        onCancel();
+
+        return true; /* prevent default behavior */
+      },
+    );
+    return () => backHandler.remove();
+  }, [onCancel]);
 
   return (
     <View className="flex-1">
@@ -52,7 +65,7 @@ export const PhotoProcessor = ({
         <VisualAssetFinder
           image={image}
           onCancel={onCancel}
-          onItemFound={onItemFound}
+          onItemSelect={onItemSelect}
           debug={debug}
         />
       )}

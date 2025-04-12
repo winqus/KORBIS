@@ -1,27 +1,43 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
   SafeAreaView,
   Dimensions,
-  BackHandler,
+  TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { OutlinedButton } from "./Buttons";
 import { GuidanceHoverText } from "./GuidanceHoverText";
+import { Frame, useSubjectSegmentation } from "@/modules/expo-mlkit";
+import { AssetType, Item } from "@/types";
+import { SmartItemFrame } from "@/components/SmartItemFrame";
+import { cropImage, expandFrameIfPossible } from "@/lib/utils";
+import { useSupabase } from "@/lib/useSupabase";
+import { searchItems } from "@/lib/supabase";
+import { isProcessing } from "@/signals/queue";
 
 interface VisualAssetFinderProps {
   image: { uri: string; width: number; height: number };
   onCancel: () => void;
-  onItemFound: (foundItem: any) => void; // Update type based on your item structure
+  onItemSelect: (item: Item) => void;
   debug?: boolean;
 }
+
+type SearchCandidateAsset = {
+  id: string;
+  state: "suggested" | "selected" | "dismissed";
+  image?: { uri: string; width: number; height: number };
+  frame: Frame;
+  type: AssetType;
+};
 
 export const VisualAssetFinder = ({
   image,
   onCancel,
-  onItemFound,
+  onItemSelect,
   debug = false,
 }: VisualAssetFinderProps) => {
   if (!image) {
@@ -29,61 +45,186 @@ export const VisualAssetFinder = ({
   }
 
   const router = useRouter();
+  const segmentator = useSubjectSegmentation();
+  const lastImageUriRef = useRef<string | null>(null);
+  const [candidates, setCandidates] = useState<SearchCandidateAsset[]>([]);
+  const lastSearchImageUriRef = useRef<string | null>(null);
+  const [imageToSearch, setImageToSearch] = useState<string | null>(null);
 
-  // State for found items
-  const [foundItems, setFoundItems] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const {
+    data: items,
+    loading: loadingItems,
+    refetch: refetchItems,
+  } = useSupabase({
+    fn: searchItems,
+    params: {
+      queryText: "",
+      queryImageUri: imageToSearch || "",
+    },
+    skip: true,
+  });
+
+  const selectedCandidatesCount = candidates.filter(
+    (c) => c.state === "selected",
+  ).length;
 
   useEffect(() => {
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      () => {
-        onCancel();
-        return true; /* prevent default behavior */
-      },
-    );
-    return () => backHandler.remove();
-  }, [onCancel]);
+    if (!imageToSearch) return;
+    if (lastSearchImageUriRef.current === imageToSearch) return;
+
+    lastSearchImageUriRef.current = imageToSearch;
+
+    refetchItems({
+      queryText: "",
+      queryImageUri: imageToSearch || "",
+    });
+  }, [imageToSearch, isProcessing.value]);
 
   useEffect(() => {
-    if (!image?.uri) return;
+    if (!segmentator.isInitialized || !image?.uri) return;
+    if (lastImageUriRef.current === image.uri) return;
 
-    // Start search when image is provided
-    searchForItems(image.uri);
-  }, [image.uri]);
+    lastImageUriRef.current = image.uri;
+
+    if (debug) {
+      console.log("Segmentator is initialized, starting segmentation");
+    }
+
+    createSuggestionFrames(image.uri);
+  }, [image.uri, segmentator, segmentator.isInitialized]);
+
+  useEffect(() => {
+    if (!segmentator.isInitialized || !image?.uri) return;
+    if (candidates.length > 1 && selectedCandidatesCount === 0) return;
+
+    if (candidates.length === 1) {
+      updateCandidate(candidates[0].id, {
+        state: "selected",
+      });
+
+      return;
+    }
+
+    if (debug) {
+      console.log("Selected candidates count:", selectedCandidatesCount);
+    }
+
+    dismissSuggestedCandidates();
+  }, [image.uri, candidates.length]);
+
+  const createSuggestionFrames = async (imageUri: string) => {
+    const result = await segmentator
+      .segmentSubjects(imageUri)
+      .then((result) => {
+        const frames = result.frames.map(
+          (frame, i) =>
+            ({
+              id: `subject-${i + 1}`,
+              frame: expandFrameIfPossible(
+                frame,
+                1.1,
+                image.width,
+                image.height,
+              ).frame,
+              type: "item",
+              state: "suggested",
+            }) satisfies SearchCandidateAsset,
+        );
+
+        if (debug) {
+          console.log("Segmentation result:", frames.length);
+        }
+
+        setCandidates(frames);
+      })
+      .catch((error) => {
+        console.error("Error during segmentation:", error);
+      });
+  };
+
+  const cropAndSearch = async (candidate: SearchCandidateAsset) => {
+    if (debug) {
+      console.log("Cropping and searching for candidate:", candidate.id);
+    }
+
+    const croppedImage = await cropImage(image.uri, candidate.frame);
+
+    await searchForItems(croppedImage.uri);
+  };
 
   const searchForItems = async (imageUri: string) => {
-    setIsSearching(true);
-    try {
-      // Call your Supabase Edge Function for item matching
-      // Example:
-      // const { data, error } = await supabase.functions.invoke('match-item', {
-      //   body: { imageUri }
-      // });
+    setImageToSearch(imageUri);
+  };
 
-      // If you need to upload the image first:
-      // 1. Upload to storage
-      // 2. Get the URL
-      // 3. Send URL to edge function
+  useEffect(() => {
+    if (selectedCandidatesCount !== 1) return;
 
-      // Placeholder for now
-      setTimeout(() => {
-        // Simulating results
-        setFoundItems([
-          { id: "item-1", name: "Sample Item 1", confidence: 0.95 },
-          { id: "item-2", name: "Sample Item 2", confidence: 0.82 },
-        ]);
-        setIsSearching(false);
-      }, 2000);
-    } catch (error) {
-      console.error("Error searching for items:", error);
-      setIsSearching(false);
-    }
+    const selectedCandidate = candidates.find((c) => c.state === "selected");
+
+    if (!selectedCandidate) return;
+
+    dismissSuggestedCandidates();
+
+    cropAndSearch(selectedCandidate);
+  }, [selectedCandidatesCount]);
+
+  const updateCandidate = (
+    id: string,
+    update: Partial<SearchCandidateAsset>,
+  ) => {
+    setCandidates((prev) =>
+      prev.map((candidate) => {
+        if (candidate.id === id) {
+          const updatedCandidate = {
+            ...candidate,
+            ...update,
+          };
+          // TODO future: If the frame was updated, trigger recropping
+          // if (update.frame) {
+          //   recropCandidate(id, update.frame);
+          // }
+          return updatedCandidate;
+        }
+        return candidate;
+      }),
+    );
+  };
+
+  const dismissSuggestedCandidates = () => {
+    setCandidates((prev) =>
+      prev.map((candidate) =>
+        candidate.state === "suggested"
+          ? {
+              ...candidate,
+              state: "dismissed",
+            }
+          : candidate,
+      ),
+    );
+  };
+
+  const handleCandidateSelect = (id: string) => {
+    updateCandidate(id, {
+      state: "selected",
+    });
   };
 
   const handleSelectItem = (item: any) => {
-    onItemFound(item);
-    router.push("/");
+    onItemSelect(item);
+  };
+
+  const handleSelectMore = () => {
+    if (!imageToSearch) return;
+
+    const encodedUri = encodeURIComponent(imageToSearch);
+
+    router.push({
+      pathname: "/",
+      params: {
+        queryText: "",
+        queryImageUri: encodedUri,
+      },
+    });
   };
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -96,7 +237,7 @@ export const VisualAssetFinder = ({
   return (
     <SafeAreaView className="flex-1 bg-black">
       <GuidanceHoverText
-        text="Searching for matching items in your collection"
+        text="Tap on items to find matches"
         textContainerClassName="max-w-[70%]"
       />
       <View className="flex-1">
@@ -108,12 +249,44 @@ export const VisualAssetFinder = ({
         >
           <Image
             source={image}
-            style={{ width: screenWidth, height: displayHeight }}
+            style={{
+              width: screenWidth,
+              height: displayHeight,
+            }}
             contentFit="contain"
+            onTouchStart={() => {
+              if (candidates.length > 0) {
+                dismissSuggestedCandidates();
+              }
+            }}
           />
 
+          {candidates
+            .filter((c) => c.state !== "dismissed")
+            .map((c, i) => (
+              <SmartItemFrame
+                key={c.id}
+                id={c.id}
+                state={c.state}
+                frame={c.frame}
+                displayWidth={screenWidth}
+                displayHeight={displayHeight}
+                parentImage={image}
+                borderColor="white"
+                onSelect={() => {
+                  updateCandidate(c.id, {
+                    state: "selected",
+                  });
+                }}
+                onChangeCount={(count: number) => {}}
+                onDismiss={() => {
+                  console.log("Candidate dismissed:", c.id);
+                }}
+              />
+            ))}
+
           {/* Overlay with search indicator when searching */}
-          {isSearching && (
+          {loadingItems && (
             <View className="absolute inset-0 bg-black/50 items-center justify-center">
               <Text className="text-white text-lg font-medium">
                 Finding matches...
@@ -122,36 +295,44 @@ export const VisualAssetFinder = ({
           )}
 
           {/* Results display when available */}
-          {!isSearching && foundItems.length > 0 && (
-            <View className="absolute bottom-5 left-5 right-5 bg-black/70 rounded-lg p-4">
-              <Text className="text-white text-lg font-bold mb-2">
-                Found Items
-              </Text>
-              {foundItems.map((item) => (
-                <View
-                  key={item.id}
-                  className="flex-row items-center justify-between mb-2 py-2 border-b border-gray-700"
-                >
-                  <Text className="text-white">{item.name}</Text>
-                  <Text className="text-white/70">
-                    {Math.round(item.confidence * 100)}% match
-                  </Text>
-                  <OutlinedButton
-                    text="Select"
-                    onPress={() => handleSelectItem(item)}
-                    containerClassName="py-1 px-3"
-                  />
-                </View>
-              ))}
-            </View>
-          )}
+          {(loadingItems || !!items) && (
+            <View className="absolute bottom-16 px-6">
+              <View className="bg-white rounded-lg px-4 py-3">
+                <View className="flex-row items-center flex-wrap gap-3">
+                  {loadingItems && (
+                    <ActivityIndicator
+                      className="text-primary-300"
+                      size="large"
+                    />
+                  )}
 
-          {/* No results message */}
-          {!isSearching && foundItems.length === 0 && (
-            <View className="absolute bottom-5 left-5 right-5 bg-black/70 rounded-lg p-4">
-              <Text className="text-white text-center">
-                No matching items found in your collection
-              </Text>
+                  {items?.slice(0, 3).map((item) => (
+                    <View key={item.ID} className="">
+                      <TouchableOpacity onPress={() => handleSelectItem(item)}>
+                        <Image
+                          source={{ uri: item.imageURI }}
+                          className="size-16 rounded-md"
+                        />
+                        {item.quantity > 1 && (
+                          <View className="absolute top-0 right-0 bg-black/70 rounded-full w-5 h-5 items-center justify-center">
+                            <Text className="text-xs text-white font-rubik-semibold">
+                              {item.quantity}
+                            </Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+
+                  {items && items.length > 3 && (
+                    <TouchableOpacity onPress={handleSelectMore}>
+                      <Text className="text-black-200 font-rubik-semibold text-base">
+                        More
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
             </View>
           )}
         </View>
