@@ -5,6 +5,7 @@ import { VisualAssetFinder } from "./VisualAssetFinder";
 import { AddFindOptionsSegment } from "@/components/ItemCameraControls";
 import { CloseButton } from "@/components/Buttons";
 import { AutoCreateItemsPayload } from "@/signals/queue";
+import { Item } from "@/types";
 
 type ProcessMode = "add" | "find";
 
@@ -13,7 +14,7 @@ interface PhotoProcessorProps {
   onCancel: () => void;
   onAutoCreate: (payload: AutoCreateItemsPayload) => void;
   onManualAdd: (candidates: { quantity: number; imageUri: string }[]) => void;
-  onItemFound: (foundItem: any) => void;
+  onItemSelect: (item: Item) => void;
   initialMode?: ProcessMode;
   debug?: boolean;
 }
@@ -23,7 +24,7 @@ export const PhotoProcessor = ({
   onCancel,
   onAutoCreate,
   onManualAdd,
-  onItemFound,
+  onItemSelect,
   initialMode = "add",
   debug = false,
 }: PhotoProcessorProps) => {
@@ -64,7 +65,7 @@ export const PhotoProcessor = ({
         <VisualAssetFinder
           image={image}
           onCancel={onCancel}
-          onItemFound={onItemFound}
+          onItemSelect={onItemSelect}
           debug={debug}
         />
       )}

@@ -13,7 +13,7 @@ import icons from "../constants/icons";
 type SmartItemFrameProps = {
   id: string;
   state: "suggested" | "selected" | "dismissed";
-  croppedImage: { uri: string; width: number; height: number };
+  croppedImage?: { uri: string; width: number; height: number };
   frame: Frame;
   quantity?: number;
   displayWidth: number;

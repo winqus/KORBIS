@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { CameraItemOption } from "@/components/ItemCameraControls";
 import { PhotoProcessor } from "@/components/PhotoProcessor";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ImageType } from "@/types";
+import { ImageType, Item } from "@/types";
 import { useIsFocused } from "@react-navigation/core";
 import { AutoCreateItemsPayload, enqueueJobs } from "@/signals/queue";
 import { useRouter } from "expo-router";
@@ -37,9 +37,8 @@ const Camera = () => {
     console.log("TODO: Handle manual item creation");
   };
 
-  const handleItemFound = (item: any) => {
-    console.log("Item found:", item);
-    // TODO Logic for handling found item
+  const handleItemSelect = ({ ID }: Item) => {
+    router.push(`/items/${ID}`);
   };
 
   const handleActiveOptionChange = (option: CameraItemOption) => {
@@ -54,7 +53,7 @@ const Camera = () => {
           onCancel={handleCancel}
           onAutoCreate={handleAutoCreate}
           onManualAdd={handleManualAdd}
-          onItemFound={handleItemFound}
+          onItemSelect={handleItemSelect}
           initialMode={activeOption}
           debug={false}
         />
