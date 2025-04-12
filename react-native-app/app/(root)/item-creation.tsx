@@ -1,6 +1,9 @@
 import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
 import React, { useEffect, useState } from "react";
-import { currentParentAsset, mostRecentlyTakenPictureUri } from "@/lib/signals";
+import {
+  currentParentAsset,
+  mostRecentlyTakenPictureUri,
+} from "@/signals/other";
 import icons from "@/constants/icons";
 import IconButton from "@/components/IconButton";
 import PrimaryButton from "@/components/PrimaryButton";

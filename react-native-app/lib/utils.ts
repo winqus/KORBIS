@@ -5,6 +5,7 @@ import {
   SubjectSegmentationResult,
 } from "@/modules/expo-mlkit";
 import * as ImageManipulator from "expo-image-manipulator";
+import * as Crypto from "expo-crypto";
 
 export function throwIfMissing(
   subject: string,
@@ -236,4 +237,8 @@ export const convertDetectionFramesToParentDomain = (
     height: cropFrame.height,
     detectedObjects: convertedObjects,
   };
+};
+
+export const randomUUIDv4 = () => {
+  return Crypto.randomUUID();
 };

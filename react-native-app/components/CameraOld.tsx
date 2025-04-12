@@ -10,7 +10,7 @@ import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, useRouter } from "expo-router";
-import { mostRecentlyTakenPictureUri } from "../lib/signals";
+import { mostRecentlyTakenPictureUri } from "../signals/other";
 
 export const CameraOld = () => {
   const cameraRef = useRef<CameraView>(null);

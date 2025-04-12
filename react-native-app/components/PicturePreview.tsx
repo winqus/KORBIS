@@ -29,6 +29,8 @@ import {
 import { SmartItemFrame } from "@/components/SmartItemFrame";
 import { AssetType } from "@/types";
 import { GuidanceHoverText } from "@/components/GuidanceHoverText";
+import { enqueueJobs } from "@/signals/queue";
+import { useRouter } from "expo-router";
 
 type CandidateAsset = {
   id: string;
@@ -36,7 +38,7 @@ type CandidateAsset = {
   image: { uri: string; width: number; height: number };
   frame: Frame;
   type: AssetType;
-  count?: number;
+  quantity?: number;
 };
 
 interface PicturePreviewProps {
@@ -60,6 +62,7 @@ export const PicturePreview = ({
     throw new Error("Picture is missing");
   }
 
+  const router = useRouter();
   const segmentator = useSubjectSegmentation();
 
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
@@ -114,7 +117,7 @@ export const PicturePreview = ({
               frame: croppedImages[i].frame,
               image: croppedImages[i].image,
               type: "item",
-              count: undefined,
+              quantity: undefined,
               state: "suggested",
             }) satisfies CandidateAsset,
         );
@@ -185,6 +188,22 @@ export const PicturePreview = ({
     );
   };
 
+  const handleAutoAdd = () => {
+    const jobs = candidates
+      .filter((c) => c.state === "selected")
+      .map((candidate) => ({
+        candidate: {
+          quantity: candidate.quantity,
+        },
+        imageUri: candidate.image.uri,
+      }));
+
+    enqueueJobs(jobs);
+    setCandidates([]);
+
+    router.push("/");
+  };
+
   const selectedCandidatesCount = candidates.filter(
     (c) => c.state === "selected",
   ).length;
@@ -239,7 +258,7 @@ export const PicturePreview = ({
                 state={c.state}
                 croppedImage={c.image}
                 frame={c.frame}
-                count={c.count}
+                quantity={c.quantity}
                 displayWidth={screenWidth}
                 displayHeight={displayHeight}
                 parentImage={image}
@@ -248,7 +267,7 @@ export const PicturePreview = ({
                   updateCandidate(c.id, { state: "selected" });
                 }}
                 onChangeCount={(count: number) => {
-                  updateCandidate(c.id, { count });
+                  updateCandidate(c.id, { quantity: count });
                 }}
                 onDismiss={() => {
                   console.log("Candidate dismissed:", c.id);
@@ -276,7 +295,7 @@ export const PicturePreview = ({
             />
           ) : (
             <AutoCreateButton
-              onPress={() => {}}
+              onPress={handleAutoAdd}
               text={
                 selectedCandidatesCount <= 1
                   ? "Auto add item"

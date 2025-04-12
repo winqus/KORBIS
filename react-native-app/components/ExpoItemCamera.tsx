@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import { CameraPermissionRequest } from "@/components/CameraPermissionRequest";
@@ -10,8 +10,10 @@ import {
 } from "@/components/ItemCameraControls";
 import * as ImagePicker from "expo-image-picker";
 import { PicturePreview } from "@/components/PicturePreview";
+import { useIsFocused } from "@react-navigation/core";
 
 export const ExpoItemCamera = () => {
+  const isFocused = useIsFocused();
   const router = useRouter();
   const camRef = useRef<CameraView>(null);
   const [camFacing, setCamFacing] = useState<CameraType>("back");
@@ -22,6 +24,12 @@ export const ExpoItemCamera = () => {
     width: number;
     height: number;
   } | null>(null);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setImage(null);
+    }
+  }, [isFocused]);
 
   if (!camPermission) {
     /* Camera permissions are still loading. */

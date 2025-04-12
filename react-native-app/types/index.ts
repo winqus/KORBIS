@@ -16,6 +16,8 @@ export interface IVirtualAsset {
   type: AssetType;
 }
 
+export type VirtualAsset<T extends IVirtualAsset> = T;
+
 export interface Item {
   ID: string;
   ownerId: string;

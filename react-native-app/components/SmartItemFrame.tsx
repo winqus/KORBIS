@@ -15,7 +15,7 @@ type SmartItemFrameProps = {
   state: "suggested" | "selected" | "dismissed";
   croppedImage: { uri: string; width: number; height: number };
   frame: Frame;
-  count?: number;
+  quantity?: number;
   displayWidth: number;
   displayHeight: number;
   borderColor?: ColorValue;
@@ -32,7 +32,7 @@ export const SmartItemFrame = (props: SmartItemFrameProps) => {
     state,
     croppedImage,
     frame,
-    count,
+    quantity,
     displayWidth,
     displayHeight,
     borderColor = "white",
@@ -44,7 +44,7 @@ export const SmartItemFrame = (props: SmartItemFrameProps) => {
   } = props;
 
   const selected = state === "selected";
-  const countSelected = count !== undefined;
+  const countSelected = quantity !== undefined;
   const { detectObjects, isInitialized: isDetectorInitialized } =
     useObjectDetectionTracking();
   const [detectionResult, setDetectionResult] =
@@ -140,7 +140,7 @@ export const SmartItemFrame = (props: SmartItemFrameProps) => {
           >
             {countSelected ? (
               <Text className="text-gray text-xs font-rubik-medium">
-                {`Add ${detectionResult?.detectedObjects.length || 0}`}
+                {`Add ${detectionResult?.detectedObjects.length || 0} units`}
               </Text>
             ) : (
               <>
@@ -155,7 +155,7 @@ export const SmartItemFrame = (props: SmartItemFrameProps) => {
                   }}
                 />
                 <Text className="text-gray text-xs font-rubik-medium">
-                  {`Add ${detectionResult?.detectedObjects.length || 0}?`}
+                  {`Add ${detectionResult?.detectedObjects.length || 0} units?`}
                 </Text>
               </>
             )}
