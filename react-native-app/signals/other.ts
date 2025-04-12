@@ -1,5 +1,5 @@
 import { signal } from "@preact/signals-react";
-import { IVirtualAsset } from "@/types";
+import { IVirtualAsset } from "../types";
 
 export const mostRecentlyTakenPictureUri = signal("");
 export const currentParentAsset = signal({

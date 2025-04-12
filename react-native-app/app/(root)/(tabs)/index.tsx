@@ -5,12 +5,18 @@ import { useSupabase } from "@/lib/useSupabase";
 import ItemList from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import icons from "@/constants/icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { Item } from "@/types";
 import SearchBar from "@/components/SearchBar";
 import React, { useEffect } from "react";
+import { isProcessing, pendingJobsCount } from "@/signals/queue";
 
 export default function Index() {
+  // TODO: remove
+  // console.debug("[REMOVE LATER] Redirecting to /camera from /index");
+  // return <Redirect href="/camera" />;
+  /* REMOVE UNTIL HERE */
+
   const { user } = useGlobalContext();
   const params = useLocalSearchParams<{
     queryText?: string;
@@ -40,7 +46,7 @@ export default function Index() {
       queryText: params.queryText || "",
       queryImageUri: params.queryImageUri || "",
     });
-  }, [params.queryImageUri, params.queryText]);
+  }, [params.queryImageUri, params.queryText, isProcessing.value]);
 
   const itemListHeader = (
     <View className="px-5">
@@ -73,6 +79,14 @@ export default function Index() {
           Found {items?.length} item(s) in your inventory
         </Text>
       </View>
+
+      {isProcessing.value && (
+        <View className="mt-5">
+          <Text className="text-lg font-rubik-semiboldtext-primary-300">
+            Currently adding {pendingJobsCount} items...
+          </Text>
+        </View>
+      )}
     </View>
   );
 

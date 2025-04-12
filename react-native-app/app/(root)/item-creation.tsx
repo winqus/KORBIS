@@ -1,6 +1,9 @@
 import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
 import React, { useEffect, useState } from "react";
-import { currentParentAsset, mostRecentlyTakenPictureUri } from "@/lib/signals";
+import {
+  currentParentAsset,
+  mostRecentlyTakenPictureUri,
+} from "@/signals/other";
 import icons from "@/constants/icons";
 import IconButton from "@/components/IconButton";
 import PrimaryButton from "@/components/PrimaryButton";
@@ -61,7 +64,9 @@ const ItemCreation = () => {
   }, [generatedMetadata]);
 
   const onCancel = () => {
-    router.back();
+    // TODO: fix back to camera (when coming from camera)
+    // router.back();
+    router.replace("/camera");
     mostRecentlyTakenPictureUri.value = "";
   };
 
@@ -163,6 +168,10 @@ const ItemCreation = () => {
 
     if (!result.canceled) {
       setUri(result.assets[0].uri);
+      // console.log(result.assets[0].height);
+      console.log(
+        `Image size: ${result.assets[0].width}x${result.assets[0].height}`,
+      );
     }
   };
 

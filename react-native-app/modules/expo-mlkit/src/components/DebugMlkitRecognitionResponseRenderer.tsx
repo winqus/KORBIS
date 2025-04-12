@@ -74,6 +74,7 @@ interface DetectionOverlayProps {
   borderColor?: ColorValue;
   showText?: boolean;
   textColor?: ColorValue;
+  autoCalculateOffsets?: boolean;
 }
 
 export const DetectionOverlay = ({
@@ -85,13 +86,19 @@ export const DetectionOverlay = ({
   borderColor = "red",
   showText = true,
   textColor = "blue",
+  autoCalculateOffsets = false,
 }: DetectionOverlayProps) => {
   // Calculate scale factors for both dimensions
   const scaleX = displayWidth / imageWidth;
   const scaleY = displayHeight / imageHeight;
   const { width: windowWidth, height: windowHeight } = Dimensions.get("window");
   // Calculate vertical offset for centering when image doesn't fill screen height
-  const verticalOffset = Math.max(0, (windowHeight - displayHeight) / 2);
+  const verticalOffset = autoCalculateOffsets
+    ? Math.max(0, (windowHeight - displayHeight) / 2)
+    : undefined;
+  const horizontalOffset = autoCalculateOffsets
+    ? (windowWidth - displayWidth) / 2
+    : undefined;
 
   return (
     <View
@@ -100,7 +107,7 @@ export const DetectionOverlay = ({
           position: "absolute",
           width: displayWidth,
           height: displayHeight,
-          left: (windowWidth - displayWidth) / 2, // Center horizontally
+          left: horizontalOffset, // Center horizontally
           top: verticalOffset, // Center vertically when needed
         },
       ]}
@@ -213,12 +220,14 @@ export const SubjectSegmentationResponseRenderer = ({
   displayHeight,
   borderColor = "blue",
   scale = 1,
+  autoCalculateOffsets = false,
 }: {
   result: SubjectSegmentationResult;
   displayWidth: number;
   displayHeight: number;
   borderColor?: ColorValue;
   scale?: number;
+  autoCalculateOffsets?: boolean;
 }) => {
   // Transform segmentation frames into recognized items
   const items: RecognizedItem[] = React.useMemo(() => {
@@ -243,6 +252,7 @@ export const SubjectSegmentationResponseRenderer = ({
       borderColor={borderColor}
       showText={true}
       textColor="white"
+      autoCalculateOffsets={autoCalculateOffsets}
     />
   );
 };

@@ -1,3 +1,5 @@
+export type AssetType = "item" | "container";
+
 export interface GeneratedItemMetadata {
   item_name: string;
   shorthand: string;
@@ -11,8 +13,10 @@ export interface IVirtualAsset {
 
   name: string;
 
-  type: "item" | "container";
+  type: AssetType;
 }
+
+export type VirtualAsset<T extends IVirtualAsset> = T;
 
 export interface Item {
   ID: string;
