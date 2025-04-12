@@ -1,6 +1,5 @@
 import { Image } from "expo-image";
 import {
-  BackHandler,
   Dimensions,
   ImageSourcePropType,
   Text,
@@ -58,18 +57,6 @@ export const VisualAssetCreator = ({
   const [segmentationResult, setSegmentationResult] =
     useState<SubjectSegmentationResult | null>(null);
   const [candidates, setCandidates] = useState<CreationCandidateAsset[]>([]);
-
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      () => {
-        onCancel();
-
-        return true; /* prevent default behavior */
-      },
-    );
-    return () => backHandler.remove();
-  }, [onCancel]);
 
   useEffect(() => {
     if (!segmentator.isInitialized || !image?.uri) return;

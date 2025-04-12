@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  SafeAreaView,
-  Dimensions,
-  BackHandler,
-} from "react-native";
+import { View, Text, SafeAreaView, Dimensions } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { OutlinedButton } from "./Buttons";
 import { GuidanceHoverText } from "./GuidanceHoverText";
+import { Frame, useSubjectSegmentation } from "@/modules/expo-mlkit";
+import { AssetType } from "@/types";
 
 interface VisualAssetFinderProps {
   image: { uri: string; width: number; height: number };
@@ -17,6 +13,14 @@ interface VisualAssetFinderProps {
   onItemFound: (foundItem: any) => void; // Update type based on your item structure
   debug?: boolean;
 }
+
+type SearchCandidateAsset = {
+  id: string;
+  state: "suggested" | "selected" | "dismissed";
+  image: { uri: string; width: number; height: number };
+  frame: Frame;
+  type: AssetType;
+};
 
 export const VisualAssetFinder = ({
   image,
@@ -29,21 +33,11 @@ export const VisualAssetFinder = ({
   }
 
   const router = useRouter();
+  const segmentator = useSubjectSegmentation();
+  const [candidate, setCandidate] = useState<SearchCandidateAsset[]>();
 
-  // State for found items
   const [foundItems, setFoundItems] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
-
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      () => {
-        onCancel();
-        return true; /* prevent default behavior */
-      },
-    );
-    return () => backHandler.remove();
-  }, [onCancel]);
 
   useEffect(() => {
     if (!image?.uri) return;

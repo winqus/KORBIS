@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { BackHandler, View } from "react-native";
 import { VisualAssetCreator } from "./VisualAssetCreator";
 import { VisualAssetFinder } from "./VisualAssetFinder";
 import { AddFindOptionsSegment } from "@/components/ItemCameraControls";
@@ -28,6 +28,18 @@ export const PhotoProcessor = ({
   debug = false,
 }: PhotoProcessorProps) => {
   const [mode, setMode] = useState<ProcessMode>(initialMode);
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        onCancel();
+
+        return true; /* prevent default behavior */
+      },
+    );
+    return () => backHandler.remove();
+  }, [onCancel]);
 
   return (
     <View className="flex-1">
