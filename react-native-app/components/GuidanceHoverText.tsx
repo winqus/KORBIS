@@ -1,30 +1,45 @@
-import { Text, View } from "react-native";
-import React from "react";
+import { Text, TouchableWithoutFeedback, View } from "react-native";
+import React, { useEffect, useState } from "react";
 
-export const GuidanceHoverText = ({
-  text,
-  containerClassName,
-  textContainerClassName,
-  textClassName,
-}: {
+type GuidanceHoverTextProps = {
   text: string;
+  top?: number;
   containerClassName?: string;
   textContainerClassName?: string;
   textClassName?: string;
-}) => {
+};
+
+export const GuidanceHoverText = ({
+  text,
+  top = 56,
+  containerClassName,
+  textContainerClassName,
+  textClassName,
+}: GuidanceHoverTextProps) => {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    setVisible(true); // Reset visibility when component mounts
+  }, []);
+
+  if (!visible) return null;
+
   return (
-    <View
-      className={`absolute top-12 left-0 right-0 items-center z-10 ${containerClassName || ""}`}
-    >
+    <TouchableWithoutFeedback onPress={() => setVisible(false)}>
       <View
-        className={`bg-black/50 px-6 py-2 rounded-full ${textContainerClassName || ""}`}
+        className={`absolute z-10 w-full flex items-center ${containerClassName || ""}`}
+        style={{ top }}
       >
-        <Text
-          className={`text-white text-center font-rubik-medium ${textClassName || ""}`}
+        <View
+          className={`bg-black/30 px-6 py-2 rounded-full ${textContainerClassName || ""}`}
         >
-          {text}
-        </Text>
+          <Text
+            className={`text-white text-center font-rubik-medium ${textClassName || ""}`}
+          >
+            {text}
+          </Text>
+        </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };

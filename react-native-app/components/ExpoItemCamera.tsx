@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import { CameraPermissionRequest } from "@/components/CameraPermissionRequest";
@@ -9,27 +9,28 @@ import {
   CameraItemOption,
 } from "@/components/ItemCameraControls";
 import * as ImagePicker from "expo-image-picker";
-import { PicturePreview } from "@/components/PicturePreview";
-import { useIsFocused } from "@react-navigation/core";
+import { ImageType } from "@/types";
 
-export const ExpoItemCamera = () => {
-  const isFocused = useIsFocused();
+type ExpoItemCameraProps = {
+  onPhotoTaken: (photo: ImageType) => void;
+  onActiveOptionChange: (option: CameraItemOption) => void;
+  initialMode?: CameraItemOption;
+  debug?: boolean;
+};
+
+export const ExpoItemCamera = (props: ExpoItemCameraProps) => {
+  const {
+    onPhotoTaken,
+    onActiveOptionChange,
+    initialMode = "add",
+    debug = false,
+  } = props;
   const router = useRouter();
   const camRef = useRef<CameraView>(null);
   const [camFacing, setCamFacing] = useState<CameraType>("back");
   const [camPermission, requestPermission] = useCameraPermissions();
-  const [activeOption, setActiveOption] = useState<CameraItemOption>("add");
-  const [image, setImage] = useState<{
-    uri: string;
-    width: number;
-    height: number;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!isFocused) {
-      setImage(null);
-    }
-  }, [isFocused]);
+  const [activeOption, setActiveOption] =
+    useState<CameraItemOption>(initialMode);
 
   if (!camPermission) {
     /* Camera permissions are still loading. */
@@ -58,8 +59,15 @@ export const ExpoItemCamera = () => {
 
     if (response?.uri) {
       const image = response;
-      setImage({ uri: image.uri, width: image.width, height: image.height });
-      console.log("Image captured:", image.uri);
+      if (debug) {
+        console.log("[ExpoItemCamera] Image captured:", image.uri);
+      }
+
+      onPhotoTaken({
+        uri: image.uri,
+        width: image.width,
+        height: image.height,
+      });
     }
   };
 
@@ -73,22 +81,22 @@ export const ExpoItemCamera = () => {
 
     if (!result.canceled) {
       const image = result.assets[0];
-      setImage({ uri: image.uri, width: image.width, height: image.height });
-      console.log("Image selected from gallery:", image.uri);
+      if (debug) {
+        console.log("[ExpoItemCamera] Image selected from gallery:", image.uri);
+      }
+
+      onPhotoTaken({
+        uri: image.uri,
+        width: image.width,
+        height: image.height,
+      });
     }
   };
 
-  if (image) {
-    return (
-      <PicturePreview
-        mode="add"
-        image={image}
-        onCancel={() => setImage(null)}
-        onAutoCreate={() => {}}
-        onManualAdd={() => {}}
-      />
-    );
-  }
+  const handleActiveOptionChange = (option: CameraItemOption) => {
+    setActiveOption(option);
+    onActiveOptionChange(option);
+  };
 
   return (
     <View className="flex-[1] justify-center">
@@ -99,11 +107,12 @@ export const ExpoItemCamera = () => {
               ? "Take a picture to add your item"
               : "Take a picture to find a match"
           }
+          top={36}
         />
 
         <BottomSectionItemCameraControls
           activeOption={activeOption}
-          onChangeOption={(option) => setActiveOption(option)}
+          onChangeOption={handleActiveOptionChange}
           onPressFlip={handleToggleCameraFacing}
           onPressCapture={handleTakePicture}
           onPressGallery={handlePickImageFromGallery}

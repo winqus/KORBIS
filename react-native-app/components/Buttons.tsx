@@ -59,20 +59,28 @@ export const ManualAddButton = ({
 );
 
 type CloseButtonProps = {
-  absolute?: boolean;
   onCancel: () => void;
+  className?: string;
+  iconColor?: string;
+  iconSize?: number;
 };
 
-export const CloseButton = ({ absolute, onCancel }: CloseButtonProps) => {
-  const className = `p-2 ${absolute ? "" : "absolute top-12 left-4 z-10 p-2 bg-primary-200 rounded-full items-center justify-center size-12"}`;
+export const CloseButton = ({
+  onCancel,
+  className = "",
+  iconColor = "white",
+  iconSize = 28,
+}: CloseButtonProps) => {
+  const defaultClass =
+    "z-20 p-2 bg-primary-200 rounded-full items-center justify-center size-12";
 
-  const button = (
-    <TouchableOpacity onPress={onCancel} className={className}>
-      <Ionicons name="close" size={28} color="white" />
+  const combinedClass = `${defaultClass} ${className}`.trim();
+
+  return (
+    <TouchableOpacity onPress={onCancel} className={combinedClass}>
+      <Ionicons name="close" size={iconSize} color={iconColor} />
     </TouchableOpacity>
   );
-
-  return absolute ? <View className="pt-2 pl-4 pb-2">{button}</View> : button;
 };
 
 type OutlinedButtonProps = {
