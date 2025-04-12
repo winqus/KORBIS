@@ -14,7 +14,11 @@ import { GuidanceHoverText } from "./GuidanceHoverText";
 import { Frame, useSubjectSegmentation } from "@/modules/expo-mlkit";
 import { AssetType, Item } from "@/types";
 import { SmartItemFrame } from "@/components/SmartItemFrame";
-import { cropImage, expandFrameIfPossible } from "@/lib/utils";
+import {
+  cropImage,
+  expandFrameIfPossible,
+  frameToSquareIfPossible,
+} from "@/lib/utils";
 import { useSupabase } from "@/lib/useSupabase";
 import { searchItems } from "@/lib/supabase";
 import { isProcessing } from "@/signals/queue";
@@ -147,7 +151,18 @@ export const VisualAssetFinder = ({
       console.log("Cropping and searching for candidate:", candidate.id);
     }
 
-    const croppedImage = await cropImage(image.uri, candidate.frame);
+    const expandedFrame = expandFrameIfPossible(
+      candidate.frame,
+      1.05,
+      image.width,
+      image.height,
+    ).frame;
+    const squareFrame = frameToSquareIfPossible(
+      expandedFrame,
+      image.width,
+      image.height,
+    ).frame;
+    const croppedImage = await cropImage(image.uri, squareFrame);
 
     await searchForItems(croppedImage.uri);
   };

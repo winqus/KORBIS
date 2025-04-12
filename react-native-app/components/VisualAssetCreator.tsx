@@ -14,7 +14,12 @@ import {
   useSubjectSegmentation,
 } from "../modules/expo-mlkit";
 import { DebugModal } from "./DebugModal";
-import { generateCroppedImages } from "../lib/utils";
+import {
+  cropImage,
+  expandFrameIfPossible,
+  frameToSquareIfPossible,
+  generateCroppedImages,
+} from "../lib/utils";
 import { SmallImageList } from "./SmallImageList";
 import { OutlinedButton, AutoCreateButton, ManualAddButton } from "./Buttons";
 import { SmartItemFrame } from "./SmartItemFrame";
@@ -162,15 +167,32 @@ export const VisualAssetCreator = ({
     );
   };
 
-  const handleAutoAdd = () => {
-    const payload = candidates
-      .filter((c) => c.state === "selected")
-      .map((candidate) => ({
-        candidate: {
-          quantity: candidate.quantity,
-        },
-        imageUri: candidate.image.uri,
-      }));
+  const handleAutoAdd = async () => {
+    const payload = await Promise.all(
+      candidates
+        .filter((c) => c.state === "selected")
+        .map(async (candidate) => {
+          const expandedFrame = expandFrameIfPossible(
+            candidate.frame,
+            1.05,
+            image.width,
+            image.height,
+          ).frame;
+          const squareFrame = frameToSquareIfPossible(
+            expandedFrame,
+            image.width,
+            image.height,
+          ).frame;
+          const croppedImage = await cropImage(image.uri, squareFrame);
+
+          return {
+            candidate: {
+              quantity: candidate.quantity,
+            },
+            imageUri: croppedImage.uri,
+          };
+        }),
+    );
 
     setCandidates([]);
 
