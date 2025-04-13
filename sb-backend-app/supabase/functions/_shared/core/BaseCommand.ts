@@ -15,6 +15,13 @@ export abstract class BaseCommand {
     );
 
     if (Object.keys(invalidFields).length > 0) {
+      console.log("Command data:",
+        JSON.stringify(
+          { ...data, imageBase64: ((data as any)["imageBase64"] as any)?.slice(0, 10) },
+          null,
+          2,
+        ),
+      );
       throw new BadRequestError(invalidFields);
     }
   }

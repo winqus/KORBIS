@@ -4,11 +4,13 @@ import {
   DOMAIN_CDN_SERVICE,
 } from "../../injection-tokens.ts";
 import { CreateContainerCommand } from "../index.ts";
-import { Container } from "../../entities/index.ts";
+import { Container, IVirtualAsset } from "../../entities/index.ts";
 import {
   DocumentNotFoundError,
   NoPermissionError,
 } from "../../errors/index.ts";
+import { AssetTypeEnum } from "../../core/index.ts";
+import { DOMAIN_ROOT_NAME } from "../../config.ts";
 
 @injectable()
 export class CreateContainer {
@@ -21,28 +23,27 @@ export class CreateContainer {
     const { name, description, imageBase64, userId, parentId, parentType } =
       command;
 
-    let parentContainer: Container | null = null;
-    let path = "";
-
-    if (parentId && parentType === "container") {
+    let parent: (Pick<IVirtualAsset, "id" | "type" | "name"> & Pick<Container, "path">) | null = null;
+    if (parentId && parentType === AssetTypeEnum.CONTAINER) {
       const container = await this.containersRepository.findById(parentId);
       if (!container) {
-        throw new DocumentNotFoundError(
-          "Container",
-          parentId,
-          "Container not found",
-        );
+        throw new DocumentNotFoundError("Container", parentId, "Container not found");
       }
 
       if (container.ownerId !== userId) {
         throw new NoPermissionError();
       }
 
-      parentContainer = container;
+      parent = container;
+    }
 
-      path = container.path
-        ? `${container.path}/${container.name}`
-        : container.name;
+    if (!parent) {
+      parent = {
+        id: userId,
+        type: AssetTypeEnum.DOMAIN_ROOT,
+        name: DOMAIN_ROOT_NAME,
+        path: "/",
+      };
     }
 
     const newContainer = await this.containersRepository.createWithImage({
@@ -50,9 +51,9 @@ export class CreateContainer {
       name,
       description,
       childCount: 0,
-      path,
-      parentId: parentContainer?.id,
-      parentType: parentContainer ? "container" : undefined,
+      path: parent.path,
+      parentId: parent.id,
+      parentType: parent.type,
     }, imageBase64);
 
     const { imageUrl } = await this.domainCdnService.uploadImage(
@@ -66,8 +67,8 @@ export class CreateContainer {
       ownerId: newContainer.ownerId,
       name: newContainer.name,
       description: newContainer.description,
-      parentId: parentContainer?.id || null,
-      parentType: parentContainer ? "container" : null,
+      parentId: newContainer.parentId,
+      parentType: newContainer.parentType,
       path: newContainer.path,
       imageId: newContainer.imageId || null,
       imageUrl: imageUrl || null,

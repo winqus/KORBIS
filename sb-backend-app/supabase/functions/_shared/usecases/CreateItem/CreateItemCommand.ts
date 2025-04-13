@@ -1,6 +1,7 @@
 // @ts-types="npm:@types/validator"
 import validator from "validator";
-import { AuthenticatedCommand } from "../../core/index.ts";
+import { AssetTypeEnum, AuthenticatedCommand } from "../../core/index.ts";
+import { isDefined } from "../../utils.ts";
 
 export class CreateItemCommand extends AuthenticatedCommand {
   name!: string;
@@ -25,17 +26,16 @@ export class CreateItemCommand extends AuthenticatedCommand {
       parentType,
       quantity = 1,
     } = data;
-
     this.validate(data, [
       {
         property: "userId",
-        isValid: !!userId && validator.isLength(userId, { min: 1, max: 255 }),
-        message: "User ID must be between 1 and 255 characters",
+        isValid: isDefined(userId) && validator.isUUID(userId),
+        message: "User ID must be a valid UUID",
       },
       {
         property: "name",
-        isValid: !!name && validator.isLength(name, { min: 1, max: 255 }),
-        message: "Name must be between 1 and 255 characters",
+        isValid: isDefined(name) && validator.isLength(name, { min: 1, max: 100 }),
+        message: "Name must be between 1 and 100 characters",
       },
       {
         property: "description",
@@ -44,20 +44,20 @@ export class CreateItemCommand extends AuthenticatedCommand {
       },
       {
         property: "imageBase64",
-        isValid: !!imageBase64 && validator.isLength(imageBase64, { min: 1 }),
+        isValid: isDefined(imageBase64) && validator.isLength(imageBase64, { min: 1 }),
         message: "Image base64 data is required",
       },
       {
         property: "parentType",
-        isValid: !parentType || validator.isIn(parentType, [
-          "container",
+        isValid: (!isDefined(parentType) || parentType === "") || validator.isIn(parentType, [
+          AssetTypeEnum.CONTAINER,
         ]),
         message: "Parent type must be 'container'",
       },
       {
         property: "parentId",
-        isValid: !parentId || validator.isLength(userId, { min: 1, max: 255 }),
-        message: "Parent ID must be between 1 and 255 characters",
+        isValid: !parentId || validator.isUUID(parentId),
+        message: "Parent ID must be a valid UUID",
       },
       {
         property: "parentId",
@@ -71,7 +71,8 @@ export class CreateItemCommand extends AuthenticatedCommand {
       },
       {
         property: "quantity",
-        isValid: !!quantity && validator.isInt(quantity.toString(), { min: 0, max: 4294967295 }),
+        isValid: isDefined(quantity) &&
+          validator.isInt(quantity.toString(), { min: 0, max: 4294967295 }),
         message: "Quantity must be a positive integer or 0",
       },
     ]);

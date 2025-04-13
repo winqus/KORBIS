@@ -108,3 +108,7 @@ export function base64StringToArrayBuffer(base64String: string): ArrayBuffer {
 export function generateUUID5(identifier: string, namespace?: string): string {
   return generateUuid5(identifier, namespace);
 }
+
+export function isDefined<T>(value: T | null | undefined): value is T {
+  return value !== undefined && value !== null;
+}

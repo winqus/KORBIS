@@ -48,6 +48,11 @@ export const containerSchema = {
       description: "Type of parent VirtualAsset",
     },
     {
+      name: "parentName",
+      dataType: ["text"],
+      description: "Name of parent VirtualAsset",
+    },
+    {
       name: "childCount",
       dataType: ["int"],
       description: "Number of children in the container",

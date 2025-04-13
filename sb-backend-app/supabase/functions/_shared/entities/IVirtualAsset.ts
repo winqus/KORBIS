@@ -1,3 +1,5 @@
+import { AssetType } from "../core/index.ts";
+
 export interface IVirtualAsset {
   id: string;
 
@@ -5,5 +7,5 @@ export interface IVirtualAsset {
 
   name: string;
 
-  type: "item" | "container";
+  type: AssetType;
 }
