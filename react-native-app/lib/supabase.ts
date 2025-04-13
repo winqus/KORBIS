@@ -231,42 +231,59 @@ export async function createItem({
   quantity?: number;
 }) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error("No user data found. User is not authenticated.");
-    }
+    const user = await requireAuthentication();
 
-    const { data: itemData, error: funcError } =
-      await supabase.functions.invoke("items", {
-        method: "POST",
-        body: {
-          name,
-          description,
-          imageBase64: pictureBase64 || undefined,
-          parentType: parent?.type || undefined,
-          parentId: parent?.id || undefined,
-          quantity: quantity || 1,
-        },
-      });
-
-    if (funcError instanceof FunctionsHttpError) {
-      const errorMessage = await funcError.context.json();
-      console.log("Function returned an error", errorMessage);
-    } else if (funcError instanceof FunctionsRelayError) {
-      console.log("Relay error:", funcError.message);
-    } else if (funcError instanceof FunctionsFetchError) {
-      console.log("Fetch error:", funcError.message);
-    }
-
-    if (funcError) {
-      throw new Error("Failed to create new item");
-    }
+    const itemData = await invokeFunction<any>("items", {
+      method: "POST",
+      body: {
+        name,
+        description,
+        imageBase64: pictureBase64 || undefined,
+        parentType: parent?.type || undefined,
+        parentId: parent?.id || undefined,
+        quantity: quantity || 1,
+      },
+    });
 
     console.log("created item", itemData);
 
     return mapAny2Item(itemData, user, config);
   } catch (error) {
     console.error("createItem error", error);
+    return null;
+  }
+}
+
+export async function createContainer({
+  name,
+  description,
+  pictureBase64,
+  parent,
+}: {
+  name: string;
+  description: string;
+  pictureBase64?: string;
+  parent?: Pick<IVirtualAsset, "type" | "id">;
+}) {
+  try {
+    const user = await requireAuthentication();
+
+    const itemData = await invokeFunction<any>("containers", {
+      method: "POST",
+      body: {
+        name,
+        description,
+        imageBase64: pictureBase64 || undefined,
+        parentType: parent?.type || undefined,
+        parentId: parent?.id || undefined,
+      },
+    });
+
+    console.log("created container", itemData);
+
+    return mapAny2Item(itemData, user, config);
+  } catch (error) {
+    console.error("createContainer error", error);
     return null;
   }
 }
