@@ -441,7 +441,7 @@ function mapAny2Item(
     description: item.description,
     imageID: item.imageId,
     imageURI: item.imageUrl || imageURI,
-    type: item.parentType,
+    type: item.type,
     parentId: item.parentId,
     parentType: item.parentType,
     parentName: item.parentName,

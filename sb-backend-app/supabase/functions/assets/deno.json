@@ -1,0 +1,17 @@
+{
+  "imports": {
+    "@/": "../_shared/",
+    "express": "npm:express@4.21.2",
+    "weaviate-ts-client": "npm:weaviate-ts-client@2.2.0",
+    "@google/generative-ai": "npm:@google/generative-ai",
+    "@supabase/supabase-js": "jsr:@supabase/supabase-js@2",
+    "base64-arraybuffer": "npm:base64-arraybuffer",
+    "@supabase/storage-js": "npm:@supabase/storage-js@2.7.1",
+    "postgres": "https://deno.land/x/postgres@v0.19.3/mod.ts",
+    "validator": "npm:validator@13.15.0",
+    "@needle-di/core": "jsr:@needle-di/core@0.12.0"
+  },
+  "compilerOptions": {
+    "types": ["npm:@types/express", "jsr:@supabase/functions-js/edge-runtime.d.ts", "npm:@types/validator"]
+  }
+}
