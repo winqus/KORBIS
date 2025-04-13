@@ -76,3 +76,16 @@ GET {{baseUrl}}/items
 ?limit=invalid
 &skip=invalid
 Authorization: Bearer {{authToken}}
+
+### Search items by text and image
+### Expect status 200 and matching items in response
+# @name searchItems
+POST {{baseUrl}}/items/search
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "queryText": "",
+  "queryImageBase64": "{{$dotenv IMAGE0BASE64}}"
+}
+

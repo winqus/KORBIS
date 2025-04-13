@@ -16,6 +16,20 @@ import { randomUUID } from "../utils.ts";
 import { inject, injectable } from "@needle-di/core";
 import { WEAVIATE_CLIENT } from "../injection-tokens.ts";
 
+const SCORE_THRESHOLD = 0.4;
+const IMAGE_SEARCH_SCORE_THRESHOLD = 0.8;
+const DEFAULT_PAGINATION_LIMIT = 50;
+const FIND_ALL_LIMIT = 100;
+const SEARCH_RESULTS_LIMIT = 10;
+const MAX_FINAL_RESULTS = 20;
+const HYBRID_SEARCH_ALPHA = 0.5;
+const NAME_BOOST_FACTOR = 4;
+const DESCRIPTION_BOOST_FACTOR = 2;
+const SEARCH_PROPERTIES = {
+  NAME: "name",
+  DESCRIPTION: "description",
+} as const;
+
 @injectable()
 export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
   implements ItemsRepository {
@@ -80,7 +94,7 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
       let query = this.client.graphql.get()
         .withClassName(this.className)
         .withFields(`${this.classProperties} _additional{id}`)
-        .withLimit(limit || 50)
+        .withLimit(limit || DEFAULT_PAGINATION_LIMIT)
         .withOffset(skip || 0);
 
       query = query.withWhere({
@@ -114,7 +128,7 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
 
   public async findAll(): Promise<Item[]> {
     return await this.findMany({
-      limit: 100,
+      limit: FIND_ALL_LIMIT,
       offset: 0,
       fields: `${this.classProperties} _additional{id}`,
     });
@@ -143,7 +157,7 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
           .withClassName("Item")
           .withFields(`${this.classProperties} _additional{id distance}`)
           .withNearImage({ image: queryImageBase64 })
-          .withLimit(10)
+          .withLimit(SEARCH_RESULTS_LIMIT)
           .do();
 
         this.log(
@@ -152,21 +166,17 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
           result.data.Get.Item.length,
         );
 
-        this.log(
-          "search",
-          "founds by image items:",
-          result.data.Get.Item,
-        );
-
-        const rawItems = (result.data.Get.Item || []).map((
-          item: WeaviateNearImageSearchResult<Item>,
-        ) => ({
-          ...item,
-          _additional: {
-            id: item._additional.id,
-            score: 1 - item._additional.distance,
-          },
-        }));
+        const rawItems = (result.data.Get.Item || [])
+          .map((item: WeaviateNearImageSearchResult<Item>) => ({
+            ...item,
+            _additional: {
+              id: item._additional.id,
+              score: 1 - item._additional.distance,
+            },
+          }))
+          .filter((item: WeaviateScoredSearchResult<Item>) =>
+            item._additional.score >= IMAGE_SEARCH_SCORE_THRESHOLD
+          );
 
         imageBasedResults.push(...rawItems);
       }
@@ -182,22 +192,19 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
           )
           .withHybrid({
             query: queryText,
-            properties: ["name^3", "description^2"],
-            alpha: 0.25,
+            properties: [
+              `${SEARCH_PROPERTIES.NAME}^${NAME_BOOST_FACTOR}`,
+              `${SEARCH_PROPERTIES.DESCRIPTION}^${DESCRIPTION_BOOST_FACTOR}`,
+            ],
+            alpha: HYBRID_SEARCH_ALPHA,
           })
-          .withLimit(10)
+          .withLimit(SEARCH_RESULTS_LIMIT)
           .do();
 
         this.log(
           "search",
           "founds by text items:",
           result.data.Get.Item.length,
-        );
-
-        this.log(
-          "search",
-          "founds by text items:",
-          result.data.Get.Item,
         );
 
         const rawItems = (result.data.Get.Item || []).map(
@@ -236,7 +243,20 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
         return 0;
       });
 
-      const items = sortedResults.map((
+      const filteredResults = sortedResults
+        .filter((item) => {
+          const score = item._additional.score;
+          const threshold = imageBasedResults.some((img) =>
+              img._additional.id === item._additional.id
+            )
+            ? IMAGE_SEARCH_SCORE_THRESHOLD
+            : SCORE_THRESHOLD;
+          return score && score >= threshold;
+        });
+
+      const finalResults = filteredResults.slice(0, MAX_FINAL_RESULTS);
+
+      const items = finalResults.map((
         item,
       ) => ({
         id: item._additional.id,
