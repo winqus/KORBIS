@@ -93,9 +93,13 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
 
       let query = this.client.graphql.get()
         .withClassName(this.className)
-        .withFields(`${this.classProperties} _additional{id}`)
+        .withFields(`${this.classProperties} _additional{id creationTimeUnix}`)
         .withLimit(limit || DEFAULT_PAGINATION_LIMIT)
-        .withOffset(skip || 0);
+        .withOffset(skip || 0)
+        .withSort([{
+          path: ["_creationTimeUnix"],
+          order: "desc"
+        }]);
 
       query = query.withWhere({
         path: ["ownerId"],
