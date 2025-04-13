@@ -1,4 +1,4 @@
-import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
   currentParentAsset,
@@ -12,13 +12,18 @@ import SquareGallery from "@/components/SquareGallery";
 import GenerativeInputField from "@/components/GenerativeInputField";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import { createItem, generateItemMetadataFromPicture } from "@/lib/supabase";
+import {
+  createContainer,
+  createItem,
+  generateItemMetadataFromPicture,
+} from "@/lib/supabase";
 import * as ImagePicker from "expo-image-picker";
-import { GeneratedItemMetadata } from "@/types";
+import { GeneratedItemMetadata, IVirtualAsset } from "@/types";
 import { getPictureBase64FromLocalUri } from "@/lib/utils";
 import { Quantity } from "@/components/AssetQuantity";
 import { ParentAssetInfo } from "@/components/ParentAssetInfo";
 import detectNewline from "detect-newline";
+import Checkbox from "expo-checkbox";
 
 const ItemCreation = () => {
   const router = useRouter();
@@ -32,6 +37,7 @@ const ItemCreation = () => {
   const [form, setForm] = useState({
     name: "",
     description: "",
+    isContainer: false,
   });
   const [parentAsset, setParentAsset] = useState({
     name: currentParentAsset.value.name || "My Home",
@@ -59,6 +65,7 @@ const ItemCreation = () => {
         name: (generatedMetadata as any)[fieldMap.name] || form.name,
         description:
           (generatedMetadata as any)[fieldMap.description] || form.description,
+        isContainer: form.isContainer,
       });
     }
   }, [generatedMetadata]);
@@ -127,26 +134,46 @@ const ItemCreation = () => {
 
   const handleAdd = async () => {
     const pictureBase64 = await getRecentPictureBase64();
-    const newItem = await createItem({
-      name: form.name,
-      description: form.description,
-      pictureBase64: pictureBase64 || undefined,
-      parent: parentAsset.id && {
-        id: parentAsset.id,
-        type: parentAsset.type,
-      },
-      quantity: quantity,
-    });
 
-    if (!newItem) {
-      console.error("Failed to create item");
-      Alert.alert("Error", "Failed to create item");
-      return;
+    if (form.isContainer) {
+      const newContainer = await createContainer({
+        name: form.name,
+        description: form.description,
+        pictureBase64: pictureBase64 || undefined,
+        parent: parentAsset.id && {
+          id: parentAsset.id,
+          type: parentAsset.type,
+        },
+      });
+
+      if (!newContainer) {
+        console.error("Failed to create container");
+        Alert.alert("Error", "Failed to create container");
+        return;
+      }
+    } else {
+      const newItem = await createItem({
+        name: form.name,
+        description: form.description,
+        pictureBase64: pictureBase64 || undefined,
+        parent: parentAsset.id && {
+          id: parentAsset.id,
+          type: parentAsset.type,
+        },
+        quantity: quantity,
+      });
+
+      if (!newItem) {
+        console.error("Failed to create item");
+        Alert.alert("Error", "Failed to create item");
+        return;
+      }
     }
 
     setForm({
       name: "",
       description: "",
+      isContainer: false,
     });
 
     router.replace("/");
@@ -216,12 +243,14 @@ const ItemCreation = () => {
                 parentType={parentAsset.type}
                 parentName={parentAsset.name}
               />
-              <Quantity
-                mode="edit"
-                value={quantity}
-                onDecrease={handleQuantityDecrease}
-                onIncrease={handleQuantityIncrease}
-              />
+              {!form.isContainer && (
+                <Quantity
+                  mode="edit"
+                  value={quantity}
+                  onDecrease={handleQuantityDecrease}
+                  onIncrease={handleQuantityIncrease}
+                />
+              )}
             </View>
           </View>
           <GenerativeInputField
@@ -233,6 +262,20 @@ const ItemCreation = () => {
             isLoading={isGenerating}
             maxLength={50}
           />
+
+          <View className="flex flex-row items-center px-5 py-2 gap-2">
+            <Checkbox
+              value={form.isContainer}
+              onValueChange={(value) =>
+                setForm({ ...form, isContainer: value })
+              }
+              color={form.isContainer ? "#0061FF" : undefined}
+            />
+            <Text className="text-black-200 font-rubik-medium text-sm">
+              is a container?
+            </Text>
+          </View>
+
           <View className="border-t border-accent w-full">
             <GenerativeInputField
               label="Notes"

@@ -15,6 +15,7 @@ export default function Index() {
   // TODO: remove
   // console.debug("[REMOVE LATER] Redirecting to /camera from /index");
   // return <Redirect href="/camera" />;
+  // return <Redirect href="/item-creation" />;
   /* REMOVE UNTIL HERE */
 
   const { user } = useGlobalContext();
