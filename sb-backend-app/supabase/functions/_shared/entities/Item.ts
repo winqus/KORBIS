@@ -1,4 +1,5 @@
 import { IVirtualAsset } from "./index.ts";
+import { File } from "./File.ts";
 
 export class Item implements IVirtualAsset {
   id!: string;
@@ -20,4 +21,6 @@ export class Item implements IVirtualAsset {
   parentName?: string;
 
   imageId?: string;
+  
+  files?: File[];
 }

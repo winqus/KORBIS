@@ -1,5 +1,6 @@
 import { Item } from "../entities/index.ts";
 import { Optional, Scored } from "../core/types.ts";
+import { File } from "../entities/File.ts";
 
 export type SearchItemsProps = {
   queryText?: string;
@@ -30,4 +31,21 @@ export interface ItemsRepository {
   delete(id: string): Promise<void>;
 
   search(query: SearchItemsProps): Promise<Scored<Item>[]>;
+  
+  addFile(
+    itemId: string, 
+    fileData: {
+      id: string;
+      name: string;
+      originalName: string;
+      fileUrl: string;
+      mimeType?: string;
+      size?: number;
+      createdAt: string;
+    }
+  ): Promise<File>;
+  
+  deleteFile(itemId: string, fileId: string): Promise<void>;
+
+  getFiles(itemId: string): Promise<File[]>;
 }

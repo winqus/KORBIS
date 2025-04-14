@@ -18,7 +18,7 @@ export class WeaviateV2AssetsRepository implements AssetsRepository {
   > = {
     Item: itemSchema.properties.map((property) =>
       property.name
-    ).filter((property) => property !== "image"),
+    ).filter((property) => (property !== "image" && property !== "files")),
     Container: containerSchema.properties.map((property) =>
       property.name
     ).filter((property) => property !== "image"),

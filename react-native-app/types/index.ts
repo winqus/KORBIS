@@ -40,6 +40,8 @@ export interface Item {
   parentName?: string;
 
   parentType?: "root" | "container";
+
+  files?: File[];
 }
 
 export interface Container extends IVirtualAsset {
@@ -62,8 +64,20 @@ export interface Container extends IVirtualAsset {
   path: string;
 }
 
-export type ImageType = {
+export interface ImageType {
   uri: string;
   width: number;
   height: number;
-};
+}
+
+export interface File {
+  id: string;
+  name: string;
+  originalName: string;
+  fileUrl: string;
+  itemId: string;
+  ownerId: string;
+  mimeType?: string;
+  size?: number;
+  createdAt: string;
+}

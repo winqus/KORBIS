@@ -72,6 +72,48 @@ export const itemSchema = {
       dataType: ["blob"],
       description: "Image in base64 of the item",
     },
+    {
+      name: "files",
+      dataType: ["object[]"],
+      description: "Files attached to this item",
+      nestedProperties: [
+        {
+          name: "id",
+          dataType: ["uuid"],
+          description: "ID of the file",
+        },
+        {
+          name: "name",
+          dataType: ["text"],
+          description: "Name of the file",
+        },
+        {
+          name: "originalName",
+          dataType: ["text"],
+          description: "Original name of the file",
+        },
+        {
+          name: "fileUrl",
+          dataType: ["text"],
+          description: "URL of the file",
+        },
+        {
+          name: "mimeType",
+          dataType: ["text"],
+          description: "MIME type of the file",
+        },
+        {
+          name: "size",
+          dataType: ["number"],
+          description: "Size of the file in bytes",
+        },
+        {
+          name: "createdAt",
+          dataType: ["text"],
+          description: "When the file was created",
+        }
+      ],
+    },
   ],
 };
 

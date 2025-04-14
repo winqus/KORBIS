@@ -209,6 +209,18 @@ export class SupabaseService {
     console.log(`Deleted bucket "${bucketName}"`);
   }
 
+  public async deleteFile(bucketName: string, filePath: string): Promise<void> {
+    const admin = this.adminClient();
+    const { error } = await admin.storage.from(bucketName).remove([filePath]);
+    
+    if (error) {
+      console.error(`Failed to delete file "${filePath}" from bucket "${bucketName}": ${error.message}`);
+      throw new Error(`Failed to delete file: ${error.message}`);
+    }
+    
+    console.log(`Deleted file "${filePath}" from bucket "${bucketName}"`);
+  }
+
   public createUserFolderPolicy(bucketName: string): Promise<any> {
     const policyName = `Allow upload to ${bucketName} bucket personal folder`
       .slice(0, 50);
