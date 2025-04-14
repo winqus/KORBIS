@@ -17,7 +17,7 @@ import { inject, injectable } from "@needle-di/core";
 import { WEAVIATE_CLIENT } from "../injection-tokens.ts";
 
 const SCORE_THRESHOLD = 0.4;
-const IMAGE_SEARCH_SCORE_THRESHOLD = 0.7;
+const IMAGE_SEARCH_SCORE_THRESHOLD = 0.75;
 const DEFAULT_PAGINATION_LIMIT = 50;
 const FIND_ALL_LIMIT = 100;
 const SEARCH_RESULTS_LIMIT = 10;
@@ -277,6 +277,7 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
       } satisfies Item & { score: number }));
 
       this.log("search", "items found:", items.length);
+      console.log("items scores:", items.map((item) => item.score));
 
       return items;
     } catch (error) {
