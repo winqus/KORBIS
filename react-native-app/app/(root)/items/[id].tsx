@@ -7,6 +7,7 @@ import {
   Platform,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import React from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -25,8 +26,13 @@ import { Feather } from "@expo/vector-icons";
 const Item = () => {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
-  const { files, isLoading, uploadFile, openFile, deleteFile } =
-    useItemFiles(id);
+  const {
+    files,
+    isLoading: isLoadingFiles,
+    uploadFile,
+    openFile,
+    deleteFile,
+  } = useItemFiles(id);
 
   if (!id) {
     console.error("No item ID provided");
@@ -36,7 +42,7 @@ const Item = () => {
 
   const windowHeight = Dimensions.get("window").height;
 
-  const { data: item } = useSupabase({
+  const { data: item, loading: isLoadingItem } = useSupabase({
     fn: getItemById,
     params: {
       id: id!,
@@ -148,7 +154,7 @@ const Item = () => {
               <Text className="text-black-300 text-xl font-rubik-bold">
                 Attachments
               </Text>
-              <TouchableOpacity disabled={isLoading} onPress={uploadFile}>
+              <TouchableOpacity disabled={isLoadingFiles} onPress={uploadFile}>
                 <Feather
                   name="file-plus"
                   size={20}
@@ -157,10 +163,8 @@ const Item = () => {
                 />
               </TouchableOpacity>
             </View>
-            {isLoading ? (
-              <Text className="text-gray-500 text-sm font-rubik-medium">
-                Loading...
-              </Text>
+            {isLoadingItem || isLoadingFiles ? (
+              <ActivityIndicator size="small" color="#0061ff" />
             ) : files.length > 0 ? (
               <View className="flex flex-col items-start gap-4 w-full">
                 {files.map((file) => (
@@ -169,6 +173,7 @@ const Item = () => {
                     label={file.originalName}
                     onPress={() => openFile(file)}
                     onDelete={() => deleteFile(file.id)}
+                    isDownloaded={file.isDownloaded}
                   />
                 ))}
               </View>
