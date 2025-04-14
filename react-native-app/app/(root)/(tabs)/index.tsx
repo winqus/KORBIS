@@ -6,7 +6,7 @@ import ItemList from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import icons from "@/constants/icons";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
-import { Item } from "@/types";
+import { Container, Item, IVirtualAsset } from "@/types";
 import SearchBar from "@/components/SearchBar";
 import React, { useEffect } from "react";
 import { isProcessing, pendingJobsCount } from "@/signals/queue";
@@ -40,7 +40,9 @@ export default function Index() {
 
   const handleProfilePress = () => router.push("/profile");
 
-  const handleCardPress = ({ ID }: Item) => router.push(`/items/${ID}`);
+  const handleCardPress = (asset: IVirtualAsset) => {
+    router.push(`/items/${asset.id}`);
+  };
 
   useEffect(() => {
     refetchItems({
@@ -94,7 +96,7 @@ export default function Index() {
   return (
     <SafeAreaView className="bg-white h-full">
       <ItemList
-        items={items ?? []}
+        assets={items ?? []}
         onCardPress={handleCardPress}
         loading={loadingItems}
         showHeader={true}

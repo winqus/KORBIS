@@ -322,10 +322,10 @@ export const VisualAssetFinder = ({
                   )}
 
                   {items?.slice(0, 3).map((item) => (
-                    <View key={item.ID} className="">
+                    <View key={item.id} className="">
                       <TouchableOpacity onPress={() => handleSelectItem(item)}>
                         <Image
-                          source={{ uri: item.imageURI }}
+                          source={{ uri: item.imageUrl }}
                           className="size-16 rounded-md"
                         />
                         {item.quantity > 1 && (

@@ -37,8 +37,8 @@ const Camera = () => {
     console.log("TODO: Handle manual item creation");
   };
 
-  const handleItemSelect = ({ ID }: Item) => {
-    router.push(`/items/${ID}`);
+  const handleItemSelect = ({ id }: Item) => {
+    router.push(`/items/${id}`);
   };
 
   const handleActiveOptionChange = (option: CameraItemOption) => {
