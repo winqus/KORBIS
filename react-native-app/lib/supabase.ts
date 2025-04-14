@@ -19,7 +19,9 @@ import {
   GeneratedItemMetadata,
   Item,
   IVirtualAsset,
+  File,
 } from "@/types";
+import * as FileSystem from "expo-file-system";
 
 throwIfMissing("env variables", process.env, [
   "EXPO_PUBLIC_SUPABASE_PROJECT_URL",
@@ -488,6 +490,117 @@ export async function searchAssets({
   }
 }
 
+export async function uploadItemFile({
+  itemId,
+  fileUri,
+  fileName,
+}: {
+  itemId: string;
+  fileUri: string;
+  fileName: string;
+}) {
+  try {
+    const user = await requireAuthentication();
+
+    const fileInfo = await FileSystem.getInfoAsync(fileUri);
+    if (!fileInfo.exists) {
+      throw new Error("File doesn't exist at provided URI");
+    }
+
+    const filePathInBucket = `${user.id}/${itemId}/${new Date().getTime()}`;
+
+    const fileContent = await FileSystem.readAsStringAsync(fileUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    const extension = fileName.split(".").pop()?.toLowerCase();
+    let contentType = "application/octet-stream";
+
+    if (extension === "pdf") contentType = "application/pdf";
+    else if (extension === "doc" || extension === "docx")
+      contentType = "application/msword";
+    else if (extension === "xls" || extension === "xlsx")
+      contentType = "application/vnd.ms-excel";
+    else if (extension === "jpg" || extension === "jpeg")
+      contentType = "image/jpeg";
+    else if (extension === "png") contentType = "image/png";
+    else if (extension === "txt") contentType = "text/plain";
+
+    const { data, error } = await supabase.storage
+      .from("domain-files")
+      .upload(filePathInBucket, decode(fileContent), {
+        contentType,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    console.log("File upload data", data);
+
+    const fileData = await invokeFunction<any>("items/files", {
+      method: "POST",
+      body: {
+        itemId,
+        name: fileName,
+        originalName: fileName,
+        path: data.fullPath,
+        mimeType: contentType,
+        size: fileInfo.size,
+      },
+    });
+
+    return mapAny2File(fileData, user, config);
+  } catch (error) {
+    console.error("Upload file error", error);
+    return null;
+  }
+}
+
+export async function getItemFiles({ itemId }: { itemId: string }) {
+  try {
+    const user = await requireAuthentication();
+
+    const files = await invokeFunction<any>(`items/${itemId}/files`, {
+      method: "GET",
+    });
+
+    console.log(`getItemFiles retrieved ${files.length} files`);
+
+    return mapAny2Files(files, user, config);
+  } catch (error) {
+    console.error("getItemFiles error", error);
+    return [];
+  }
+}
+
+export async function deleteItemFile({
+  itemId,
+  fileId,
+}: {
+  itemId: string;
+  fileId: string;
+}) {
+  try {
+    if (!fileId) {
+      throw new Error("No file ID provided");
+    }
+
+    await requireAuthentication();
+
+    await invokeFunction(`items/${itemId}/files/${fileId}`, {
+      method: "DELETE",
+    });
+
+    console.log(`Successfully deleted file with ID: ${fileId}`);
+
+    return true;
+  } catch (error) {
+    console.error("deleteItemFile error", error);
+    return false;
+  }
+}
+
 /*
  * HELPERS
  */
@@ -544,6 +657,7 @@ function mapAny2Item(
     parentType: item.parentType,
     parentName: item.parentName,
     quantity: item.quantity,
+    files: item.files ? mapAny2Files(item.files, user, config) : undefined,
   } satisfies Item;
 }
 
@@ -592,6 +706,36 @@ function mapAny2Containers(
   return containers.map((container) =>
     mapAny2Container(container, user, config),
   );
+}
+
+function mapAny2File(
+  file: any,
+  user: { id: string },
+  config: { projectUrl: string },
+): File {
+  if (!file) {
+    throw new Error("Returned file is null");
+  }
+
+  return {
+    id: file.id,
+    name: file.name,
+    originalName: file.originalName,
+    fileUrl: file.fileUrl,
+    itemId: file.itemId,
+    ownerId: file.ownerId,
+    mimeType: file.mimeType,
+    size: file.size,
+    createdAt: file.createdAt,
+  } satisfies File;
+}
+
+function mapAny2Files(
+  files: any[],
+  user: { id: string },
+  config: { projectUrl: string },
+): File[] {
+  return files.map((file) => mapAny2File(file, user, config));
 }
 
 async function requireAuthentication() {

@@ -12,6 +12,7 @@ import React from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { deleteItem, getItemById } from "@/lib/supabase";
 import { useSupabase } from "@/lib/useSupabase";
+import { useItemFiles } from "@/lib/useItemFiles";
 import icons from "@/constants/icons";
 import images from "@/constants/images";
 import { DocumentPill } from "@/components/DocumentPill";
@@ -19,10 +20,14 @@ import { TagPill } from "@/components/TagPill";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { ParentAssetInfo } from "@/components/ParentAssetInfo";
 import { Quantity } from "@/components/AssetQuantity";
+import { Feather } from "@expo/vector-icons";
 
 const Item = () => {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
+  const { files, isLoading, uploadFile, openFile, deleteFile } =
+    useItemFiles(id);
+
   if (!id) {
     console.error("No item ID provided");
     Alert.alert("Error", "No item ID provided");
@@ -137,17 +142,44 @@ const Item = () => {
             </Text>
           </View>
 
-          {/* Documents */}
+          {/* Attachments */}
           <View className="flex flex-col items-start gap-3">
-            <Text className="text-black-300 text-xl font-rubik-bold">
-              Documents
-            </Text>
-            <View className="flex col items-start gap-4">
-              <DocumentPill label="Manual.pdf" />
-              <DocumentPill label="Long manual in English.pdf" />
-              <DocumentPill label="2 Long manual in English .pdf" />
-              <DocumentPill label="3 A truly honestly very very very long long long manual in English.pdf" />
+            <View className="flex flex-row justify-start items-center gap-2.5">
+              <Text className="text-black-300 text-xl font-rubik-bold">
+                Attachments
+              </Text>
+              <TouchableOpacity disabled={isLoading} onPress={uploadFile}>
+                <Feather
+                  name="file-plus"
+                  size={20}
+                  color="#666876"
+                  className="size-7"
+                />
+              </TouchableOpacity>
             </View>
+            {isLoading ? (
+              <Text className="text-gray-500 text-sm font-rubik-medium">
+                Loading...
+              </Text>
+            ) : files.length > 0 ? (
+              <View className="flex flex-col items-start gap-4 w-full">
+                {files.map((file) => (
+                  <DocumentPill
+                    key={file.id}
+                    label={file.originalName}
+                    onPress={() => openFile(file)}
+                    onDelete={() => deleteFile(file.id)}
+                  />
+                ))}
+              </View>
+            ) : (
+              <Text
+                className="text-black-200 text-sm font-rubik-medium"
+                onPress={uploadFile}
+              >
+                Tap + to add files
+              </Text>
+            )}
           </View>
 
           {/* Location */}
