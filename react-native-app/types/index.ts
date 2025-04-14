@@ -19,17 +19,27 @@ export interface IVirtualAsset {
 export type VirtualAsset<T extends IVirtualAsset> = T;
 
 export interface Item {
-  ID: string;
+  id: string;
+
   ownerId: string;
+
   name: string;
+
   type: "item";
+
   description: string;
+
   quantity: number;
-  imageID?: string;
-  imageURI?: string;
+
+  imageId?: string;
+
+  imageUrl?: string;
+
   parentId?: string;
+
   parentName?: string;
-  parentType?: "container";
+
+  parentType?: "root" | "container";
 }
 
 export interface Container extends IVirtualAsset {
@@ -37,15 +47,19 @@ export interface Container extends IVirtualAsset {
 
   description: string;
 
+  imageId?: string;
+
+  imageUrl?: string;
+
   parentId?: string;
 
-  parentType?: "container";
+  parentName?: string;
+
+  parentType?: "root" | "container";
 
   childCount: number;
 
   path: string;
-
-  imageId?: string;
 }
 
 export type ImageType = {

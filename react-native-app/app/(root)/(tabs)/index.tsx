@@ -1,15 +1,23 @@
-import { Image, Text, TouchableOpacity, View } from "react-native";
-import { searchItems } from "@/lib/supabase";
+/* eslint-disable react-hooks/exhaustive-deps */
+import { BackHandler, Image, Text, TouchableOpacity, View } from "react-native";
+import { searchAssets } from "@/lib/supabase";
 import { useGlobalContext } from "@/lib/global-provider";
 import { useSupabase } from "@/lib/useSupabase";
 import ItemList from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import icons from "@/constants/icons";
-import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
-import { Item } from "@/types";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { IVirtualAsset } from "@/types";
 import SearchBar from "@/components/SearchBar";
 import React, { useEffect } from "react";
 import { isProcessing, pendingJobsCount } from "@/signals/queue";
+import {
+  pushParent,
+  currentParentAsset,
+  popParent,
+  parentStack,
+} from "@/signals/parent";
+import { useIsFocused } from "@react-navigation/core";
 
 export default function Index() {
   // TODO: remove
@@ -30,24 +38,70 @@ export default function Index() {
     loading: loadingItems,
     refetch: refetchItems,
   } = useSupabase({
-    fn: searchItems,
+    fn: searchAssets,
     params: {
       queryText: params.queryText || "",
       queryImageUri: params.queryImageUri || "",
+      parentId: currentParentAsset.value.id,
+      parentType: currentParentAsset.value.type,
     },
     skip: true,
   });
 
   const handleProfilePress = () => router.push("/profile");
 
-  const handleCardPress = ({ ID }: Item) => router.push(`/items/${ID}`);
+  const handleCardPress = (asset: IVirtualAsset) => {
+    if (asset.type === "item") {
+      router.push(`/items/${asset.id}`);
+    } else if (asset.type === "container") {
+      pushParent({
+        type: "container",
+        id: asset.id,
+        name: asset.name,
+      });
+    }
+  };
 
   useEffect(() => {
     refetchItems({
       queryText: params.queryText || "",
       queryImageUri: params.queryImageUri || "",
+      parentId: currentParentAsset.value.id,
+      parentType: currentParentAsset.value.type,
     });
-  }, [params.queryImageUri, params.queryText, isProcessing.value]);
+  }, [
+    params.queryImageUri,
+    params.queryText,
+    isProcessing.value,
+    currentParentAsset.value,
+  ]);
+
+  const isFocused = useIsFocused();
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        if (params.queryImageUri || params.queryText) {
+          console.log("[hardwareBackPress] Clearing search params");
+          router.setParams({
+            queryText: "",
+            queryImageUri: "",
+          });
+          return true;
+        }
+
+        if (parentStack.value.length > 1) {
+          console.log("[hardwareBackPress] Popping parent");
+          popParent();
+          return true;
+        }
+
+        console.log("[hardwareBackPress] Returning", !isFocused);
+        return isFocused; /* true to prevent default behavior */
+      },
+    );
+    return () => backHandler.remove();
+  }, [isFocused]);
 
   const itemListHeader = (
     <View className="px-5">
@@ -77,7 +131,10 @@ export default function Index() {
       {/* Found Items text */}
       <View className="mt-5">
         <Text className="text-xl font-rubik-bold text-black-300 mt-5">
-          Found {items?.length} item(s) in your inventory
+          Found {items?.length} item(s) in{" "}
+          <Text className="font-rubik-bold text-primary-300">
+            {currentParentAsset.value.name}
+          </Text>
         </Text>
       </View>
 
@@ -94,7 +151,7 @@ export default function Index() {
   return (
     <SafeAreaView className="bg-white h-full">
       <ItemList
-        items={items ?? []}
+        assets={items ?? []}
         onCardPress={handleCardPress}
         loading={loadingItems}
         showHeader={true}

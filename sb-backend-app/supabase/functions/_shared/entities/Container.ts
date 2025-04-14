@@ -15,6 +15,8 @@ export class Container implements IVirtualAsset {
 
   parentType?: string;
 
+  parentName?: string;
+
   childCount!: number;
 
   path!: string;

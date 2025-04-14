@@ -13,7 +13,13 @@ import { getPictureBase64FromLocalUri, throwIfMissing } from "@/lib/utils";
 import { openAuthSessionAsync } from "expo-web-browser";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
 import { decode } from "base64-arraybuffer";
-import { GeneratedItemMetadata, Item, IVirtualAsset } from "@/types";
+import {
+  AssetType,
+  Container,
+  GeneratedItemMetadata,
+  Item,
+  IVirtualAsset,
+} from "@/types";
 
 throwIfMissing("env variables", process.env, [
   "EXPO_PUBLIC_SUPABASE_PROJECT_URL",
@@ -317,15 +323,15 @@ export async function getItems(options?: {
   }
 }
 
-export async function getItemById({ ID }: Pick<Item, "ID">) {
+export async function getItemById({ id }: Pick<Item, "id">) {
   try {
-    if (!ID) {
+    if (!id) {
       throw new Error("No item ID provided");
     }
 
     const user = await requireAuthentication();
 
-    const item = await invokeFunction<any>(`items/${ID}`, { method: "GET" });
+    const item = await invokeFunction<any>(`items/${id}`, { method: "GET" });
 
     if (!item) {
       throw new Error("Returned item is null");
@@ -347,10 +353,7 @@ export async function searchItems({
   queryImageUri?: string;
 }) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error("No user data found. User is not authenticated.");
-    }
+    const user = await requireAuthentication();
 
     const pictureBase64 = await getPictureBase64FromLocalUri(
       queryImageUri || "",
@@ -364,29 +367,13 @@ export async function searchItems({
       return await getItems();
     }
 
-    const { data: items, error: funcError } = await supabase.functions.invoke(
-      "items/search",
-      {
-        method: "POST",
-        body: {
-          queryText: queryText || undefined,
-          queryImageBase64: pictureBase64 || undefined,
-        },
+    const items = await invokeFunction<any>("items/search", {
+      method: "POST",
+      body: {
+        queryText: queryText || undefined,
+        queryImageBase64: pictureBase64 || undefined,
       },
-    );
-
-    if (funcError instanceof FunctionsHttpError) {
-      const errorMessage = await funcError.context.json();
-      console.log("Function returned an error", errorMessage);
-    } else if (funcError instanceof FunctionsRelayError) {
-      console.log("Relay error:", funcError.message);
-    } else if (funcError instanceof FunctionsFetchError) {
-      console.log("Fetch error:", funcError.message);
-    }
-
-    if (funcError) {
-      throw new Error("Failed to get items");
-    }
+    });
 
     console.log(`getItems retrieved ${items.length} items`);
 
@@ -397,17 +384,17 @@ export async function searchItems({
   }
 }
 
-export async function deleteItem({ ID }: Pick<Item, "ID">) {
+export async function deleteItem({ id }: Pick<Item, "id">) {
   try {
-    if (!ID) {
+    if (!id) {
       throw new Error("No item ID provided");
     }
 
     await requireAuthentication();
 
-    await invokeFunction(`items/${ID}`, { method: "DELETE" });
+    await invokeFunction(`items/${id}`, { method: "DELETE" });
 
-    console.log(`Successfully deleted item with ID: ${ID}`);
+    console.log(`Successfully deleted item with ID: ${id}`);
 
     return true;
   } catch (error) {
@@ -416,9 +403,120 @@ export async function deleteItem({ ID }: Pick<Item, "ID">) {
   }
 }
 
+export async function getAssets({
+  limit = 50,
+  offset = 0,
+  parentId,
+  parentType = "root",
+}: {
+  limit?: number;
+  offset?: number;
+  parentId?: string;
+  parentType?: "root" | "container";
+}) {
+  try {
+    const user = await requireAuthentication();
+
+    let queryString = `assets?limit=${limit}&skip=${offset}`;
+
+    if (parentId) {
+      queryString += `&parentId=${parentId}`;
+    }
+
+    const assets = await invokeFunction<any>(queryString, {
+      method: "GET",
+    });
+
+    console.log(`getAssets retrieved ${assets.length} assets`);
+
+    return mapAny2Assets(assets, user, config);
+  } catch (error) {
+    console.error("getAssets error", error);
+    return [];
+  }
+}
+
+export async function searchAssets({
+  queryText,
+  queryImageUri,
+  parentId,
+  parentType = "root",
+  limit = 50,
+  offset = 0,
+}: {
+  queryText?: string;
+  queryImageUri?: string;
+  parentId?: string;
+  parentType?: "root" | "container";
+  limit?: number;
+  offset?: number;
+}) {
+  try {
+    const user = await requireAuthentication();
+
+    const pictureBase64 = await getPictureBase64FromLocalUri(
+      queryImageUri || "",
+    );
+
+    console.log(
+      `searchItems: queryText: ${queryText}, pictureBase64: ${pictureBase64?.slice(0, 10)}...`,
+    );
+    if (!queryText && !pictureBase64) {
+      console.log("No search query provided, returning all items");
+      return await getAssets({
+        parentId,
+        parentType,
+        limit,
+        offset,
+      });
+    }
+
+    const assets = await invokeFunction<any>("items/search", {
+      method: "POST",
+      body: {
+        queryText: queryText || undefined,
+        queryImageBase64: pictureBase64 || undefined,
+      },
+    });
+
+    console.log(`getAssets retrieved ${assets.length} assets`);
+
+    return mapAny2Assets(assets, user, config);
+  } catch (error) {
+    console.error("searchItems error", error);
+    return [];
+  }
+}
+
 /*
  * HELPERS
  */
+
+function mapAny2Asset(
+  asset: any,
+  user: { id: string },
+  config: { projectUrl: string },
+): Item | Container {
+  if (!asset) {
+    throw new Error("Returned asset is null");
+  }
+
+  if (asset.type === "item") {
+    return mapAny2Item(asset, user, config);
+  } else if (asset.type === "container") {
+    return mapAny2Container(asset, user, config);
+  }
+
+  throw new Error("Invalid asset type");
+}
+
+function mapAny2Assets(
+  assets: any[],
+  user: { id: string },
+  config: { projectUrl: string },
+): (Item | Container)[] {
+  return assets.map((asset) => mapAny2Asset(asset, user, config));
+}
 
 function mapAny2Item(
   item: any,
@@ -435,13 +533,13 @@ function mapAny2Item(
     : undefined;
   // console.log(">>>>Received raw ITEM", item);
   return {
-    ID: item.id,
+    id: item.id,
     ownerId: item.ownerId,
     name: item.name,
     description: item.description,
-    imageID: item.imageId,
-    imageURI: item.imageUrl || imageURI,
-    type: item.parentType,
+    imageId: item.imageId,
+    imageUrl: item.imageUrl || imageURI,
+    type: item.type,
     parentId: item.parentId,
     parentType: item.parentType,
     parentName: item.parentName,
@@ -455,6 +553,45 @@ function mapAny2Items(
   config: { projectUrl: string },
 ): Item[] {
   return items.map((item) => mapAny2Item(item, user, config));
+}
+
+function mapAny2Container(
+  container: any,
+  user: { id: string },
+  config: { projectUrl: string },
+): Container {
+  if (!container) {
+    throw new Error("Returned container is null");
+  }
+
+  const imageURI = container.imageId
+    ? `${config.projectUrl}/storage/v1/object/public/domain-images/${user.id}/${container.imageId}.png`
+    : undefined;
+
+  return {
+    id: container.id,
+    ownerId: container.ownerId,
+    name: container.name,
+    description: container.description,
+    imageId: container.imageId,
+    imageUrl: container.imageUrl || imageURI,
+    type: container.type,
+    parentId: container.parentId,
+    parentType: container.parentType,
+    parentName: container.parentName,
+    childCount: container.childCount,
+    path: container.path,
+  } satisfies Container;
+}
+
+function mapAny2Containers(
+  containers: any[],
+  user: { id: string },
+  config: { projectUrl: string },
+): Container[] {
+  return containers.map((container) =>
+    mapAny2Container(container, user, config),
+  );
 }
 
 async function requireAuthentication() {

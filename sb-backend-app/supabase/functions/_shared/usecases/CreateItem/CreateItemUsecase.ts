@@ -9,7 +9,9 @@ import {
   DocumentNotFoundError,
   NoPermissionError,
 } from "../../errors/index.ts";
-import { Container } from "../../entities/index.ts";
+import { IVirtualAsset } from "../../entities/index.ts";
+import { AssetTypeEnum } from "../../core/index.ts";
+import { DOMAIN_ROOT_NAME } from "../../config.ts";
 
 @injectable()
 export class CreateItem {
@@ -23,8 +25,8 @@ export class CreateItem {
     const { name, description, imageBase64, userId, parentId, parentType, quantity = 1 } =
       command;
 
-    let parentContainer: Container | null = null;
-    if (parentId && parentType === "container") {
+    let parent: Pick<IVirtualAsset, "id" | "type" | "name"> | null = null;
+    if (parentId && parentType === AssetTypeEnum.CONTAINER) {
       const container = await this.containersRepository.findById(
         parentId,
       );
@@ -36,16 +38,24 @@ export class CreateItem {
         throw new NoPermissionError();
       }
 
-      parentContainer = container;
+      parent = container;
+    }
+
+    if (!parent) {
+      parent = {
+        id: userId,
+        type: AssetTypeEnum.DOMAIN_ROOT,
+        name: DOMAIN_ROOT_NAME,
+      }
     }
 
     const newItem = await this.itemsRepository.createWithImage({
       ownerId: userId,
       name,
       description,
-      parentId: parentContainer?.id,
-      parentType: parentContainer?.type, 
-      parentName: parentContainer?.name,
+      parentId: parent.id,
+      parentType: parent.type, 
+      parentName: parent.name,
       quantity,
     }, imageBase64);
 
@@ -60,8 +70,8 @@ export class CreateItem {
       ownerId: newItem.ownerId,
       name: newItem.name,
       description: newItem.description,
-      parentId: parentContainer?.id || null,
-      parentType: parentContainer ? "container" : null,
+      parentId: newItem.parentId,
+      parentType: newItem.parentType,
       imageId: newItem.imageId || null,
       imageUrl: imageUrl || null,
     };

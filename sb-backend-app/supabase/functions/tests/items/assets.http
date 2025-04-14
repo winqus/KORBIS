@@ -1,0 +1,33 @@
+### Variables
+@baseUrl = http://127.0.0.1:54321/functions/v1
+@authToken = {{$dotenv AUTH_TOKEN}}
+
+### Get Paginated assets
+### Expect status 200 and some assets in the response (if enough assets exist)
+# @name getPaginatedAssets
+GET {{baseUrl}}/assets
+?limit=2
+&skip=0
+Authorization: Bearer {{authToken}}
+
+### Get Paginated assets - Test with default values
+### Expect status 200 and some assets in the response (if enough assets exist)
+# @name getPaginatedAssetsDefault
+GET {{baseUrl}}/assets
+Authorization: Bearer {{authToken}}
+
+### Get Paginated assets - Test pagination with different values
+### Expect status 200 and some assets in the response (if enough assets exist)
+# @name getPaginatedAssetsPage2
+GET {{baseUrl}}/assets
+?limit=5
+&skip=5
+Authorization: Bearer {{authToken}}
+
+### Get Paginated assets - Test with invalid values (should handle conversion errors)
+### Expect 200 with default limit and skip values, should return some assets in the response (if enough assets exist)
+# @name getPaginatedAssetsInvalidParams
+GET {{baseUrl}}/assets
+?limit=invalid
+&skip=invalid
+Authorization: Bearer {{authToken}}
