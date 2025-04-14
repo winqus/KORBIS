@@ -1,19 +1,19 @@
 import { View, FlatList, ActivityIndicator, Text } from "react-native";
 import React from "react";
-import { Item } from "@/types";
-import { ItemCard } from "@/components/ItemCards";
+import { Container, Item } from "@/types";
+import { ContainerCard, ItemCard } from "@/components/ItemCards";
 import NoResults from "@/components/NoResults";
 
 interface ItemListProps {
-  items: Item[];
-  onCardPress: (item: Item) => void;
+  assets: (Item | Container)[];
+  onCardPress: (item: Item | Container) => void;
   loading?: boolean;
   showHeader?: boolean;
   customHeader?: React.ReactElement;
 }
 
 const ItemList = ({
-  items,
+  assets,
   loading,
   showHeader,
   customHeader,
@@ -33,7 +33,7 @@ const ItemList = ({
             Inventory
           </Text>
           <Text className="text-lg text-primary-300 ml-5">
-            {items.length} items
+            {assets.length} items
           </Text>
         </View>
       ));
@@ -41,11 +41,22 @@ const ItemList = ({
   return (
     <View>
       <FlatList
-        data={items}
-        renderItem={({ item }) => (
-          <ItemCard item={item} onPress={() => onCardPress(item)} />
-        )}
-        keyExtractor={(item) => item.ID}
+        data={assets}
+        renderItem={({ item: asset }) => {
+          return (
+            <>
+              {asset.type === "item" ? (
+                <ItemCard item={asset} onPress={() => onCardPress(asset)} />
+              ) : (
+                <ContainerCard
+                  container={asset}
+                  onPress={() => onCardPress(asset)}
+                />
+              )}
+            </>
+          );
+        }}
+        keyExtractor={(asset) => asset.id}
         numColumns={2}
         contentContainerClassName="pb-64"
         columnWrapperClassName="flex gap-5 px-5"

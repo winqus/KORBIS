@@ -34,7 +34,7 @@ const Item = () => {
   const { data: item } = useSupabase({
     fn: getItemById,
     params: {
-      ID: id!,
+      id: id!,
     },
   });
 
@@ -47,7 +47,7 @@ const Item = () => {
       {
         text: "Delete",
         onPress: async () => {
-          await deleteItem({ ID: id! });
+          await deleteItem({ id: id! });
           router.replace("/");
         },
         style: "destructive",
@@ -63,7 +63,7 @@ const Item = () => {
       >
         <View className="relative w-full" style={{ height: windowHeight / 2 }}>
           <Image
-            source={{ uri: item?.imageURI }}
+            source={{ uri: item?.imageUrl }}
             className="size-full"
             resizeMode="cover"
           />
@@ -176,7 +176,7 @@ const Item = () => {
                 className="text-black-200 text-sm font-rubik-medium"
                 selectable={true}
               >
-                ID: {item?.ID}
+                ID: {item?.id}
               </Text>
             </View>
           </View>

@@ -317,15 +317,15 @@ export async function getItems(options?: {
   }
 }
 
-export async function getItemById({ ID }: Pick<Item, "ID">) {
+export async function getItemById({ id }: Pick<Item, "id">) {
   try {
-    if (!ID) {
+    if (!id) {
       throw new Error("No item ID provided");
     }
 
     const user = await requireAuthentication();
 
-    const item = await invokeFunction<any>(`items/${ID}`, { method: "GET" });
+    const item = await invokeFunction<any>(`items/${id}`, { method: "GET" });
 
     if (!item) {
       throw new Error("Returned item is null");
@@ -397,17 +397,17 @@ export async function searchItems({
   }
 }
 
-export async function deleteItem({ ID }: Pick<Item, "ID">) {
+export async function deleteItem({ id }: Pick<Item, "id">) {
   try {
-    if (!ID) {
+    if (!id) {
       throw new Error("No item ID provided");
     }
 
     await requireAuthentication();
 
-    await invokeFunction(`items/${ID}`, { method: "DELETE" });
+    await invokeFunction(`items/${id}`, { method: "DELETE" });
 
-    console.log(`Successfully deleted item with ID: ${ID}`);
+    console.log(`Successfully deleted item with ID: ${id}`);
 
     return true;
   } catch (error) {
@@ -435,13 +435,13 @@ function mapAny2Item(
     : undefined;
   // console.log(">>>>Received raw ITEM", item);
   return {
-    ID: item.id,
+    id: item.id,
     ownerId: item.ownerId,
     name: item.name,
     description: item.description,
-    imageID: item.imageId,
-    imageURI: item.imageUrl || imageURI,
-    type: item.parentType,
+    imageId: item.imageId,
+    imageUrl: item.imageUrl || imageURI,
+    type: item.type,
     parentId: item.parentId,
     parentType: item.parentType,
     parentName: item.parentName,
