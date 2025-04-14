@@ -1,39 +1,47 @@
 import { DeleteFileForItemCommand } from "./DeleteFileForItemCommand.ts";
 import { inject, injectable } from "@needle-di/core";
-// TODO: Adjust token imports
 import {
   ITEMS_REPOSITORY,
   DOMAIN_CDN_SERVICE,
 } from "../../injection-tokens.ts";
-// TODO: Adjust error and entity imports as needed
 import {
   DocumentNotFoundError,
   NoPermissionError,
 } from "../../errors/index.ts";
-import { Container } from "../../entities/index.ts";
 
 @injectable()
 export class DeleteFileForItem {
   constructor(
-    // TODO: Inject needed repositories/services
     private readonly itemsRepository = inject(ITEMS_REPOSITORY),
     private readonly domainCdnService = inject(DOMAIN_CDN_SERVICE),
   ) {}
 
-  public async execute(command: DeleteFileForItemCommand) {
-    // TODO: Destructure command properties
-    // const { name, userId, ... } = command;
+  public async execute(command: DeleteFileForItemCommand): Promise<void> {
+    const { userId, fileId, itemId } = command;
 
-    // TODO: Add logic (e.g. permission checks, validations)
+    const item = await this.itemsRepository.findById(itemId);
+    if (!item) {
+      throw new DocumentNotFoundError(`Item with ID ${itemId} not found`, itemId);
+    }
 
-    // TODO: Perform action (e.g. create/update/delete/etc.)
-    // const result = await this.itemsRepository.method(...);
+    if (item.ownerId !== userId) {
+      throw new NoPermissionError();
+    }
 
-    // TODO: Return appropriate response
-    return {
-      // id: result.id,
-      // name: result.name,
-      // ...
-    };
+    const fileExists = item.files?.some(file => file.id === fileId);
+    if (!fileExists) {
+      throw new DocumentNotFoundError(`File with ID ${fileId} not found in item ${itemId}`, itemId);
+    }
+
+    const fileToDelete = item.files?.find(file => file.id === fileId);
+    if (fileToDelete && fileToDelete.fileUrl) {
+      try {
+        await this.domainCdnService.deleteFile(fileToDelete.fileUrl);
+      } catch (error) {
+        console.error("Failed to delete file from storage:", error);
+      }
+    }
+
+    await this.itemsRepository.deleteFile(itemId, fileId);
   }
 }

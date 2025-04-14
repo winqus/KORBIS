@@ -15,6 +15,8 @@ import {
 import { randomUUID } from "../utils.ts";
 import { inject, injectable } from "@needle-di/core";
 import { WEAVIATE_CLIENT } from "../injection-tokens.ts";
+import { File } from "../entities/File.ts";
+import { DocumentNotFoundError } from "../errors/index.ts";
 
 const SCORE_THRESHOLD = 0.4;
 const IMAGE_SEARCH_SCORE_THRESHOLD = 0.75;
@@ -285,4 +287,97 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
       throw error;
     }
   }
+
+  public async addFile(
+    itemId: string,
+    fileData: {
+      id: string;
+      name: string;
+      originalName: string;
+      fileUrl: string;
+      mimeType?: string;
+      size?: number;
+      createdAt: string;
+    }
+  ): Promise<File> {
+    try {
+      const item = await this.findById(itemId);
+      if (!item) {
+        throw new DocumentNotFoundError(`Item`, itemId);
+      }
+
+      const currentFiles = item.files || [];
+      const newFile: File = {
+        id: fileData.id,
+        name: fileData.name,
+        originalName: fileData.originalName,
+        fileUrl: fileData.fileUrl,
+        mimeType: fileData.mimeType,
+        size: fileData.size,
+        createdAt: fileData.createdAt,
+      };
+      
+      const updatedFiles = [...currentFiles, newFile];
+      
+      await this.client.data
+        .merger()
+        .withId(itemId)
+        .withClassName(this.className)
+        .withProperties({
+          files: updatedFiles,
+        })
+        .do();
+      
+      return newFile;
+    } catch (error) {
+      this.error("addFile", "Failed to add file:", error);
+      throw error;
+    }
+  }
+  
+  public async deleteFile(itemId: string, fileId: string): Promise<void> {
+    try {
+      const item = await this.findById(itemId);
+      if (!item) {
+        throw new DocumentNotFoundError("Item", itemId);
+      }
+      
+      const currentFiles = item.files || [];
+      const fileToDelete = currentFiles.find(file => file.id === fileId);
+      
+      if (!fileToDelete) {
+        throw new DocumentNotFoundError(`File`, fileId, `File not found for item ${item.name}`);
+      }
+      
+      const updatedFiles = currentFiles.filter(file => file.id !== fileId);
+      
+      await this.client.data
+        .merger()
+        .withId(itemId)
+        .withClassName(this.className)
+        .withProperties({ 
+          files: updatedFiles
+        })
+        .do();
+    } catch (error) {
+      this.error("deleteFile", "Failed to delete file:", error);
+      throw error;
+    }
+  }
+
+  public async getFiles(itemId: string): Promise<File[]> {
+    try {
+      const item = await this.findById(itemId);
+      if (!item) {
+        throw new DocumentNotFoundError("Item", itemId);
+      }
+
+      return item.files || [];
+    } catch (error) {
+      this.error("getFiles", "Failed to get files:", error);
+      throw error;
+    }
+  }
+      
+    
 }

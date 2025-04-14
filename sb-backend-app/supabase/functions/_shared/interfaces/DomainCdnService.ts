@@ -9,4 +9,8 @@ export interface DomainCdnService {
     domainId: string,
     imageId: string,
   ): { imageUrl?: string };
+  
+  getPublicUrl(path: string): string;
+  
+  deleteFile(fileUrl: string): Promise<void>;
 }

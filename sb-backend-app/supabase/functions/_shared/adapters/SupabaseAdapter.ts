@@ -65,6 +65,28 @@ export class SupabaseAdapter implements DomainCdnService {
     return { imageUrl };
   }
 
+  public getPublicUrl(path: string): string {
+    const bucketName = path.split('/')[0];
+    const filePath = path.split('/').slice(1).join('/');
+    
+    return this.supabaseService.getFilePublicUrl(bucketName, filePath);
+  }
+
+  public async deleteFile(fileUrl: string): Promise<void> {
+    const url = new URL(fileUrl);
+    const pathParts = url.pathname.split('/').filter(Boolean);
+  
+  
+    if (pathParts.length < 6 || pathParts[2] !== 'object') {
+      throw new Error(`Invalid Supabase file URL format: ${fileUrl}`);
+    }
+  
+    const bucketName = pathParts[4];
+    const filePath = pathParts.slice(5).join('/');
+  
+    await this.supabaseService.deleteFile(bucketName, filePath);
+  }
+
   private formFilePath(domainId: string, imageId: string): string {
     return `${domainId}/${imageId}.${this.config.imageExtension}`;
   }

@@ -8,6 +8,12 @@ import {
   GetItemCommand,
   GetItems,
   GetItemsCommand,
+  AddFileForItem,
+  AddFileForItemCommand,
+  DeleteFileForItem,
+  DeleteFileForItemCommand,
+  GetItemFiles,
+  GetItemFilesCommand,
 } from "../usecases/index.ts";
 import { handleError } from "./errorHandler.ts";
 import { inject, injectable } from "@needle-di/core";
@@ -19,6 +25,9 @@ export class ItemsController {
     private readonly getItemUsecase = inject(GetItem),
     private readonly getItemsUsecase = inject(GetItems),
     private readonly deleteItemUsecase = inject(DeleteItem),
+    private readonly addFileForItemUsecase = inject(AddFileForItem),
+    private readonly deleteFileForItemUsecase = inject(DeleteFileForItem),
+    private readonly getItemFilesUsecase = inject(GetItemFiles),
   ) {}
 
   public async create(req: Request, res: Response, next: NextFunction) {
@@ -93,6 +102,66 @@ export class ItemsController {
       });
 
       await this.deleteItemUsecase.execute(command);
+
+      res.status(204).send();
+    } catch (error) {
+      handleError(error, req, res, next);
+    }
+  }
+
+  public async getFiles(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { itemId } = req.params;
+      const userId = req["userId"] as string;
+
+      const command = GetItemFilesCommand.create({
+        userId,
+        itemId,
+      });
+
+      const result = await this.getItemFilesUsecase.execute(command);
+
+      res.status(200).json(result);
+    } catch (error) {
+      handleError(error, req, res, next);
+    }
+  }
+
+  public async addFile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { itemId, name, originalName, path, mimeType, size } = req.body;
+      const userId = req["userId"] as string;
+
+      const command = AddFileForItemCommand.create({
+        userId,
+        itemId,
+        name,
+        originalName,
+        path,
+        mimeType,
+        size,
+      });
+
+      const result = await this.addFileForItemUsecase.execute(command);
+
+      res.status(201).json(result);
+    } catch (error) {
+      handleError(error, req, res, next);
+    }
+  }
+
+  public async deleteFile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { fileId, itemId } = req.params;
+      const userId = req["userId"] as string;
+
+      const command = DeleteFileForItemCommand.create({
+        userId,
+        fileId,
+        itemId,
+      });
+
+      await this.deleteFileForItemUsecase.execute(command);
 
       res.status(204).send();
     } catch (error) {

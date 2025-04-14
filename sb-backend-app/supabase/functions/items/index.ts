@@ -38,6 +38,9 @@ app.post("/items", itemsController.create.bind(itemsController));
 app.get("/items/:id", itemsController.get.bind(itemsController));
 app.delete("/items/:id", itemsController.delete.bind(itemsController));
 app.get("/items", itemsController.getPaginated.bind(itemsController));
+app.post("/items/files", itemsController.addFile.bind(itemsController));
+app.get("/items/:itemId/files", itemsController.getFiles.bind(itemsController));
+app.delete("/items/:itemId/files/:fileId", itemsController.deleteFile.bind(itemsController));
 
 /* OLD */
 app.post("/items/search", itemsControllerOld.search.bind(itemsControllerOld));

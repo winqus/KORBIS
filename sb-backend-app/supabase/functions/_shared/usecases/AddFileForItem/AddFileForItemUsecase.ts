@@ -1,39 +1,49 @@
 import { AddFileForItemCommand } from "./AddFileForItemCommand.ts";
 import { inject, injectable } from "@needle-di/core";
-// TODO: Adjust token imports
 import {
   ITEMS_REPOSITORY,
   DOMAIN_CDN_SERVICE,
 } from "../../injection-tokens.ts";
-// TODO: Adjust error and entity imports as needed
 import {
   DocumentNotFoundError,
   NoPermissionError,
 } from "../../errors/index.ts";
-import { Container } from "../../entities/index.ts";
+import { File } from "../../entities/index.ts";
+import { randomUUID } from "../../utils.ts";
 
 @injectable()
 export class AddFileForItem {
   constructor(
-    // TODO: Inject needed repositories/services
     private readonly itemsRepository = inject(ITEMS_REPOSITORY),
     private readonly domainCdnService = inject(DOMAIN_CDN_SERVICE),
   ) {}
 
-  public async execute(command: AddFileForItemCommand) {
-    // TODO: Destructure command properties
-    // const { name, userId, ... } = command;
+  public async execute(command: AddFileForItemCommand): Promise<File> {
+    const { userId, itemId, name, originalName, path, mimeType, size } = command;
 
-    // TODO: Add logic (e.g. permission checks, validations)
+    const item = await this.itemsRepository.findById(itemId);
+    if (!item) {
+      throw new DocumentNotFoundError(`Item`, itemId);
+    }
 
-    // TODO: Perform action (e.g. create/update/delete/etc.)
-    // const result = await this.itemsRepository.method(...);
+    if (item.ownerId !== userId) {
+      throw new NoPermissionError();
+    }
 
-    // TODO: Return appropriate response
-    return {
-      // id: result.id,
-      // name: result.name,
-      // ...
+    const fileUrl = this.domainCdnService.getPublicUrl(path);
+    
+    const fileData = {
+      id: randomUUID(),
+      name,
+      originalName,
+      fileUrl,
+      mimeType,
+      size,
+      createdAt: new Date().toISOString(),
     };
+
+    const file = await this.itemsRepository.addFile(itemId, fileData);
+
+    return file;
   }
 }
