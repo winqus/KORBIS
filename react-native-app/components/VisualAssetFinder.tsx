@@ -339,6 +339,12 @@ export const VisualAssetFinder = ({
                     </View>
                   ))}
 
+                  {items && items.length === 0 && (
+                    <Text className="text-black-200 font-rubik-semibold text-base">
+                      No matches
+                    </Text>
+                  )}
+
                   {items && items.length > 3 && (
                     <TouchableOpacity onPress={handleSelectMore}>
                       <Text className="text-black-200 font-rubik-semibold text-base">
