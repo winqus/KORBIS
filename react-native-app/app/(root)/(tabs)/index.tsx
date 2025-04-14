@@ -131,7 +131,7 @@ export default function Index() {
       {/* Found Items text */}
       <View className="mt-5">
         <Text className="text-xl font-rubik-bold text-black-300 mt-5">
-          Found {items?.length} item(s) in{" "}
+          {loadingItems ? "Searching in" : `Found ${items?.length} item(s) in`}{" "}
           <Text className="font-rubik-bold text-primary-300">
             {currentParentAsset.value.name}
           </Text>
@@ -151,7 +151,7 @@ export default function Index() {
   return (
     <SafeAreaView className="bg-white h-full">
       <ItemList
-        assets={items ?? []}
+        assets={loadingItems ? [] : (items ?? [])}
         onCardPress={handleCardPress}
         loading={loadingItems}
         showHeader={true}

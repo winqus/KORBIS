@@ -1,8 +1,9 @@
-import { View, FlatList, ActivityIndicator, Text } from "react-native";
+import { View, Text } from "react-native";
 import React from "react";
 import { Container, Item } from "@/types";
 import { ContainerCard, ItemCard } from "@/components/ItemCards";
 import NoResults from "@/components/NoResults";
+import { FlashList } from "@shopify/flash-list";
 
 interface ItemListProps {
   assets: (Item | Container)[];
@@ -20,7 +21,28 @@ const ItemList = ({
   onCardPress,
 }: ItemListProps) => {
   const listEmptyComponent = loading ? (
-    <ActivityIndicator size="large" className="text-primary-300 mt-5" />
+    <FlashList
+      data={Array.from({ length: 6 })}
+      renderItem={({ item, index }) => (
+        <View
+          className={`flex-1 mx-5 ${index % 2 === 0 ? "mr-2.5" : "ml-2.5"}`}
+        >
+          <ItemCard
+            item={{
+              id: "skeleton",
+              name: "Skeleton",
+              imageUrl: "",
+            }}
+            variant="loading"
+            onPress={() => {}}
+          />
+        </View>
+      )}
+      estimatedItemSize={10}
+      numColumns={2}
+      contentContainerClassName="pb-64"
+      showsVerticalScrollIndicator={false}
+    />
   ) : (
     <NoResults />
   );
@@ -39,12 +61,15 @@ const ItemList = ({
       ));
 
   return (
-    <View>
-      <FlatList
+    <View className="flex-1">
+      <FlashList
         data={assets}
-        renderItem={({ item: asset }) => {
+        estimatedItemSize={4}
+        renderItem={({ item: asset, index }) => {
           return (
-            <>
+            <View
+              className={`flex-1 mx-5 ${index % 2 === 0 ? "mr-2.5" : "ml-2.5"}`}
+            >
               {asset.type === "item" ? (
                 <ItemCard item={asset} onPress={() => onCardPress(asset)} />
               ) : (
@@ -53,13 +78,12 @@ const ItemList = ({
                   onPress={() => onCardPress(asset)}
                 />
               )}
-            </>
+            </View>
           );
         }}
         keyExtractor={(asset) => asset.id}
         numColumns={2}
         contentContainerClassName="pb-64"
-        columnWrapperClassName="flex gap-5 px-5"
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={listEmptyComponent}
         ListHeaderComponent={listHeaderComponent}
