@@ -3,13 +3,14 @@ import {
   Text,
   Dimensions,
   Alert,
-  Image,
   Platform,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import React from "react";
+import { Image } from "expo-image";
+
+import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { deleteItem, getItemById } from "@/lib/supabase";
 import { useSupabase } from "@/lib/useSupabase";
@@ -22,10 +23,15 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { ParentAssetInfo } from "@/components/ParentAssetInfo";
 import { Quantity } from "@/components/AssetQuantity";
 import { Feather } from "@expo/vector-icons";
+import { Item } from "@/types";
 
-const Item = () => {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+const ItemDetail = () => {
+  const { id, itemData } = useLocalSearchParams<{
+    id?: string;
+    itemData?: string;
+  }>();
   const router = useRouter();
+  const [initialItem, setInitialItem] = useState<Item | null>(null);
   const {
     files,
     isLoading: isLoadingFiles,
@@ -33,6 +39,17 @@ const Item = () => {
     openFile,
     deleteFile,
   } = useItemFiles(id);
+
+  useEffect(() => {
+    if (itemData) {
+      try {
+        const parsedItem = JSON.parse(itemData) as Item;
+        setInitialItem(parsedItem);
+      } catch (error) {
+        console.error("Failed to parse item data:", error);
+      }
+    }
+  }, [itemData]);
 
   if (!id) {
     console.error("No item ID provided");
@@ -42,12 +59,15 @@ const Item = () => {
 
   const windowHeight = Dimensions.get("window").height;
 
-  const { data: item, loading: isLoadingItem } = useSupabase({
+  const { data: fetchedItem, loading: isLoadingItem } = useSupabase({
     fn: getItemById,
     params: {
       id: id!,
     },
+    skip: !!initialItem,
   });
+
+  const item = initialItem || fetchedItem;
 
   const handleDelete = () => {
     Alert.alert("Delete Item", "Are you sure you want to delete this item?", [
@@ -76,7 +96,7 @@ const Item = () => {
           <Image
             source={{ uri: item?.imageUrl }}
             className="size-full"
-            resizeMode="cover"
+            contentFit="cover"
           />
           <Image
             source={images.whiteGradient}
@@ -130,8 +150,6 @@ const Item = () => {
 
             <View className="flex flex-row items-center gap-1.5">
               <TagPill label="Item" />
-              {/*<TagPill label="Drink" />*/}
-              {/*<TagPill label="Glass" />*/}
             </View>
           </View>
 
@@ -233,4 +251,4 @@ const Item = () => {
   );
 };
 
-export default Item;
+export default ItemDetail;

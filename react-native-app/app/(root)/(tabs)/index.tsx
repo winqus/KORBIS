@@ -57,7 +57,10 @@ export default function Index() {
 
   const handleCardPress = (asset: IVirtualAsset) => {
     if (asset.type === "item") {
-      router.push(`/items/${asset.id}`);
+      router.push({
+        pathname: "/items/[id]",
+        params: { id: asset.id, itemData: JSON.stringify(asset) },
+      });
     } else if (asset.type === "container") {
       pushParent({
         type: "container",
