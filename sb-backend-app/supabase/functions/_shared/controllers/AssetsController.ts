@@ -2,8 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { GetAssetsOfParent } from "../usecases/GetAssetsOfParent/GetAssetsOfParentUsecase.ts";
 import { GetAssetsOfParentCommand } from "../usecases/GetAssetsOfParent/GetAssetsOfParentCommand.ts";
 import { handleError } from "./errorHandler.ts";
-import { inject, injectable } from "@needle-di/core";
-import { AssetTypeEnum } from "../core/index.ts";
+import { inject, injectable } from "jsr:@needle-di/core@0.12.0";
 
 @injectable()
 export class AssetsController {
