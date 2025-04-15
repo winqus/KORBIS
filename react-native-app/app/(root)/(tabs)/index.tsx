@@ -12,6 +12,11 @@ import SearchBar from "@/components/SearchBar";
 import React, { useEffect, useRef } from "react";
 import { isProcessing, pendingJobsCount, jobQueue } from "@/signals/queue";
 import {
+  isManualProcessing,
+  pendingManualJobsCount,
+  manualJobQueue,
+} from "@/signals/manual-queue";
+import {
   pushParent,
   currentParentAsset,
   popParent,
@@ -49,9 +54,6 @@ export default function Index() {
     params: {
       queryText: params.queryText || "",
       queryImageUri: params.queryImageUri || "",
-      // queryImageUri: params.queryImageUri
-      // ? decodeURIComponent(params.queryImageUri)
-      // : undefined,
       parentId: currentParentAsset.value.id,
       parentType: currentParentAsset.value.type,
     },
@@ -61,6 +63,10 @@ export default function Index() {
   const handleProfilePress = () => router.push("/profile");
 
   const handleCardPress = (asset: IVirtualAsset) => {
+    if (asset.ownerId === "queue" || asset.ownerId === "manual-queue") {
+      return;
+    }
+
     if (asset.type === "item") {
       router.push({
         pathname: "/items/[id]",
@@ -75,15 +81,26 @@ export default function Index() {
     }
   };
 
-  const queueItems: IVirtualAsset[] = jobQueue.value.map((job) => ({
+  const autoQueueItems: IVirtualAsset[] = jobQueue.value.map((job) => ({
     id: job.id,
     type: "item" as AssetType,
     name: job.candidate.name || "Processing item...",
     imageUrl: job.imageUri,
     ownerId: "queue",
   }));
+  const manualQueueItems: IVirtualAsset[] = manualJobQueue.value.map((job) => ({
+    id: job.id,
+    type: "item" as AssetType,
+    name: job.name || "Processing item...",
+    imageUrl: job.imageUri,
+    ownerId: "manual-queue",
+  }));
 
-  const combinedAssets = [...queueItems, ...(items || [])];
+  const combinedAssets = [
+    ...autoQueueItems,
+    ...manualQueueItems,
+    ...(items || []),
+  ];
 
   useEffect(() => {
     navigation.addListener("tabPress" as any, () => {
@@ -102,6 +119,7 @@ export default function Index() {
     params.queryImageUri,
     params.queryText,
     isProcessing.value,
+    isManualProcessing.value,
     currentParentAsset.value,
   ]);
 
@@ -154,6 +172,10 @@ export default function Index() {
     scrollPositionsRef.current[currentContainerId] = position;
   };
 
+  const totalAddingItems =
+    pendingJobsCount.value + pendingManualJobsCount.value;
+  const isAnyProcessing = isProcessing.value || isManualProcessing.value;
+
   const itemListHeader = (
     <View className="px-5">
       {/* Avatar */}
@@ -191,10 +213,11 @@ export default function Index() {
         </Text>
       </View>
 
-      {isProcessing.value && (
+      {isAnyProcessing && (
         <View className="mt-5">
           <Text className="text-lg font-rubik-semibold text-primary-300">
-            Currently adding {pendingJobsCount.value} items...
+            Currently adding {totalAddingItems} item
+            {totalAddingItems > 1 ? "s" : ""}...
           </Text>
         </View>
       )}

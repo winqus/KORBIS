@@ -1,9 +1,6 @@
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import React, { useEffect, useState } from "react";
-import {
-  currentParentAsset,
-  mostRecentlyTakenPictureUri,
-} from "@/signals/other";
+import { currentParentAsset } from "@/signals/other";
 import icons from "@/constants/icons";
 import IconButton from "@/components/IconButton";
 import PrimaryButton from "@/components/PrimaryButton";
@@ -14,24 +11,26 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   createContainer,
-  createItem,
   generateItemMetadataFromPicture,
 } from "@/lib/supabase";
 import * as ImagePicker from "expo-image-picker";
-import { AssetType, GeneratedItemMetadata, IVirtualAsset } from "@/types";
+import { AssetType, GeneratedItemMetadata } from "@/types";
 import { getPictureBase64FromLocalUri } from "@/lib/utils";
 import { Quantity } from "@/components/AssetQuantity";
 import { ParentAssetInfo } from "@/components/ParentAssetInfo";
 import detectNewline from "detect-newline";
 import Checkbox from "expo-checkbox";
-import { enqueueJob } from "@/signals/queue";
+import { enqueueManualJob } from "@/signals/manual-queue";
+import { manualCandidates } from "@/app/(root)/(tabs)/camera";
 
 const ItemCreation = () => {
   const router = useRouter();
-  const { initialQuantity, initialPictureUri } = useLocalSearchParams<{
-    initialQuantity?: string;
-    initialPictureUri?: string;
-  }>();
+  const { initialQuantity, initialPictureUri, remainingCandidates } =
+    useLocalSearchParams<{
+      initialQuantity?: string;
+      initialPictureUri?: string;
+      remainingCandidates?: string;
+    }>();
 
   const [uri, setUri] = useState(initialPictureUri || "");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -80,11 +79,12 @@ const ItemCreation = () => {
   const onCancel = () => {
     // TODO: fix back to camera (when coming from camera)
     // router.back();
-    router.replace("/camera");
-    mostRecentlyTakenPictureUri.value = "";
-  };
+    if (remainingCandidates && parseInt(remainingCandidates) > 0) {
+      manualCandidates.value = [];
+    }
 
-  const getRecentPictureBase64 = async () => getPictureBase64FromLocalUri(uri);
+    router.replace("/camera");
+  };
 
   const handleGenerate = async () => {
     const pictureUri = uri;
@@ -141,10 +141,8 @@ const ItemCreation = () => {
 
   const handleAdd = async () => {
     if (form.isContainer) {
-      // For containers, keep the existing direct creation method
       const pictureBase64 = await getPictureBase64FromLocalUri(uri);
 
-      // Only proceed if we have a valid parentAsset.type that can be cast to AssetType
       const parentType =
         parentAsset.type === "container"
           ? ("container" as AssetType)
@@ -169,23 +167,19 @@ const ItemCreation = () => {
         return;
       }
     } else {
-      // For regular items, use the queue system
       if (!uri) {
         Alert.alert("Error", "No image selected");
         return;
       }
 
-      // Add item to the processing queue
-      enqueueJob({
-        candidate: {
-          name: form.name,
-          description: form.description,
-          quantity: quantity,
-          parentId: parentAsset.id,
-          parentType: parentAsset.type as "root" | "container",
-          parentName: parentAsset.name,
-        },
+      enqueueManualJob({
+        name: form.name,
+        description: form.description,
+        quantity: quantity,
         imageUri: uri,
+        parentId: parentAsset.id,
+        parentType: parentAsset.type as "root" | "container",
+        parentName: parentAsset.name,
       });
     }
 
@@ -195,16 +189,36 @@ const ItemCreation = () => {
       isContainer: false,
     });
 
+    const remaining = remainingCandidates
+      ? parseInt(remainingCandidates, 10)
+      : 0;
+
+    if (remaining > 0) {
+      manualCandidates.value = manualCandidates.value.slice(1);
+
+      if (manualCandidates.value.length > 0) {
+        const nextCandidate = manualCandidates.value[0];
+
+        router.replace({
+          pathname: "/item-creation",
+          params: {
+            initialQuantity: nextCandidate.quantity.toString(),
+            initialPictureUri: nextCandidate.imageUri,
+            remainingCandidates: (manualCandidates.value.length - 1).toString(),
+          },
+        });
+        return;
+      }
+    }
+
     router.replace("/");
   };
 
   const handleDismissPicture = () => {
-    const mostRecentPictureUri = "";
-    setUri(mostRecentPictureUri);
+    setUri("");
   };
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: false,
@@ -214,7 +228,6 @@ const ItemCreation = () => {
 
     if (!result.canceled) {
       setUri(result.assets[0].uri);
-      // console.log(result.assets[0].height);
       console.log(
         `Image size: ${result.assets[0].width}x${result.assets[0].height}`,
       );
@@ -227,6 +240,16 @@ const ItemCreation = () => {
 
   const handleQuantityIncrease = () => {
     setQuantity((prev) => prev + 1);
+  };
+
+  const getAddButtonText = () => {
+    const remaining = remainingCandidates
+      ? parseInt(remainingCandidates, 10)
+      : 0;
+    if (remaining > 0) {
+      return `Add (${remaining + 1} remaining)`;
+    }
+    return "Add";
   };
 
   return (
@@ -329,7 +352,11 @@ const ItemCreation = () => {
             disabled={!canGenerate}
           />
         </View>
-        <PrimaryButton onPress={handleAdd} label="Add" disabled={!canAdd} />
+        <PrimaryButton
+          onPress={handleAdd}
+          label={getAddButtonText()}
+          disabled={!canAdd}
+        />
       </StaticFooterMenu>
     </View>
   );

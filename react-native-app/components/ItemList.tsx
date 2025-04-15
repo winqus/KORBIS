@@ -76,7 +76,8 @@ const ItemList = ({
           }
 
           // Check if this is a queue item that should be shown in generating state
-          const isQueueItem = asset.ownerId === "queue";
+          const isQueueItem =
+            asset.ownerId === "queue" || asset.ownerId === "manual-queue";
           const variant = isQueueItem ? "generating" : "default";
 
           return (
