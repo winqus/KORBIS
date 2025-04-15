@@ -97,7 +97,7 @@ export class ItemsController {
   public async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { name, description, imageBase64, quantity } = req.body;
+      const { name, description, imageBase64, quantity, parentId, parentType } = req.body;
       const userId = req["userId"] as string;
 
       const command = UpdateItemCommand.create({
@@ -107,6 +107,8 @@ export class ItemsController {
         description,
         imageBase64,
         quantity,
+        parentId: parentType === "root" ? userId : parentId,
+        parentType,
       });
 
       const result = await this.updateItemUsecase.execute(command);

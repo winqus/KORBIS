@@ -1,5 +1,5 @@
 import validator from "validator";
-import { AuthenticatedCommand } from "../../core/index.ts";
+import { AssetTypeEnum, AuthenticatedCommand } from "../../core/index.ts";
 import { isDefined } from "../../utils.ts";
 
 export class UpdateItemCommand extends AuthenticatedCommand {
@@ -8,6 +8,8 @@ export class UpdateItemCommand extends AuthenticatedCommand {
   description?: string;
   imageBase64?: string;
   quantity?: number;
+  parentId?: string;
+  parentType?: string;
 
   static create(data: UpdateItemCommand) {
     const {
@@ -17,6 +19,8 @@ export class UpdateItemCommand extends AuthenticatedCommand {
       description = "",
       imageBase64,
       quantity,
+      parentId,
+      parentType,
     } = data;
 
     this.validate(data, [
@@ -47,6 +51,30 @@ export class UpdateItemCommand extends AuthenticatedCommand {
           (validator.isInt(quantity.toString(), { min: 0, max: 4294967295 })),
         message: "Quantity must be a positive integer or 0",
       },
+      {
+        property: "parentType",
+        isValid: (!isDefined(parentType) || parentType === "") ||
+          validator.isIn(parentType, [
+            AssetTypeEnum.CONTAINER,
+            AssetTypeEnum.DOMAIN_ROOT,
+          ]),
+        message: "Parent type must be 'container' or 'domain_root'",
+      },
+      {
+        property: "parentId",
+        isValid: !parentId || validator.isUUID(parentId),
+        message: "Parent ID must be a valid UUID",
+      },
+      {
+        property: "parentId",
+        isValid: !parentId || !!parentType,
+        message: "Parent ID must be provided if parent type is provided",
+      },
+      {
+        property: "parentType",
+        isValid: !parentType || !!parentId,
+        message: "Parent type must be provided if parent ID is provided",
+      },
     ]);
 
     const command = new this();
@@ -58,6 +86,8 @@ export class UpdateItemCommand extends AuthenticatedCommand {
     if (isDefined(description)) command.description = description.trim();
     if (isDefined(imageBase64)) command.imageBase64 = imageBase64;
     if (isDefined(quantity)) command.quantity = quantity;
+    if (isDefined(parentId)) command.parentId = parentId;
+    if (isDefined(parentType)) command.parentType = parentType;
 
     return command;
   }

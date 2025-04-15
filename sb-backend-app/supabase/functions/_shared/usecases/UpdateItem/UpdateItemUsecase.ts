@@ -3,6 +3,7 @@ import { inject, injectable } from "@needle-di/core";
 import {
   ITEMS_REPOSITORY,
   DOMAIN_CDN_SERVICE,
+  CONTAINERS_REPOSITORY,
 } from "../../injection-tokens.ts";
 import {
   DocumentNotFoundError,
@@ -10,16 +11,19 @@ import {
 } from "../../errors/index.ts";
 import { Item } from "../../entities/index.ts";
 import { randomUUID } from "../../utils.ts";
+import { AssetTypeEnum } from "../../core/index.ts";
+import { DOMAIN_ROOT_NAME } from "../../config.ts";
 
 @injectable()
 export class UpdateItem {
   constructor(
     private readonly itemsRepository = inject(ITEMS_REPOSITORY),
+    private readonly containersRepository = inject(CONTAINERS_REPOSITORY),
     private readonly domainCdnService = inject(DOMAIN_CDN_SERVICE),
   ) {}
 
   public async execute(command: UpdateItemCommand) {
-    const { id, name, description, imageBase64, userId, quantity } = command;
+    const { id, name, description, imageBase64, userId, quantity, parentId, parentType } = command;
 
     const existingItem = await this.itemsRepository.findById(id);
     if (!existingItem) {
@@ -34,6 +38,31 @@ export class UpdateItem {
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (quantity !== undefined) updateData.quantity = quantity;
+
+    // Handle parent change if provided
+    if (parentId !== undefined && parentType !== undefined) {
+      // Check if parent container exists and user has permission
+      if (parentType === AssetTypeEnum.CONTAINER) {
+        const container = await this.containersRepository.findById(parentId);
+        if (!container) {
+          throw new DocumentNotFoundError("Container", parentId);
+        }
+
+        if (container.ownerId !== userId) {
+          throw new NoPermissionError();
+        }
+
+        updateData.parentId = parentId;
+        updateData.parentType = parentType;
+        updateData.parentName = container.name;
+      } else if (parentType === AssetTypeEnum.DOMAIN_ROOT) {
+        updateData.parentId = userId;
+        updateData.parentType = AssetTypeEnum.DOMAIN_ROOT;
+        updateData.parentName = DOMAIN_ROOT_NAME;
+      } else {
+        throw new NoPermissionError();
+      }
+    }
 
     let imageUrl = undefined;
     if (imageBase64) {
