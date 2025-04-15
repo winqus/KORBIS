@@ -54,6 +54,7 @@ export class GetContainer {
       type: container.type,
       childCount: container.childCount,
       path: container.path,
+      visualCode: container.visualCode,
     } satisfies Container & { imageUrl?: string };
   }
 }
