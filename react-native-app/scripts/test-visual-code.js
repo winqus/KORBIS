@@ -24,7 +24,7 @@ const VisualCode = {
   },
 
   // Generate a complete visual code
-  generate: (prefix = "BX", digits = "1234") => {
+  generate: (prefix = "KX", digits = "1234") => {
     const checksum = VisualCode.generateChecksum(prefix, digits);
     return `${prefix}-${digits}-${checksum}`;
   },
@@ -34,7 +34,7 @@ const VisualCode = {
     // Normalize the code: uppercase and remove spaces
     code = code.toUpperCase().replace(/\s/g, "");
 
-    // Check if the code follows the pattern BX-XXXX-C
+    // Check if the code follows the pattern KX-XXXX-C
     const match = code.match(/^([A-Z]{2})-([A-Z0-9]{4})-([A-Z0-9])$/);
 
     if (!match) return null;
@@ -57,7 +57,7 @@ const VisualCode = {
 };
 
 // Test code generation
-const testPrefix = "BX";
+const testPrefix = "KX";
 const testDigits = "1234";
 const code = VisualCode.generate(testPrefix, testDigits);
 const checksum = VisualCode.generateChecksum(testPrefix, testDigits);
@@ -69,8 +69,8 @@ console.log(`Is the code valid? ${VisualCode.validate(code)}`);
 // Test a few different combinations
 console.log("\nTesting different combinations:");
 [
-  ["BX", "1234"],
-  ["BX", "9876"],
+  ["KX", "1234"],
+  ["KX", "9876"],
   ["CX", "5432"],
   ["AZ", "0123"],
 ].forEach(([prefix, digits]) => {
@@ -83,10 +83,10 @@ console.log("\nTesting different combinations:");
 // Test OCR error correction
 console.log("\nTesting OCR error correction scenarios:");
 const testCodes = [
-  "BX-1234-J", // Valid
-  "BX-1234-X", // Invalid checksum
-  "BX-I234-J", // OCR error: I instead of 1
-  "BX-I234-X", // Multiple errors
+  "KX-1234-J", // Valid
+  "KX-1234-X", // Invalid checksum
+  "KX-I234-J", // OCR error: I instead of 1
+  "KX-I234-X", // Multiple errors
 ];
 
 testCodes.forEach((code) => {
@@ -143,7 +143,7 @@ export const VisualCode2 = {
     return nanoid(length).slice(0, length).toUpperCase();
   },
 
-  generateRandomVisualCode: (prefix = "BX") => {
+  generateRandomVisualCode: (prefix = "KX") => {
     const digits = VisualCode2.generateRandomDigits(4);
     const checksum = VisualCode2.generateChecksum(prefix, digits);
     return `${prefix}-${digits}-${checksum}`;

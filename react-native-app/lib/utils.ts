@@ -246,7 +246,7 @@ export const randomUUIDv4 = () => {
 export const VisualCode = {
   ALLOWED_CHARS: "347ACDEFHKMNPRTUVWXY",
 
-  /* Format: BX-XXXX-C where C is the checksum
+  /* Format: KX-XXXX-C where C is the checksum
      Returns null if the format doesn't match */
   parseCode: (
     code: string,
@@ -254,7 +254,7 @@ export const VisualCode = {
     /* Normalize the code: uppercase and remove spaces */
     code = code.toUpperCase().replace(/\s/g, "");
 
-    /* Check if the code follows the pattern BX-XXXX-C */
+    /* Check if the code follows the pattern KX-XXXX-C */
     const match = code.match(/^([A-Z]{2})-([A-Z0-9]{4})-([A-Z0-9])$/);
 
     if (!match) return null;
@@ -290,7 +290,7 @@ export const VisualCode = {
     return parsed.checksum === expected;
   },
 
-  generate: (prefix = "BX", digits?: string): string => {
+  generate: (prefix = "KX", digits?: string): string => {
     if (!digits) {
       digits = "";
       for (let i = 0; i < 4; i++) {
@@ -342,7 +342,7 @@ export const VisualCode = {
 
     const normalized = text.toUpperCase().replace(/\s+/g, "");
 
-    const codePattern = /(BX)[-_]([A-Z0-9]{4})[-_]([A-Z0-9])/g;
+    const codePattern = /(KX)[-_]([A-Z0-9]{4})[-_]([A-Z0-9])/g;
 
     let match;
     while ((match = codePattern.exec(normalized)) !== null) {
