@@ -24,6 +24,7 @@ import { ParentAssetInfo } from "@/components/ParentAssetInfo";
 import { Quantity } from "@/components/AssetQuantity";
 import { Feather } from "@expo/vector-icons";
 import { Item } from "@/types";
+import { clearParentStack, pushParent } from "@/signals/parent";
 
 const ItemDetail = () => {
   const { id, itemData } = useLocalSearchParams<{
@@ -84,6 +85,22 @@ const ItemDetail = () => {
         style: "destructive",
       },
     ]);
+  };
+
+  const handleParentPress = () => {
+    if (item?.parentId && item?.parentType && item?.parentName) {
+      clearParentStack();
+      pushParent({
+        id: item.parentId,
+        type: item.parentType,
+        name: item.parentName,
+      });
+
+      router.push({
+        pathname: "/",
+        // params: { parentId: item?.parentId, parentType: item?.parentType },
+      });
+    }
   };
 
   return (

@@ -130,7 +130,6 @@ export default function Index() {
           return true;
         }
 
-        console.log("[hardwareBackPress] Returning", !isFocused);
         return isFocused; /* true to prevent default behavior */
       },
     );
