@@ -5,6 +5,8 @@ export * from "./CreateContainer/CreateContainerCommand.ts";
 export * from "./CreateContainer/CreateContainerUsecase.ts";
 export * from "./CreateItem/CreateItemCommand.ts";
 export * from "./CreateItem/CreateItemUsecase.ts";
+export * from "./DeleteContainer/DeleteContainerCommand.ts";
+export * from "./DeleteContainer/DeleteContainerUsecase.ts";
 export * from "./DeleteFileForItem/DeleteFileForItemCommand.ts";
 export * from "./DeleteFileForItem/DeleteFileForItemUsecase.ts";
 export * from "./DeleteItem/DeleteItemCommand.ts";

@@ -3,8 +3,9 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import _express from "express";
 import { CONTAINERS_REPOSITORY } from "@/injection-tokens.ts";
 import { ContainersController } from "@/controllers/index.ts";
-import { WeaviateV2ContainersRepository } from "@/repositories/index.ts";
+import { WeaviateV2AssetsRepository, WeaviateV2ContainersRepository } from "@/repositories/index.ts";
 import { bootstrap } from "@/bootstrap.ts";
+import { ASSETS_REPOSITORY } from "@/injection-tokens.ts";
 
 const port = 8000; // Default port for Supabase functions
 
@@ -19,6 +20,10 @@ const { app } = bootstrap({
       token: CONTAINERS_REPOSITORY,
       repository: WeaviateV2ContainersRepository,
     },
+    {
+      token: ASSETS_REPOSITORY,
+      repository: WeaviateV2AssetsRepository,
+    },
   ],
   controllers: [
     {
@@ -26,6 +31,9 @@ const { app } = bootstrap({
       routes: [
         { method: "post", path: "/containers", handler: "create" },
         { method: "get", path: "/containers", handler: "getPaginated" },
+        { method: "get", path: "/containers/:id", handler: "get" },
+        { method: "put", path: "/containers/:id", handler: "update" },
+        { method: "delete", path: "/containers/:id", handler: "delete" },
       ],
     },
   ],

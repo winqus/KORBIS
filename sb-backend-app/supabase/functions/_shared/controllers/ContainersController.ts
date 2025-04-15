@@ -8,6 +8,8 @@ import {
   GetContainerCommand,
   UpdateContainer,
   UpdateContainerCommand,
+  DeleteContainer,
+  DeleteContainerCommand,
 } from "../usecases/index.ts";
 import { handleError } from "./errorHandler.ts";
 import { inject, injectable } from "@needle-di/core";
@@ -19,6 +21,7 @@ export class ContainersController {
     private readonly getContainersUsecase = inject(GetContainers),
     private readonly getContainerUsecase = inject(GetContainer),
     private readonly updateContainerUsecase = inject(UpdateContainer),
+    private readonly deleteContainerUsecase = inject(DeleteContainer),
   ) {}
 
   public async create(req: Request, res: Response, next: NextFunction) {
@@ -100,6 +103,24 @@ export class ContainersController {
       const result = await this.updateContainerUsecase.execute(command);
 
       res.status(200).json(result);
+    } catch (error) {
+      handleError(error, req, res, next);
+    }
+  }
+
+  public async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const userId = req["userId"] as string;
+
+      const command = DeleteContainerCommand.create({
+        containerId: id,
+        userId,
+      });
+
+      await this.deleteContainerUsecase.execute(command);
+
+      res.status(204).send();
     } catch (error) {
       handleError(error, req, res, next);
     }
