@@ -418,11 +418,15 @@ export async function updateItem({
   name,
   description,
   quantity,
+  parentId,
+  parentType,
 }: {
   id: string;
   name?: string;
   description?: string;
   quantity?: number;
+  parentId?: string;
+  parentType?: string;
 }) {
   try {
     const user = await requireAuthentication();
@@ -431,7 +435,11 @@ export async function updateItem({
       name: name || undefined,
       description: description || undefined,
       quantity: quantity || undefined,
+      parentId: parentId || undefined,
+      parentType: parentType || undefined,
     };
+
+    console.log("updateItem with:", updateData);
 
     const updatedItem = await invokeFunction<any>(`items/${id}`, {
       method: "PUT",
@@ -448,6 +456,29 @@ export async function updateItem({
   } catch (error) {
     console.error("Failed to update item:", error);
     return null;
+  }
+}
+
+export async function getContainers() {
+  try {
+    const user = await requireAuthentication();
+
+    const assets = await invokeFunction<any>("containers", {
+      method: "GET",
+    });
+
+    if (!assets || !Array.isArray(assets)) {
+      return [];
+    }
+
+    const containers = assets.filter((asset) => asset.type === "container");
+
+    console.log(`getContainers retrieved ${containers.length} containers`);
+
+    return mapAny2Containers(containers, user, config);
+  } catch (error) {
+    console.error("getContainers error", error);
+    return [];
   }
 }
 

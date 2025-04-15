@@ -12,7 +12,12 @@ import { Image } from "expo-image";
 
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { deleteItem, getItemById, updateItem } from "@/lib/supabase";
+import {
+  deleteItem,
+  getItemById,
+  updateItem,
+  getContainers,
+} from "@/lib/supabase";
 import { useSupabase } from "@/lib/useSupabase";
 import { useItemFiles } from "@/lib/useItemFiles";
 import icons from "@/constants/icons";
@@ -23,9 +28,10 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { ParentAssetInfo } from "@/components/ParentAssetInfo";
 import { Quantity } from "@/components/AssetQuantity";
 import { Feather } from "@expo/vector-icons";
-import { Item } from "@/types";
+import { Container, Item } from "@/types";
 import { clearParentStack, pushParent } from "@/signals/parent";
 import GenerativeInputField from "@/components/GenerativeInputField";
+import ParentSelector from "@/components/ParentSelector";
 
 const ItemDetail = () => {
   const { id, itemData } = useLocalSearchParams<{
@@ -37,6 +43,8 @@ const ItemDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedItem, setEditedItem] = useState<Item | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [containers, setContainers] = useState<Container[]>([]);
+  const [isLoadingContainers, setIsLoadingContainers] = useState(false);
   const {
     files,
     isLoading: isLoadingFiles,
@@ -56,6 +64,25 @@ const ItemDetail = () => {
       }
     }
   }, [itemData]);
+
+  useEffect(() => {
+    if (isEditing) {
+      fetchContainers();
+    }
+  }, [isEditing]);
+
+  const fetchContainers = async () => {
+    setIsLoadingContainers(true);
+    try {
+      const data = await getContainers();
+      setContainers(data);
+    } catch (error) {
+      console.error("Failed to fetch containers:", error);
+      Alert.alert("Error", "Failed to load containers");
+    } finally {
+      setIsLoadingContainers(false);
+    }
+  };
 
   if (!id) {
     console.error("No item ID provided");
@@ -127,6 +154,8 @@ const ItemDetail = () => {
         name: editedItem.name,
         description: editedItem.description,
         quantity: editedItem.quantity,
+        parentId: editedItem.parentId,
+        parentType: editedItem.parentType,
       });
 
       if (!updatedItem) {
@@ -162,6 +191,21 @@ const ItemDetail = () => {
       setEditedItem({
         ...editedItem,
         quantity: editedItem.quantity + 1,
+      });
+    }
+  };
+
+  const handleParentChange = (parent: {
+    id?: string;
+    type?: string;
+    name?: string;
+  }) => {
+    if (editedItem) {
+      setEditedItem({
+        ...editedItem,
+        parentId: parent.id,
+        parentType: parent.type as "root" | "container",
+        parentName: parent.name,
       });
     }
   };
@@ -239,11 +283,22 @@ const ItemDetail = () => {
           {/* Name and Tags*/}
           <View className="flex flex-col items-start gap-3">
             <View className="flex flex-row w-full justify-between items-center py-0.5 gap-2.5">
-              <ParentAssetInfo
-                parentType={item?.parentType}
-                parentName={item?.parentName || "My Home"}
-                onPress={handleParentPress}
-              />
+              {isEditing ? (
+                <ParentSelector
+                  currentParentId={editedItem?.parentId}
+                  currentParentType={editedItem?.parentType}
+                  currentParentName={editedItem?.parentName || "My Home"}
+                  onSelectParent={handleParentChange}
+                  containers={containers}
+                  isLoading={isLoadingContainers}
+                />
+              ) : (
+                <ParentAssetInfo
+                  parentType={item?.parentType}
+                  parentName={item?.parentName || "My Home"}
+                  onPress={handleParentPress}
+                />
+              )}
               {item?.quantity! >= 0 ? (
                 isEditing ? (
                   <Quantity
