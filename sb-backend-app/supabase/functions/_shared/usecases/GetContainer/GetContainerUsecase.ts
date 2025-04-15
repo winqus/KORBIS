@@ -28,8 +28,6 @@ export class GetContainer {
       container = await this.containersRepository.findByVisualCode(visualCode);
     }
 
-    console.log(">>>>>>>>>>>>>>>>>>>container", container);
-    
     if (!container) {
       const errorMessage = `Container with ${containerId ? "ID" : "visual code"} ${containerId ?? visualCode} not found`;
       throw new DocumentNotFoundError("Container", containerId ?? visualCode ?? "", errorMessage);

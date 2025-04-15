@@ -115,7 +115,7 @@ export function isDefined<T>(value: T | null | undefined): value is T {
 }
 
 export const VisualCode = {
-  ALLOWED_CHARS: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  ALLOWED_CHARS: "347ACDEFHKMNPRTUVWXY",
 
   generateChecksum: (prefix: string, digits: string): string => {
     const combined = prefix + digits;
