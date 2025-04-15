@@ -7,6 +7,11 @@ import { ImageType, Item } from "@/types";
 import { useIsFocused } from "@react-navigation/core";
 import { AutoCreateItemsPayload, enqueueJobs } from "@/signals/queue";
 import { useRouter } from "expo-router";
+import { signal } from "@preact/signals-react";
+
+export const manualCandidates = signal<
+  { quantity: number; imageUri: string }[]
+>([]);
 
 const Camera = () => {
   const router = useRouter();
@@ -33,8 +38,29 @@ const Camera = () => {
     router.push("/");
   };
 
-  const handleManualAdd = () => {
-    console.log("TODO: Handle manual item creation");
+  const handleManualAdd = (
+    candidates: { quantity: number; imageUri: string }[],
+  ) => {
+    if (candidates.length > 0) {
+      manualCandidates.value = candidates;
+
+      processNextCandidate();
+    }
+  };
+
+  const processNextCandidate = () => {
+    if (manualCandidates.value.length > 0) {
+      const firstCandidate = manualCandidates.value[0];
+
+      router.push({
+        pathname: "/item-creation",
+        params: {
+          initialQuantity: firstCandidate.quantity.toString(),
+          initialPictureUri: firstCandidate.imageUri,
+          remainingCandidates: (manualCandidates.value.length - 1).toString(),
+        },
+      });
+    }
   };
 
   const handleItemSelect = (item: Item) => {
