@@ -306,6 +306,73 @@ export async function createContainer({
   }
 }
 
+export async function updateContainer({
+  id,
+  name,
+  description,
+  parentId,
+  parentType,
+}: {
+  id: string;
+  name?: string;
+  description?: string;
+  parentId?: string;
+  parentType?: string;
+}) {
+  try {
+    const user = await requireAuthentication();
+
+    const updateData: Record<string, any> = {
+      name: name || undefined,
+      description: description || undefined,
+      parentId: parentId || undefined,
+      parentType: parentType || undefined,
+    };
+
+    console.log("updateContainer with:", updateData);
+
+    const updatedContainer = await invokeFunction<any>(`containers/${id}`, {
+      method: "PUT",
+      body: updateData,
+    });
+
+    invalidateCacheByFn("getContainerById");
+    invalidateCacheByFn("getContainers");
+    invalidateCacheByFn("getItems");
+    invalidateCacheByFn("searchItems");
+    invalidateCacheByFn("getAssets");
+    invalidateCacheByFn("searchAssets");
+
+    return mapAny2Container(updatedContainer, user, config);
+  } catch (error) {
+    console.error("Failed to update container:", error);
+    return null;
+  }
+}
+
+export async function deleteContainer({ id }: Pick<Container, "id">) {
+  try {
+    if (!id) {
+      throw new Error("No container ID provided");
+    }
+
+    await requireAuthentication();
+
+    await invokeFunction(`containers/${id}`, { method: "DELETE" });
+
+    invalidateCacheByFn("getContainerById");
+    invalidateCacheByFn("getContainers");
+    invalidateCacheByFn("searchItems");
+    invalidateCacheByFn("getAssets");
+    invalidateCacheByFn("searchAssets");
+
+    return true;
+  } catch (error) {
+    console.error("Failed to delete container:", error);
+    return false;
+  }
+}
+
 export async function getItems(options?: {
   limit: number;
   offset: number;
@@ -353,6 +420,30 @@ export async function getItemById({ id }: Pick<Item, "id">) {
     return mapAny2Item(item, user, config);
   } catch (error) {
     console.error("getItemById error", error);
+    return null;
+  }
+}
+
+export async function getContainerById({ id }: Pick<Container, "id">) {
+  try {
+    if (!id) {
+      throw new Error("No container ID provided");
+    }
+
+    const user = await requireAuthentication();
+
+    const container = await invokeFunction<any>(`containers/${id}`, {
+      method: "GET",
+    });
+
+    if (!container) {
+      throw new Error("Returned container is null");
+    }
+    console.log(`getContainerById retrieved "${container.id}"`);
+
+    return mapAny2Container(container, user, config);
+  } catch (error) {
+    console.error("getContainerById error", error);
     return null;
   }
 }

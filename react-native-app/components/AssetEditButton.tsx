@@ -19,12 +19,14 @@ export const AssetEditButton = ({
   if (isEditing) {
     return (
       <View className="flex flex-row items-center gap-2">
-        <TouchableOpacity
-          onPress={onCancel}
-          className="flex flex-row items-center justify-center py-1.5 px-3 bg-gray-200 rounded-full"
-        >
-          <Text className="text-black-300 font-rubik-medium">Cancel</Text>
-        </TouchableOpacity>
+        {!isSaving && (
+          <TouchableOpacity
+            onPress={onCancel}
+            className="flex flex-row items-center justify-center py-1.5 px-3 bg-gray-200 rounded-full"
+          >
+            <Text className="text-black-300 font-rubik-medium">Cancel</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           onPress={onSave}
           disabled={isSaving}

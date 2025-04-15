@@ -6,8 +6,13 @@ import { useSupabase } from "@/lib/useSupabase";
 import ItemList from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import icons from "@/constants/icons";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import { AssetType, IVirtualAsset } from "@/types";
+import {
+  router,
+  useLocalSearchParams,
+  useNavigation,
+  useRouter,
+} from "expo-router";
+import { AssetType, IVirtualAsset, VirtualAsset } from "@/types";
 import SearchBar from "@/components/SearchBar";
 import React, { useEffect, useRef } from "react";
 import { isProcessing, pendingJobsCount, jobQueue } from "@/signals/queue";
@@ -62,6 +67,30 @@ export default function Index() {
 
   const handleProfilePress = () => router.push("/profile");
 
+  const handleGoAssetDetails = ({
+    id,
+    type,
+    name,
+    data,
+  }: Pick<IVirtualAsset, "id" | "type" | "name"> & {
+    data?: Partial<IVirtualAsset>;
+  }) => {
+    if (type === "item") {
+      router.push({
+        pathname: "/items/[id]",
+        params: { id: id, itemData: data ? JSON.stringify(data) : undefined },
+      });
+    } else if (type === "container") {
+      router.push({
+        pathname: "/containers/[id]",
+        params: {
+          id: id,
+          containerData: data ? JSON.stringify(data) : undefined,
+        },
+      });
+    }
+  };
+
   const handleCardPress = (asset: IVirtualAsset) => {
     if (asset.ownerId === "queue" || asset.ownerId === "manual-queue") {
       return;
@@ -90,11 +119,10 @@ export default function Index() {
       return;
     } else if (asset.type === "container") {
       console.log("Long pressed container", asset);
-      // TODO: Implement container long press
-      // router.push({
-      //   pathname: "/containers/[id]",
-      //   params: { id: asset.id, containerData: JSON.stringify(asset) },
-      // });
+      router.push({
+        pathname: "/containers/[id]",
+        params: { id: asset.id, containerData: JSON.stringify(asset) },
+      });
     }
   };
 
@@ -224,7 +252,18 @@ export default function Index() {
           {loadingItems
             ? "Searching in"
             : `Found ${combinedAssets.length} item(s) in`}{" "}
-          <Text className="font-rubik-bold text-primary-300">
+          <Text
+            className="font-rubik-bold text-primary-300"
+            onPress={() => {
+              if (currentParentAsset.value.type !== "root") {
+                handleGoAssetDetails({
+                  id: currentParentAsset.value.id!,
+                  type: currentParentAsset.value.type,
+                  name: currentParentAsset.value.name,
+                });
+              }
+            }}
+          >
             {currentParentAsset.value.name}
           </Text>
         </Text>
