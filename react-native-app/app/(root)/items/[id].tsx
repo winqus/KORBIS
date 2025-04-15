@@ -121,13 +121,13 @@ const ItemDetail = () => {
                 />
               </TouchableOpacity>
 
-              <View className="flex flex-row items-center size-12">
+              {/* <View className="flex flex-row items-center size-12">
                 <Image
                   source={icons.heart}
                   className="size-7"
                   tintColor={"#191D31"}
                 />
-              </View>
+              </View> */}
             </View>
           </View>
         </View>
