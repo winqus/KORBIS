@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   createContainer,
   generateItemMetadataFromPicture,
+  getContainers,
 } from "@/lib/supabase";
 import * as ImagePicker from "expo-image-picker";
 import { AssetType, GeneratedItemMetadata } from "@/types";
@@ -22,6 +23,8 @@ import detectNewline from "detect-newline";
 import Checkbox from "expo-checkbox";
 import { enqueueManualJob } from "@/signals/manual-queue";
 import { manualCandidates } from "@/app/(root)/(tabs)/camera";
+import { ParentSelector } from "@/components/ParentSelector";
+import { useSupabase } from "@/lib/useSupabase";
 
 const ItemCreation = () => {
   const router = useRouter();
@@ -57,6 +60,12 @@ const ItemCreation = () => {
     description: "description",
   };
 
+  const { data: containers, loading: loadingContainers } = useSupabase({
+    fn: getContainers,
+    params: {},
+    skip: false,
+  });
+
   useEffect(() => {
     setCanAdd(form.name.length > 0);
   }, [form.name]);
@@ -84,6 +93,18 @@ const ItemCreation = () => {
     }
 
     router.replace("/camera");
+  };
+
+  const handleParentChange = (parent: {
+    id?: string;
+    type?: string;
+    name?: string;
+  }) => {
+    setParentAsset({
+      id: parent.id,
+      type: parent.type as "root" | "container",
+      name: parent.name || "My Home",
+    });
   };
 
   const handleGenerate = async () => {
@@ -281,9 +302,13 @@ const ItemCreation = () => {
           <View className="flex flex-col w-full justify-center items-start py-2 px-5 gap-2.5">
             {/* Container and Quantity Row */}
             <View className="flex flex-row w-full justify-between items-center py-0.5 gap-2.5">
-              <ParentAssetInfo
-                parentType={parentAsset.type}
-                parentName={parentAsset.name}
+              <ParentSelector
+                currentParentId={parentAsset.id}
+                currentParentType={parentAsset.type}
+                currentParentName={parentAsset.name}
+                onSelectParent={handleParentChange}
+                containers={containers || []}
+                isLoading={loadingContainers}
               />
               {!form.isContainer && (
                 <Quantity
