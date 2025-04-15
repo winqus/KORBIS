@@ -7,11 +7,15 @@ import { WEAVIATE_CLIENT } from "../injection-tokens.ts";
 import { ContainersRepository } from "../interfaces/index.ts";
 import { Optional } from "../core/index.ts";
 import { randomUUID } from "../utils.ts";
+import { DEFAULT_PAGINATION_LIMIT } from "../config.ts";
 
 @injectable()
 export class WeaviateV2ContainersRepository
   extends WeaviateV2BaseRepository<Container>
   implements ContainersRepository {
+  protected readonly classProperties = containerSchema.properties.map((property) =>
+    property.name
+  ).filter((property) => property !== "image");
   protected readonly assetType = "container";
 
   constructor(client: WeaviateClient = inject(WEAVIATE_CLIENT)) {
@@ -56,5 +60,55 @@ export class WeaviateV2ContainersRepository
       });
 
     return this.mapObject2Entity(newObject);
+  }
+
+  public async paginate(
+    options: {
+      limit?: number;
+      skip?: number;
+      ownerId: string;
+      parentId?: string;
+    },
+  ): Promise<Container[]> {
+    try {
+      const { limit, skip, ownerId, parentId } = options;
+
+      let query = this.client.graphql.get()
+        .withClassName(this.className)
+        .withFields(`${this.classProperties} _additional{id creationTimeUnix}`)
+        .withLimit(limit || DEFAULT_PAGINATION_LIMIT)
+        .withOffset(skip || 0)
+        .withSort([{
+          path: ["_creationTimeUnix"],
+          order: "desc"
+        }]);
+
+      query = query.withWhere({
+        path: ["ownerId"],
+        operator: "Equal",
+        valueString: ownerId,
+      });
+
+      if (parentId) {
+        query = query.withWhere({
+          path: ["parentId"],
+          operator: "Equal",
+          valueString: parentId,
+        });
+      }
+
+      const objects = await query.do();
+
+      if (!objects || !objects.data) {
+        return [];
+      }
+
+      return this.mapObjects2Entities(
+        objects.data.Get[this.className] || [],
+      );
+    } catch (error: any) {
+      this.error("paginate", "Failed retrieving containers:", error?.message);
+      return [];
+    }
   }
 }

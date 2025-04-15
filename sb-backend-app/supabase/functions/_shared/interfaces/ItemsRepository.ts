@@ -30,6 +30,8 @@ export interface ItemsRepository {
 
   delete(id: string): Promise<void>;
 
+  update(id: string, data: Partial<Item>): Promise<Item | null>;
+
   search(query: SearchItemsProps): Promise<Scored<Item>[]>;
   
   addFile(
