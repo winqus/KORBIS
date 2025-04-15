@@ -36,6 +36,7 @@ const itemsControllerOld = new ItemsControllerOld(
 /* NEW */
 app.post("/items", itemsController.create.bind(itemsController));
 app.get("/items/:id", itemsController.get.bind(itemsController));
+app.put("/items/:id", itemsController.update.bind(itemsController));
 app.delete("/items/:id", itemsController.delete.bind(itemsController));
 app.get("/items", itemsController.getPaginated.bind(itemsController));
 app.post("/items/files", itemsController.addFile.bind(itemsController));

@@ -398,26 +398,87 @@ export async function searchItems({
 
 export async function deleteItem({ id }: Pick<Item, "id">) {
   try {
-    if (!id) {
-      throw new Error("No item ID provided");
-    }
-
     await requireAuthentication();
 
-    await invokeFunction(`items/${id}`, { method: "DELETE" });
+    const { error } = await supabase.from("items").delete().eq("id", id);
 
-    console.log(`Successfully deleted item with ID: ${id}`);
+    if (error) {
+      throw new Error(error.message);
+    }
 
+    return true;
+  } catch (error) {
+    console.error("Failed to delete item:", error);
+    return false;
+  }
+}
+
+export async function updateItem({
+  id,
+  name,
+  description,
+  quantity,
+  parentId,
+  parentType,
+}: {
+  id: string;
+  name?: string;
+  description?: string;
+  quantity?: number;
+  parentId?: string;
+  parentType?: string;
+}) {
+  try {
+    const user = await requireAuthentication();
+
+    const updateData: Record<string, any> = {
+      name: name || undefined,
+      description: description || undefined,
+      quantity: quantity || undefined,
+      parentId: parentId || undefined,
+      parentType: parentType || undefined,
+    };
+
+    console.log("updateItem with:", updateData);
+
+    const updatedItem = await invokeFunction<any>(`items/${id}`, {
+      method: "PUT",
+      body: updateData,
+    });
+
+    invalidateCacheByFn("getItemById");
     invalidateCacheByFn("getItems");
     invalidateCacheByFn("searchItems");
     invalidateCacheByFn("getAssets");
     invalidateCacheByFn("searchAssets");
-    invalidateCacheByFn("getItemById");
 
-    return true;
+    return mapAny2Item(updatedItem, user, config);
   } catch (error) {
-    console.error("deleteItem error", error);
-    return false;
+    console.error("Failed to update item:", error);
+    return null;
+  }
+}
+
+export async function getContainers() {
+  try {
+    const user = await requireAuthentication();
+
+    const assets = await invokeFunction<any>("containers", {
+      method: "GET",
+    });
+
+    if (!assets || !Array.isArray(assets)) {
+      return [];
+    }
+
+    const containers = assets.filter((asset) => asset.type === "container");
+
+    console.log(`getContainers retrieved ${containers.length} containers`);
+
+    return mapAny2Containers(containers, user, config);
+  } catch (error) {
+    console.error("getContainers error", error);
+    return [];
   }
 }
 

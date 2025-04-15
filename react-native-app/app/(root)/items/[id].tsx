@@ -12,7 +12,12 @@ import { Image } from "expo-image";
 
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { deleteItem, getItemById } from "@/lib/supabase";
+import {
+  deleteItem,
+  getItemById,
+  updateItem,
+  getContainers,
+} from "@/lib/supabase";
 import { useSupabase } from "@/lib/useSupabase";
 import { useItemFiles } from "@/lib/useItemFiles";
 import icons from "@/constants/icons";
@@ -23,8 +28,10 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { ParentAssetInfo } from "@/components/ParentAssetInfo";
 import { Quantity } from "@/components/AssetQuantity";
 import { Feather } from "@expo/vector-icons";
-import { Item } from "@/types";
+import { Container, Item } from "@/types";
 import { clearParentStack, pushParent } from "@/signals/parent";
+import GenerativeInputField from "@/components/GenerativeInputField";
+import ParentSelector from "@/components/ParentSelector";
 
 const ItemDetail = () => {
   const { id, itemData } = useLocalSearchParams<{
@@ -33,6 +40,11 @@ const ItemDetail = () => {
   }>();
   const router = useRouter();
   const [initialItem, setInitialItem] = useState<Item | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedItem, setEditedItem] = useState<Item | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [containers, setContainers] = useState<Container[]>([]);
+  const [isLoadingContainers, setIsLoadingContainers] = useState(false);
   const {
     files,
     isLoading: isLoadingFiles,
@@ -46,11 +58,31 @@ const ItemDetail = () => {
       try {
         const parsedItem = JSON.parse(itemData) as Item;
         setInitialItem(parsedItem);
+        setEditedItem(parsedItem);
       } catch (error) {
         console.error("Failed to parse item data:", error);
       }
     }
   }, [itemData]);
+
+  useEffect(() => {
+    if (isEditing) {
+      fetchContainers();
+    }
+  }, [isEditing]);
+
+  const fetchContainers = async () => {
+    setIsLoadingContainers(true);
+    try {
+      const data = await getContainers();
+      setContainers(data);
+    } catch (error) {
+      console.error("Failed to fetch containers:", error);
+      Alert.alert("Error", "Failed to load containers");
+    } finally {
+      setIsLoadingContainers(false);
+    }
+  };
 
   if (!id) {
     console.error("No item ID provided");
@@ -69,6 +101,12 @@ const ItemDetail = () => {
   });
 
   const item = initialItem || fetchedItem;
+
+  useEffect(() => {
+    if (fetchedItem && !initialItem) {
+      setEditedItem(fetchedItem);
+    }
+  }, [fetchedItem, initialItem]);
 
   const handleDelete = () => {
     Alert.alert("Delete Item", "Are you sure you want to delete this item?", [
@@ -98,7 +136,76 @@ const ItemDetail = () => {
 
       router.push({
         pathname: "/",
-        // params: { parentId: item?.parentId, parentType: item?.parentType },
+      });
+    }
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    if (!editedItem) return;
+
+    setIsSaving(true);
+    try {
+      const updatedItem = await updateItem({
+        id: id!,
+        name: editedItem.name,
+        description: editedItem.description,
+        quantity: editedItem.quantity,
+        parentId: editedItem.parentId,
+        parentType: editedItem.parentType,
+      });
+
+      if (!updatedItem) {
+        throw new Error("Failed to update item");
+      }
+
+      setInitialItem(updatedItem);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to update item:", error);
+      Alert.alert("Error", "Failed to update item");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditedItem(item);
+    setIsEditing(false);
+  };
+
+  const handleQuantityDecrease = () => {
+    if (editedItem) {
+      setEditedItem({
+        ...editedItem,
+        quantity: Math.max(1, editedItem.quantity - 1),
+      });
+    }
+  };
+
+  const handleQuantityIncrease = () => {
+    if (editedItem) {
+      setEditedItem({
+        ...editedItem,
+        quantity: editedItem.quantity + 1,
+      });
+    }
+  };
+
+  const handleParentChange = (parent: {
+    id?: string;
+    type?: string;
+    name?: string;
+  }) => {
+    if (editedItem) {
+      setEditedItem({
+        ...editedItem,
+        parentId: parent.id,
+        parentType: parent.type as "root" | "container",
+        parentName: parent.name,
       });
     }
   };
@@ -138,13 +245,36 @@ const ItemDetail = () => {
                 />
               </TouchableOpacity>
 
-              {/* <View className="flex flex-row items-center size-12">
-                <Image
-                  source={icons.heart}
-                  className="size-7"
-                  tintColor={"#191D31"}
-                />
-              </View> */}
+              {isEditing ? (
+                <View className="flex flex-row items-center gap-2">
+                  <TouchableOpacity
+                    onPress={handleCancel}
+                    className="flex flex-row items-center justify-center py-1.5 px-3 bg-gray-200 rounded-full"
+                  >
+                    <Text className="text-black-300 font-rubik-medium">
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSave}
+                    disabled={isSaving}
+                    className="flex flex-row items-center justify-center py-1.5 px-3 bg-primary-500 rounded-full"
+                  >
+                    {isSaving ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Text className="text-white font-rubik-medium">Save</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleEdit}
+                  className="flex flex-row items-center justify-center py-1.5 px-3 bg-primary-500 rounded-full"
+                >
+                  <Text className="text-white font-rubik-medium">Edit</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -153,17 +283,55 @@ const ItemDetail = () => {
           {/* Name and Tags*/}
           <View className="flex flex-col items-start gap-3">
             <View className="flex flex-row w-full justify-between items-center py-0.5 gap-2.5">
-              <ParentAssetInfo
-                parentType={item?.parentType}
-                parentName={item?.parentName || "My Home"}
-              />
-              {item?.quantity! > 1 ? (
-                <Quantity mode="read" value={item!.quantity} />
+              {isEditing ? (
+                <ParentSelector
+                  currentParentId={editedItem?.parentId}
+                  currentParentType={editedItem?.parentType}
+                  currentParentName={editedItem?.parentName || "My Home"}
+                  onSelectParent={handleParentChange}
+                  containers={containers}
+                  isLoading={isLoadingContainers}
+                />
+              ) : (
+                <ParentAssetInfo
+                  parentType={item?.parentType}
+                  parentName={item?.parentName || "My Home"}
+                  onPress={handleParentPress}
+                />
+              )}
+              {item?.quantity! >= 0 ? (
+                isEditing ? (
+                  <Quantity
+                    mode="edit"
+                    value={editedItem?.quantity || 1}
+                    onDecrease={handleQuantityDecrease}
+                    onIncrease={handleQuantityIncrease}
+                  />
+                ) : (
+                  <Quantity mode="read" value={item!.quantity} />
+                )
               ) : null}
             </View>
-            <Text className="text-2xl font-rubik-bold" selectable={true}>
-              {item?.name}
-            </Text>
+
+            {isEditing ? (
+              <GenerativeInputField
+                placeholder="Give it a name"
+                value={editedItem?.name || ""}
+                onChangeText={(value) =>
+                  setEditedItem((prev) =>
+                    prev ? { ...prev, name: value } : null,
+                  )
+                }
+                onClear={() =>
+                  setEditedItem((prev) => (prev ? { ...prev, name: "" } : null))
+                }
+                maxLength={50}
+              />
+            ) : (
+              <Text className="text-2xl font-rubik-bold" selectable={true}>
+                {item?.name}
+              </Text>
+            )}
 
             <View className="flex flex-row items-center gap-1.5">
               <TagPill label="Item" />
@@ -175,12 +343,33 @@ const ItemDetail = () => {
             <Text className="text-black-300 text-xl font-rubik-bold">
               Description
             </Text>
-            <Text
-              className="text-black-200 text-base font-rubik"
-              selectable={true}
-            >
-              {item?.description || "No description available"}
-            </Text>
+            {isEditing ? (
+              <GenerativeInputField
+                placeholder="Describe the item"
+                value={editedItem?.description || ""}
+                onChangeText={(value) =>
+                  setEditedItem((prev) =>
+                    prev ? { ...prev, description: value } : null,
+                  )
+                }
+                onClear={() =>
+                  setEditedItem((prev) =>
+                    prev ? { ...prev, description: "" } : null,
+                  )
+                }
+                multiline={true}
+                scrollEnabled={true}
+                maxLength={999}
+                inputClass="text-black-200 text-base leading-5"
+              />
+            ) : (
+              <Text
+                className="text-black-200 text-base font-rubik"
+                selectable={true}
+              >
+                {item?.description || "No description available"}
+              </Text>
+            )}
           </View>
 
           {/* Attachments */}
