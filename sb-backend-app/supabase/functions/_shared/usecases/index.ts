@@ -11,10 +11,14 @@ export * from "./DeleteItem/DeleteItemCommand.ts";
 export * from "./DeleteItem/DeleteItemUsecase.ts";
 export * from "./GetAssetsOfParent/GetAssetsOfParentCommand.ts";
 export * from "./GetAssetsOfParent/GetAssetsOfParentUsecase.ts";
+export * from "./GetContainers/GetContainersCommand.ts";
+export * from "./GetContainers/GetContainersUsecase.ts";
 export * from "./GetItem/GetItemCommand.ts";
 export * from "./GetItem/GetItemUsecase.ts";
 export * from "./GetItemFiles/GetItemFilesCommand.ts";
 export * from "./GetItemFiles/GetItemFilesUsecase.ts";
 export * from "./GetItems/GetItemsCommand.ts";
 export * from "./GetItems/GetItemsUsecase.ts";
+export * from "./UpdateItem/UpdateItemCommand.ts";
+export * from "./UpdateItem/UpdateItemUsecase.ts";
 // @endindex

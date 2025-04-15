@@ -25,6 +25,7 @@ const { app } = bootstrap({
       instance: ContainersController,
       routes: [
         { method: "post", path: "/containers", handler: "create" },
+        { method: "get", path: "/containers", handler: "getPaginated" },
       ],
     },
   ],

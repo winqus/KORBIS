@@ -13,5 +13,14 @@ export interface ContainersRepository {
 
   delete(id: string): Promise<void>;
 
-  update(id: string, data: Partial<Container>): Promise<Container | null>
+  update(id: string, data: Partial<Container>): Promise<Container | null>;
+
+  paginate(
+    options: {
+      limit?: number;
+      skip?: number;
+      ownerId: string;
+      parentId?: string;
+    },
+  ): Promise<Container[]>;
 }

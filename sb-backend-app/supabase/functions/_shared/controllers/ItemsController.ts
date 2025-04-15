@@ -14,6 +14,8 @@ import {
   DeleteFileForItemCommand,
   GetItemFiles,
   GetItemFilesCommand,
+  UpdateItem,
+  UpdateItemCommand,
 } from "../usecases/index.ts";
 import { handleError } from "./errorHandler.ts";
 import { inject, injectable } from "@needle-di/core";
@@ -28,6 +30,7 @@ export class ItemsController {
     private readonly addFileForItemUsecase = inject(AddFileForItem),
     private readonly deleteFileForItemUsecase = inject(DeleteFileForItem),
     private readonly getItemFilesUsecase = inject(GetItemFiles),
+    private readonly updateItemUsecase = inject(UpdateItem),
   ) {}
 
   public async create(req: Request, res: Response, next: NextFunction) {
@@ -84,6 +87,29 @@ export class ItemsController {
       });
 
       const result = await this.getItemsUsecase.execute(command);
+
+      res.status(200).json(result);
+    } catch (error) {
+      handleError(error, req, res, next);
+    }
+  }
+
+  public async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { name, description, imageBase64, quantity } = req.body;
+      const userId = req["userId"] as string;
+
+      const command = UpdateItemCommand.create({
+        userId,
+        id,
+        name,
+        description,
+        imageBase64,
+        quantity,
+      });
+
+      const result = await this.updateItemUsecase.execute(command);
 
       res.status(200).json(result);
     } catch (error) {
