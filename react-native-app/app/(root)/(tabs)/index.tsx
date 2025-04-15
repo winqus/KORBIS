@@ -9,7 +9,7 @@ import icons from "@/constants/icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { IVirtualAsset } from "@/types";
 import SearchBar from "@/components/SearchBar";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { isProcessing, pendingJobsCount } from "@/signals/queue";
 import {
   pushParent,
@@ -18,6 +18,7 @@ import {
   parentStack,
 } from "@/signals/parent";
 import { useIsFocused } from "@react-navigation/core";
+import { FlashList } from "@shopify/flash-list";
 
 export default function Index() {
   // TODO: remove
@@ -32,6 +33,10 @@ export default function Index() {
     queryImageUri?: string;
   }>();
   const router = useRouter();
+  const listRef = useRef<FlashList<IVirtualAsset>>(null);
+
+  const scrollPositionsRef = useRef<Record<string, number>>({});
+  const currentContainerId = String(currentParentAsset.value.id || "root");
 
   const {
     data: items,
@@ -77,6 +82,24 @@ export default function Index() {
   ]);
 
   const isFocused = useIsFocused();
+
+  const restoreScroll = () => {
+    const savedPosition = scrollPositionsRef.current[currentContainerId] || 0;
+
+    listRef.current?.scrollToOffset({
+      offset: savedPosition,
+      animated: false,
+    });
+  };
+
+  const handleListLoad = () => {
+    if (listRef.current) {
+      setTimeout(() => {
+        restoreScroll();
+      }, 10);
+    }
+  };
+
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
@@ -102,6 +125,12 @@ export default function Index() {
     );
     return () => backHandler.remove();
   }, [isFocused]);
+
+  const handleScroll = (event: any) => {
+    const position = event.nativeEvent.contentOffset.y;
+    // Save position for current container ID
+    scrollPositionsRef.current[currentContainerId] = position;
+  };
 
   const itemListHeader = (
     <View className="px-5">
@@ -156,6 +185,9 @@ export default function Index() {
         loading={loadingItems}
         showHeader={true}
         customHeader={itemListHeader}
+        listRef={listRef}
+        onScroll={handleScroll}
+        onLoad={handleListLoad}
       />
     </SafeAreaView>
   );
