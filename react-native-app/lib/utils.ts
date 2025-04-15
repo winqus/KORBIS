@@ -244,7 +244,7 @@ export const randomUUIDv4 = () => {
 };
 
 export const VisualCode = {
-  ALLOWED_CHARS: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  ALLOWED_CHARS: "347ACDEFHKMNPRTUVWXY",
 
   /* Format: BX-XXXX-C where C is the checksum
      Returns null if the format doesn't match */
@@ -342,9 +342,9 @@ export const VisualCode = {
 
     const normalized = text.toUpperCase().replace(/\s+/g, "");
 
-    const codePattern = /([A-Z]{2})[-_]?([A-Z0-9]{4})[-_]?([A-Z0-9])/g;
-    let match;
+    const codePattern = /(BX)[-_]([A-Z0-9]{4})[-_]([A-Z0-9])/g;
 
+    let match;
     while ((match = codePattern.exec(normalized)) !== null) {
       const extractedCode = `${match[1]}-${match[2]}-${match[3]}`;
       const isValid = VisualCode.validate(extractedCode);

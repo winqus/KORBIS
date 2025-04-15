@@ -453,9 +453,9 @@ export const VisualAssetFinder = ({
                     className="size-8 rounded-md border border-white"
                   />
                 )}
-                <Text className="text-white font-rubik-semibold text-xs py-1 px-2 bg-black/50 rounded-md">
+                {/* <Text className="text-white font-rubik-semibold text-xs py-1 px-2 bg-black/50 rounded-md">
                   {codeData.isValid ? codeData.code : codeData.correctedCode}
-                </Text>
+                </Text> */}
               </TouchableOpacity>
             );
           })}
