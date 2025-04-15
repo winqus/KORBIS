@@ -11,6 +11,8 @@ export * from "./DeleteItem/DeleteItemCommand.ts";
 export * from "./DeleteItem/DeleteItemUsecase.ts";
 export * from "./GetAssetsOfParent/GetAssetsOfParentCommand.ts";
 export * from "./GetAssetsOfParent/GetAssetsOfParentUsecase.ts";
+export * from "./GetContainer/GetContainerCommand.ts";
+export * from "./GetContainer/GetContainerUsecase.ts";
 export * from "./GetContainers/GetContainersCommand.ts";
 export * from "./GetContainers/GetContainersUsecase.ts";
 export * from "./GetItem/GetItemCommand.ts";
