@@ -151,6 +151,8 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
         );
       }
 
+      const fields = this.classProperties.filter(property => property !== "files");
+
       const imageBasedResults: WeaviateScoredSearchResult<Item>[] = [];
       if (queryImageBase64 && queryImageBase64.length > 0) {
         this.log(
@@ -161,7 +163,7 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
 
         const result = await this.client.graphql.get()
           .withClassName("Item")
-          .withFields(`${this.classProperties} _additional{id distance}`)
+          .withFields(`${fields} _additional{id distance}`)
           .withNearImage({ image: queryImageBase64 })
           .withLimit(SEARCH_RESULTS_LIMIT)
           .do();
@@ -194,7 +196,7 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
         const result = await this.client.graphql.get()
           .withClassName("Item")
           .withFields(
-            `${this.classProperties} _additional{id score}`,
+            `${fields} _additional{id score}`,
           )
           .withHybrid({
             query: queryText,
