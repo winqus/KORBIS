@@ -30,7 +30,7 @@ type RootItem = {
   name: string;
 };
 
-const ParentSelector = ({
+export const ParentSelector = ({
   currentParentId,
   currentParentType,
   currentParentName = "My Home",
@@ -148,5 +148,3 @@ const ParentSelector = ({
     </View>
   );
 };
-
-export default ParentSelector;

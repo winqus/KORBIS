@@ -81,6 +81,23 @@ export default function Index() {
     }
   };
 
+  const handleCardLongPress = (asset: IVirtualAsset) => {
+    if (asset.ownerId === "queue" || asset.ownerId === "manual-queue") {
+      return;
+    }
+
+    if (asset.type === "item") {
+      return;
+    } else if (asset.type === "container") {
+      console.log("Long pressed container", asset);
+      // TODO: Implement container long press
+      // router.push({
+      //   pathname: "/containers/[id]",
+      //   params: { id: asset.id, containerData: JSON.stringify(asset) },
+      // });
+    }
+  };
+
   const autoQueueItems: IVirtualAsset[] = jobQueue.value.map((job) => ({
     id: job.id,
     type: "item" as AssetType,
@@ -229,6 +246,7 @@ export default function Index() {
       <ItemList
         assets={loadingItems ? [] : combinedAssets}
         onCardPress={handleCardPress}
+        onCardLongPress={handleCardLongPress}
         loading={loadingItems}
         showHeader={true}
         customHeader={itemListHeader}

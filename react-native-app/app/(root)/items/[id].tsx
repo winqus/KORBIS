@@ -1,15 +1,4 @@
-import {
-  View,
-  Text,
-  Dimensions,
-  Alert,
-  Platform,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-} from "react-native";
-import { Image } from "expo-image";
-
+import { View, Dimensions, Alert, Platform, ScrollView } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -20,18 +9,23 @@ import {
 } from "@/lib/supabase";
 import { useSupabase } from "@/lib/useSupabase";
 import { useItemFiles } from "@/lib/useItemFiles";
-import icons from "@/constants/icons";
-import images from "@/constants/images";
-import { DocumentPill } from "@/components/DocumentPill";
-import { TagPill } from "@/components/TagPill";
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import { ParentAssetInfo } from "@/components/ParentAssetInfo";
-import { Quantity } from "@/components/AssetQuantity";
-import { Feather } from "@expo/vector-icons";
 import { Container, Item } from "@/types";
 import { clearParentStack, pushParent } from "@/signals/parent";
-import GenerativeInputField from "@/components/GenerativeInputField";
-import ParentSelector from "@/components/ParentSelector";
+import {
+  ParentSelector,
+  AssetViewImage,
+  AssetBackButton,
+  AssetEditButton,
+  AssetName,
+  AssetTags,
+  AssetDescription,
+  AssetAttachments,
+  AssetLocation,
+  AssetOther,
+  AssetDeleteButton,
+  ParentAssetInfo,
+  Quantity,
+} from "@/components";
 
 const ItemDetail = () => {
   const { id, itemData } = useLocalSearchParams<{
@@ -210,6 +204,42 @@ const ItemDetail = () => {
     }
   };
 
+  const handleNameChange = (name: string) => {
+    if (editedItem) {
+      setEditedItem({
+        ...editedItem,
+        name,
+      });
+    }
+  };
+
+  const handleClearName = () => {
+    if (editedItem) {
+      setEditedItem({
+        ...editedItem,
+        name: "",
+      });
+    }
+  };
+
+  const handleDescriptionChange = (description: string) => {
+    if (editedItem) {
+      setEditedItem({
+        ...editedItem,
+        description,
+      });
+    }
+  };
+
+  const handleClearDescription = () => {
+    if (editedItem) {
+      setEditedItem({
+        ...editedItem,
+        description: "",
+      });
+    }
+  };
+
   return (
     <View>
       <ScrollView
@@ -217,15 +247,8 @@ const ItemDetail = () => {
         contentContainerClassName="pb-32 bg-white"
       >
         <View className="relative w-full" style={{ height: windowHeight / 2 }}>
-          <Image
-            source={{ uri: item?.imageUrl }}
-            className="size-full"
-            contentFit="cover"
-          />
-          <Image
-            source={images.whiteGradient}
-            className="absolute top-0 w-full z-40"
-          />
+          {/* AssetViewImage */}
+          <AssetViewImage imageUrl={item?.imageUrl} />
 
           <View
             className="z-50 absolute inset-x-2"
@@ -234,55 +257,25 @@ const ItemDetail = () => {
             }}
           >
             <View className="flex flex-row items-center w-full justify-between">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="flex flex-row size-12 items-center justify-center"
-              >
-                <Image
-                  source={icons.back_caret_circle}
-                  className="size-full"
-                  tintColor={"white"}
-                />
-              </TouchableOpacity>
+              {/* BackButton */}
+              <AssetBackButton onPress={() => router.back()} />
 
-              {isEditing ? (
-                <View className="flex flex-row items-center gap-2">
-                  <TouchableOpacity
-                    onPress={handleCancel}
-                    className="flex flex-row items-center justify-center py-1.5 px-3 bg-gray-200 rounded-full"
-                  >
-                    <Text className="text-black-300 font-rubik-medium">
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleSave}
-                    disabled={isSaving}
-                    className="flex flex-row items-center justify-center py-1.5 px-3 bg-primary-500 rounded-full"
-                  >
-                    {isSaving ? (
-                      <ActivityIndicator size="small" color="white" />
-                    ) : (
-                      <Text className="text-white font-rubik-medium">Save</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  onPress={handleEdit}
-                  className="flex flex-row items-center justify-center py-1.5 px-3 bg-primary-500 rounded-full"
-                >
-                  <Text className="text-white font-rubik-medium">Edit</Text>
-                </TouchableOpacity>
-              )}
+              {/* EditButton */}
+              <AssetEditButton
+                isEditing={isEditing}
+                onEdit={handleEdit}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                isSaving={isSaving}
+              />
             </View>
           </View>
         </View>
 
         <View className="flex flex-col px-5 py-6 gap-8">
-          {/* Name and Tags*/}
           <View className="flex flex-col items-start gap-3">
             <View className="flex flex-row w-full justify-between items-center py-0.5 gap-2.5">
+              {/* ParentAsset */}
               {isEditing ? (
                 <ParentSelector
                   currentParentId={editedItem?.parentId}
@@ -299,158 +292,59 @@ const ItemDetail = () => {
                   onPress={handleParentPress}
                 />
               )}
-              {item?.quantity! >= 0 ? (
-                isEditing ? (
-                  <Quantity
-                    mode="edit"
-                    value={editedItem?.quantity || 1}
-                    onDecrease={handleQuantityDecrease}
-                    onIncrease={handleQuantityIncrease}
-                  />
-                ) : (
-                  <Quantity mode="read" value={item!.quantity} />
-                )
-              ) : null}
-            </View>
 
-            {isEditing ? (
-              <GenerativeInputField
-                placeholder="Give it a name"
-                value={editedItem?.name || ""}
-                onChangeText={(value) =>
-                  setEditedItem((prev) =>
-                    prev ? { ...prev, name: value } : null,
-                  )
-                }
-                onClear={() =>
-                  setEditedItem((prev) => (prev ? { ...prev, name: "" } : null))
-                }
-                maxLength={50}
-              />
-            ) : (
-              <Text className="text-2xl font-rubik-bold" selectable={true}>
-                {item?.name}
-              </Text>
-            )}
-
-            <View className="flex flex-row items-center gap-1.5">
-              <TagPill label="Item" />
-            </View>
-          </View>
-
-          {/* Description */}
-          <View className="flex flex-col items-start gap-3">
-            <Text className="text-black-300 text-xl font-rubik-bold">
-              Description
-            </Text>
-            {isEditing ? (
-              <GenerativeInputField
-                placeholder="Describe the item"
-                value={editedItem?.description || ""}
-                onChangeText={(value) =>
-                  setEditedItem((prev) =>
-                    prev ? { ...prev, description: value } : null,
-                  )
-                }
-                onClear={() =>
-                  setEditedItem((prev) =>
-                    prev ? { ...prev, description: "" } : null,
-                  )
-                }
-                multiline={true}
-                scrollEnabled={true}
-                maxLength={999}
-                inputClass="text-black-200 text-base leading-5"
-              />
-            ) : (
-              <Text
-                className="text-black-200 text-base font-rubik"
-                selectable={true}
-              >
-                {item?.description || "No description available"}
-              </Text>
-            )}
-          </View>
-
-          {/* Attachments */}
-          <View className="flex flex-col items-start gap-3">
-            <View className="flex flex-row justify-start items-center gap-2.5">
-              <Text className="text-black-300 text-xl font-rubik-bold">
-                Attachments
-              </Text>
-              <TouchableOpacity disabled={isLoadingFiles} onPress={uploadFile}>
-                <Feather
-                  name="file-plus"
-                  size={20}
-                  color="#666876"
-                  className="size-7"
+              {/* Quantity */}
+              {item?.quantity && (
+                <Quantity
+                  mode={isEditing ? "edit" : "read"}
+                  value={isEditing ? editedItem?.quantity || 1 : item.quantity}
+                  onDecrease={isEditing ? handleQuantityDecrease : undefined}
+                  onIncrease={isEditing ? handleQuantityIncrease : undefined}
                 />
-              </TouchableOpacity>
+              )}
             </View>
-            {isLoadingItem || isLoadingFiles ? (
-              <ActivityIndicator size="small" color="#0061ff" />
-            ) : files.length > 0 ? (
-              <View className="flex flex-col items-start gap-4 w-full">
-                {files.map((file) => (
-                  <DocumentPill
-                    key={file.id}
-                    label={file.originalName}
-                    onPress={() => openFile(file)}
-                    onDelete={() => deleteFile(file.id)}
-                    isDownloaded={file.isDownloaded}
-                  />
-                ))}
-              </View>
-            ) : (
-              <Text
-                className="text-black-200 text-sm font-rubik-medium"
-                onPress={uploadFile}
-              >
-                Tap + to add files
-              </Text>
-            )}
+
+            {/* AssetName */}
+            <AssetName
+              name={isEditing ? editedItem?.name || "" : item?.name || ""}
+              isEditing={isEditing}
+              onNameChange={handleNameChange}
+              onClear={handleClearName}
+            />
+
+            {/* AssetTags */}
+            <AssetTags type="item" />
           </View>
 
-          {/* Location */}
-          <View className="flex flex-col items-start gap-3">
-            <Text className="text-black-300 text-xl font-rubik-bold">
-              Location
-            </Text>
-            <View className="flex flex-row items-center justify-start gap-2">
-              <Image source={icons.location} className="w-7 h-7" />
-              <Text
-                className="text-black-200 text-sm font-rubik-medium"
-                selectable={true}
-              >
-                Lithuania, Vilnius
-              </Text>
-            </View>
-          </View>
+          {/* AssetDescription */}
+          <AssetDescription
+            description={
+              isEditing
+                ? editedItem?.description || ""
+                : item?.description || ""
+            }
+            isEditing={isEditing}
+            onDescriptionChange={handleDescriptionChange}
+            onClear={handleClearDescription}
+          />
 
-          {/* Other */}
-          <View className="flex flex-col items-start gap-3">
-            <Text className="text-black-300 text-xl font-rubik-bold">
-              Other
-            </Text>
-            <View className="flex flex-row items-center justify-start gap-2">
-              <Text
-                className="text-black-200 text-sm font-rubik-medium"
-                selectable={true}
-              >
-                ID: {item?.id}
-              </Text>
-            </View>
-          </View>
+          {/* AssetAttachments */}
+          <AssetAttachments
+            files={files}
+            isLoading={isLoadingFiles}
+            onUploadFile={uploadFile}
+            onOpenFile={openFile}
+            onDeleteFile={deleteFile}
+          />
 
-          {/* Delete Button */}
-          <View className="flex flex-col items-center justify-center py-8 gap-1 w-full">
-            <TouchableOpacity
-              onPress={handleDelete}
-              className="flex flex-row items-center justify-center py-1.5 px-4 gap-1.5 w-32 h-9 border border-red-500 rounded-full"
-            >
-              <FontAwesome5 name="trash-alt" size={18} color="#FF0000" />
-            </TouchableOpacity>
-          </View>
+          {/* AssetLocation */}
+          <AssetLocation />
+
+          {/* AssetOther */}
+          <AssetOther id={item?.id || ""} />
+
+          {/* AssetDeleteButton */}
+          <AssetDeleteButton onDelete={handleDelete} />
         </View>
       </ScrollView>
     </View>

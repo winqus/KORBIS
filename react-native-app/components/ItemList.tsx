@@ -8,6 +8,7 @@ import { FlashList } from "@shopify/flash-list";
 interface ItemListProps {
   assets: IVirtualAsset[];
   onCardPress: (item: IVirtualAsset) => void;
+  onCardLongPress?: (item: IVirtualAsset) => void;
   loading?: boolean;
   showHeader?: boolean;
   customHeader?: React.ReactElement;
@@ -22,6 +23,7 @@ const ItemList = ({
   showHeader,
   customHeader,
   onCardPress,
+  onCardLongPress,
   listRef,
   onScroll,
   onLoad,
@@ -75,7 +77,6 @@ const ItemList = ({
             );
           }
 
-          // Check if this is a queue item that should be shown in generating state
           const isQueueItem =
             asset.ownerId === "queue" || asset.ownerId === "manual-queue";
           const variant = isQueueItem ? "generating" : "default";
@@ -88,12 +89,14 @@ const ItemList = ({
                 <ItemCard
                   item={asset}
                   onPress={() => onCardPress(asset)}
+                  onLongPress={() => onCardLongPress?.(asset)}
                   variant={variant}
                 />
               ) : (
                 <ContainerCard
                   container={asset}
                   onPress={() => onCardPress(asset)}
+                  onLongPress={() => onCardLongPress?.(asset)}
                 />
               )}
             </View>
