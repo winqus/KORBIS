@@ -122,7 +122,7 @@ function createAuthMiddleware(container: Container) {
       const authToken = req.get("Authorization")!;
       const jwt = authToken.replace("Bearer ", "");
 
-      if (isLocalEnv()) {
+      if (isLocalEnv() || true) { // TODO: remove after testing
         console.log("[DEV] User JWT token:", jwt);
       } else {
         console.log("User JWT:", jwt.slice(0, 10), "...");
