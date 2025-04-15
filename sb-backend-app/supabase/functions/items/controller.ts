@@ -19,74 +19,74 @@ type CreateItemDTO = {
 export default class ItemsControllerOld {
   constructor(private readonly itemsRepository: ItemsRepository) {}
 
-  public async create(req: Request, res: Response, _next: NextFunction) {
-    try {
-      const { name, description, imageBase64 } = req.body as CreateItemDTO;
-      if (!name || typeof name !== "string") {
-        console.log(`Attempted to create item with invalid name: ${name}`);
-        res.status(400).send("Name of type string is required");
+  // public async create(req: Request, res: Response, _next: NextFunction) {
+  //   try {
+  //     const { name, description, imageBase64 } = req.body as CreateItemDTO;
+  //     if (!name || typeof name !== "string") {
+  //       console.log(`Attempted to create item with invalid name: ${name}`);
+  //       res.status(400).send("Name of type string is required");
 
-        return;
-      }
-      if (description && typeof description !== "string") {
-        console.log(
-          `Attempted to create item with invalid description: ${description}`,
-        );
-        res.status(400).send("Description of type string is required");
+  //       return;
+  //     }
+  //     if (description && typeof description !== "string") {
+  //       console.log(
+  //         `Attempted to create item with invalid description: ${description}`,
+  //       );
+  //       res.status(400).send("Description of type string is required");
 
-        return;
-      }
-      if (imageBase64 && typeof imageBase64 !== "string") {
-        console.log(
-          `Attempted to create item with no image`,
-        );
-        res.status(400).send("Image of type string is required");
+  //       return;
+  //     }
+  //     if (imageBase64 && typeof imageBase64 !== "string") {
+  //       console.log(
+  //         `Attempted to create item with no image`,
+  //       );
+  //       res.status(400).send("Image of type string is required");
 
-        return;
-      }
-      if (
-        imageBase64 && !/^\//.test(imageBase64)
-      ) {
-        console.log(
-          `Invalid Base64 image format: ${imageBase64.substring(0, 30)}...`,
-        );
-        res.status(400).send("Invalid image format. Expected Base64 string.");
-        return;
-      }
+  //       return;
+  //     }
+  //     if (
+  //       imageBase64 && !/^\//.test(imageBase64)
+  //     ) {
+  //       console.log(
+  //         `Invalid Base64 image format: ${imageBase64.substring(0, 30)}...`,
+  //       );
+  //       res.status(400).send("Invalid image format. Expected Base64 string.");
+  //       return;
+  //     }
 
-      const newItem = await this.itemsRepository.createWithImage(
-        {
-          name: name as string,
-          description: description as string,
-        },
-        imageBase64!,
-      );
+  //     const newItem = await this.itemsRepository.createWithImage(
+  //       {
+  //         name: name as string,
+  //         description: description as string,
+  //       },
+  //       imageBase64!,
+  //     );
 
-      console.log(`Created new item with ID: ${newItem.id}`);
+  //     console.log(`Created new item with ID: ${newItem.id}`);
 
-      if (imageBase64 && newItem.imageId) {
-        const authToken = req.get("Authorization")!;
-        const jwt = authToken.replace("Bearer ", "");
+  //     if (imageBase64 && newItem.imageId) {
+  //       const authToken = req.get("Authorization")!;
+  //       const jwt = authToken.replace("Bearer ", "");
 
-        console.log("Request JWT token:", jwt.slice(0, 30) + "...");
+  //       console.log("Request JWT token:", jwt.slice(0, 30) + "...");
 
-        const supabaseCurrentUserClient = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_ANON_KEY")!,
-          { global: { headers: { Authorization: authToken } } },
-        );
+  //       const supabaseCurrentUserClient = createClient(
+  //         Deno.env.get("SUPABASE_URL")!,
+  //         Deno.env.get("SUPABASE_ANON_KEY")!,
+  //         { global: { headers: { Authorization: authToken } } },
+  //       );
 
-        await this.saveImage(newItem, imageBase64, supabaseCurrentUserClient);
-      } else {
-        console.log("No image provided, skipping upload to Supabase Bucket");
-      }
+  //       await this.saveImage(newItem, imageBase64, supabaseCurrentUserClient);
+  //     } else {
+  //       console.log("No image provided, skipping upload to Supabase Bucket");
+  //     }
 
-      res.status(201).json(newItem);
-    } catch (error) {
-      console.error("Error creating item:", error);
-      res.status(500).send("Internal server error");
-    }
-  }
+  //     res.status(201).json(newItem);
+  //   } catch (error) {
+  //     console.error("Error creating item:", error);
+  //     res.status(500).send("Internal server error");
+  //   }
+  // }
 
   public async findAll(_req: Request, res: Response, _next: NextFunction) {
     try {
