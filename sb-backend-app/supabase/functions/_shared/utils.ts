@@ -137,7 +137,7 @@ export const VisualCode = {
     return nanoid(length).slice(0, length).toUpperCase();
   },
   
-  generateRandomVisualCode: (prefix = "BX"): string => {
+  generateRandomVisualCode: (prefix = "KX"): string => {
     const digits = VisualCode.generateRandomDigits(4);
     const checksum = VisualCode.generateChecksum(prefix, digits);
     return `${prefix}-${digits}-${checksum}`;
