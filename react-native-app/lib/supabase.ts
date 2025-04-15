@@ -448,6 +448,32 @@ export async function getContainerById({ id }: Pick<Container, "id">) {
   }
 }
 
+export async function getContainerByVisualCode({
+  visualCode,
+}: {
+  visualCode: string;
+}) {
+  try {
+    const user = await requireAuthentication();
+
+    const container = await invokeFunction<any>(`containers/${visualCode}`, {
+      method: "GET",
+    });
+
+    if (!container) {
+      return null;
+    }
+
+    console.log(
+      `getContainerByVisualCode retrieved "${container.id}" with code "${visualCode}"`,
+    );
+    return mapAny2Container(container, user, config);
+  } catch (error) {
+    console.error("getContainerByVisualCode error", error);
+    return null;
+  }
+}
+
 export async function searchItems({
   queryText,
   queryImageUri,
@@ -876,6 +902,7 @@ function mapAny2Container(
     parentName: container.parentName,
     childCount: container.childCount,
     path: container.path,
+    visualCode: container.visualCode,
   } satisfies Container;
 }
 
@@ -948,7 +975,7 @@ async function invokeFunction<T>(
 
     return data as T;
   } catch (error) {
-    console.error(`Error invoking ${functionPath}:`, error);
+    console.log(`Error invoking ${functionPath}:`, error);
     return null;
   }
 }

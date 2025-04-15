@@ -73,6 +73,7 @@ export class GetAssetsOfParent {
           parentType: asset.parentType,
           childCount: asset.childCount,
           path: asset.path,
+          visualCode: asset.visualCode,
         } satisfies Container & { imageUrl?: string };
       } else {
         throw new Error("Invalid asset type");

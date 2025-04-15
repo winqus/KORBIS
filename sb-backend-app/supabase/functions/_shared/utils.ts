@@ -1,5 +1,6 @@
 import { decode as decodeBase64 } from "base64-arraybuffer";
 import { generateUuid5 } from "npm:weaviate-ts-client@2.2.0";
+import { customAlphabet } from "jsr:@sitnik/nanoid";
 
 export const isLocalEnv = () =>
   Deno.env.get("SUPABASE_URL") === "http://kong:8000";
@@ -112,3 +113,34 @@ export function generateUUID5(identifier: string, namespace?: string): string {
 export function isDefined<T>(value: T | null | undefined): value is T {
   return value !== undefined && value !== null;
 }
+
+export const VisualCode = {
+  ALLOWED_CHARS: "347ACDEFHKMNPRTUVWXY",
+
+  generateChecksum: (prefix: string, digits: string): string => {
+    const combined = prefix + digits;
+    let sum = 0;
+
+    for (let i = 0; i < combined.length; i++) {
+      const char = combined[i];
+      const pos = VisualCode.ALLOWED_CHARS.indexOf(char);
+      if (pos >= 0) {
+        sum += pos * (i + 1); // Weighted by position
+      }
+    }
+
+    return VisualCode.ALLOWED_CHARS[sum % VisualCode.ALLOWED_CHARS.length];
+  },
+
+  generateRandomDigits: (length = 4) => {
+    const nanoid = customAlphabet(VisualCode.ALLOWED_CHARS, 20);
+    return nanoid(length).slice(0, length).toUpperCase();
+  },
+  
+  generateRandomVisualCode: (prefix = "BX"): string => {
+    const digits = VisualCode.generateRandomDigits(4);
+    const checksum = VisualCode.generateChecksum(prefix, digits);
+    return `${prefix}-${digits}-${checksum}`;
+  }
+};
+

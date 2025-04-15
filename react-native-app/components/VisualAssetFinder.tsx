@@ -12,16 +12,22 @@ import { useRouter } from "expo-router";
 import { OutlinedButton } from "./Buttons";
 import { GuidanceHoverText } from "./GuidanceHoverText";
 import { Frame, useSubjectSegmentation } from "@/modules/expo-mlkit";
-import { AssetType, Item } from "@/types";
+import { AssetType, Item, Container } from "@/types";
 import { SmartItemFrame } from "@/components/SmartItemFrame";
 import {
   cropImage,
   expandFrameIfPossible,
   frameToSquareIfPossible,
+  VisualCode,
 } from "@/lib/utils";
 import { useSupabase } from "@/lib/useSupabase";
-import { searchItems } from "@/lib/supabase";
+import { searchItems, getContainerByVisualCode } from "@/lib/supabase";
 import { isProcessing } from "@/signals/queue";
+import TextRecognitionV2Module from "@/modules/expo-mlkit/src/TextRecognitionV2Module";
+import {
+  Rect,
+  TextRecognitionResult,
+} from "@/modules/expo-mlkit/src/TextRecognitionV2.types";
 
 interface VisualAssetFinderProps {
   image: { uri: string; width: number; height: number };
@@ -38,11 +44,19 @@ type SearchCandidateAsset = {
   type: AssetType;
 };
 
+type DetectedCode = {
+  code: string;
+  correctedCode: string | null;
+  isValid: boolean;
+  rect: Rect;
+  container?: Container;
+};
+
 export const VisualAssetFinder = ({
   image,
   onCancel,
   onItemSelect,
-  debug = false,
+  debug,
 }: VisualAssetFinderProps) => {
   if (!image) {
     throw new Error("Picture is missing");
@@ -54,6 +68,11 @@ export const VisualAssetFinder = ({
   const [candidates, setCandidates] = useState<SearchCandidateAsset[]>([]);
   const lastSearchImageUriRef = useRef<string | null>(null);
   const [imageToSearch, setImageToSearch] = useState<string | null>(null);
+  const [detectedCodes, setDetectedCodes] = useState<DetectedCode[]>([]);
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+  const [ocrResult, setOcrResult] = useState<TextRecognitionResult | null>(
+    null,
+  );
 
   const {
     data: items,
@@ -90,16 +109,20 @@ export const VisualAssetFinder = ({
 
     lastImageUriRef.current = image.uri;
 
-    if (debug) {
-      console.log("Segmentator is initialized, starting segmentation");
-    }
+    recognizeText(image.uri);
 
-    createSuggestionFrames(image.uri);
+    if (segmentator.isInitialized) {
+      if (debug) {
+        console.log("Segmentator is initialized, starting segmentation");
+      }
+      createSuggestionFrames(image.uri);
+    }
   }, [image.uri, segmentator, segmentator.isInitialized]);
 
   useEffect(() => {
     if (!segmentator.isInitialized || !image?.uri) return;
     if (candidates.length > 1 && selectedCandidatesCount === 0) return;
+    if (detectedCodes.some((code) => code.isValid)) return;
 
     if (candidates.length === 1) {
       updateCandidate(candidates[0].id, {
@@ -115,6 +138,114 @@ export const VisualAssetFinder = ({
 
     dismissSuggestedCandidates();
   }, [image.uri, candidates.length]);
+
+  useEffect(() => {
+    if (!ocrResult) return;
+    processOcrResult(ocrResult);
+  }, [ocrResult]);
+
+  useEffect(() => {
+    const fetchContainers = async () => {
+      const updatedCodes = [...detectedCodes];
+      let hasUpdates = false;
+
+      for (let i = 0; i < updatedCodes.length; i++) {
+        const codeData = updatedCodes[i];
+        if (
+          codeData.container ||
+          (!codeData.isValid && !codeData.correctedCode)
+        )
+          continue;
+
+        const codeToLookup = codeData.isValid
+          ? codeData.code
+          : codeData.correctedCode;
+        if (!codeToLookup) continue;
+
+        try {
+          if (debug) {
+            console.log("Fetching container for code:", codeToLookup);
+          }
+          const container = await getContainerByVisualCode({
+            visualCode: codeToLookup,
+          });
+          if (container) {
+            updatedCodes[i] = {
+              ...codeData,
+              container,
+            };
+            hasUpdates = true;
+            if (debug) {
+              console.log(
+                `Found container for code ${codeToLookup}:`,
+                container.id,
+              );
+            }
+          }
+        } catch (err) {
+          console.error(
+            `Error fetching container for code ${codeToLookup}:`,
+            err,
+          );
+        }
+      }
+
+      if (hasUpdates) {
+        setDetectedCodes(updatedCodes);
+      }
+    };
+
+    if (detectedCodes.length > 0) {
+      fetchContainers();
+    }
+  }, [detectedCodes]);
+
+  const recognizeText = async (imageUri: string) => {
+    try {
+      setIsProcessingOCR(true);
+      const result =
+        await TextRecognitionV2Module.recognizeTextInImage(imageUri);
+      setOcrResult(result);
+      console.log("OCR result:", result.text);
+    } catch (error) {
+      console.error("Error during text recognition:", error);
+    } finally {
+      setIsProcessingOCR(false);
+    }
+  };
+
+  const processOcrResult = (result: TextRecognitionResult) => {
+    const potentialCodes = VisualCode.findCodesInText(result.text);
+    if (debug) {
+      console.log(`Found ${potentialCodes.length} potential codes in text`);
+    }
+
+    if (potentialCodes.length === 0) return;
+
+    const mappedCodes: DetectedCode[] = [];
+
+    /* For each potential code, find which block/line contains it */
+    for (const codeData of potentialCodes) {
+      const { code } = codeData;
+
+      for (const block of result.blocks) {
+        if (block.text.toUpperCase().includes(code)) {
+          for (const line of block.lines) {
+            if (line.text.toUpperCase().includes(code)) {
+              mappedCodes.push({
+                ...codeData,
+                rect: line.rect,
+              });
+              break;
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    setDetectedCodes(mappedCodes);
+  };
 
   const createSuggestionFrames = async (imageUri: string) => {
     const result = await segmentator
@@ -242,12 +373,28 @@ export const VisualAssetFinder = ({
     });
   };
 
+  const handleCodePress = (codeData: DetectedCode) => {
+    console.log("handleCodePress", codeData);
+    if (codeData.container) {
+      router.push({
+        pathname: "/containers/[id]",
+        params: {
+          id: codeData.container.id,
+          containerData: JSON.stringify(codeData.container || undefined),
+        },
+      });
+    }
+  };
+
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
   const displayHeight = image.height * (screenWidth / image.width);
   const buttonsHeight = 120;
   const topSafeArea = 50;
   const availableHeight = screenHeight - topSafeArea - buttonsHeight;
   const canFitBelowImage = displayHeight <= availableHeight;
+
+  const scaleX = screenWidth / (ocrResult?.width || image.width);
+  const scaleY = displayHeight / (ocrResult?.height || image.height);
 
   return (
     <SafeAreaView className="flex-1 bg-black">
@@ -275,6 +422,43 @@ export const VisualAssetFinder = ({
               }
             }}
           />
+
+          {/* Visual code overlays */}
+          {detectedCodes.map((codeData, index) => {
+            if (!codeData.isValid && !codeData.correctedCode) return null;
+            const rect = {
+              left: codeData.rect.left * scaleX,
+              top: codeData.rect.top * scaleY,
+              width: codeData.rect.width * scaleX,
+              height: codeData.rect.height * scaleY,
+            };
+            const hasContainer = !!codeData.container;
+
+            return (
+              <TouchableOpacity
+                key={`code-${index}`}
+                className="absolute flex-row items-center justify-center gap-2 border-2 rounded-xl z-30"
+                style={{
+                  ...rect,
+                  borderColor: hasContainer ? "#3498db" : "#f1c40f",
+                  backgroundColor: hasContainer
+                    ? "rgba(52, 152, 219, 0.3)"
+                    : "rgba(241, 196, 15, 0.3)",
+                }}
+                onPress={() => handleCodePress(codeData)}
+              >
+                {hasContainer && codeData.container?.imageUrl && (
+                  <Image
+                    source={{ uri: codeData.container.imageUrl }}
+                    className="size-8 rounded-md border border-white"
+                  />
+                )}
+                {/* <Text className="text-white font-rubik-semibold text-xs py-1 px-2 bg-black/50 rounded-md">
+                  {codeData.isValid ? codeData.code : codeData.correctedCode}
+                </Text> */}
+              </TouchableOpacity>
+            );
+          })}
 
           {candidates
             .filter((c) => c.state !== "dismissed")

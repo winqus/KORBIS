@@ -18,11 +18,19 @@ export class GetContainer {
   ) {}
 
   public async execute(command: GetContainerCommand) {
-    const { userId, containerId } = command;
+    const { userId, containerId, visualCode } = command;
 
-    const container = await this.containersRepository.findById(containerId);
+    let container: Container | null = null;
+
+    if (containerId) {
+      container = await this.containersRepository.findById(containerId);
+    } else if (visualCode) {
+      container = await this.containersRepository.findByVisualCode(visualCode);
+    }
+
     if (!container) {
-      throw new DocumentNotFoundError("Container", containerId);
+      const errorMessage = `Container with ${containerId ? "ID" : "visual code"} ${containerId ?? visualCode} not found`;
+      throw new DocumentNotFoundError("Container", containerId ?? visualCode ?? "", errorMessage);
     }
 
     if (container.ownerId !== userId) {
@@ -46,6 +54,7 @@ export class GetContainer {
       type: container.type,
       childCount: container.childCount,
       path: container.path,
+      visualCode: container.visualCode,
     } satisfies Container & { imageUrl?: string };
   }
 }

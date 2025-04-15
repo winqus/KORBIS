@@ -242,3 +242,120 @@ export const convertDetectionFramesToParentDomain = (
 export const randomUUIDv4 = () => {
   return Crypto.randomUUID();
 };
+
+export const VisualCode = {
+  ALLOWED_CHARS: "347ACDEFHKMNPRTUVWXY",
+
+  /* Format: BX-XXXX-C where C is the checksum
+     Returns null if the format doesn't match */
+  parseCode: (
+    code: string,
+  ): { prefix: string; digits: string; checksum: string } | null => {
+    /* Normalize the code: uppercase and remove spaces */
+    code = code.toUpperCase().replace(/\s/g, "");
+
+    /* Check if the code follows the pattern BX-XXXX-C */
+    const match = code.match(/^([A-Z]{2})-([A-Z0-9]{4})-([A-Z0-9])$/);
+
+    if (!match) return null;
+
+    return {
+      prefix: match[1],
+      digits: match[2],
+      checksum: match[3],
+    };
+  },
+
+  generateChecksum: (prefix: string, digits: string): string => {
+    const combined = prefix + digits;
+    let sum = 0;
+
+    for (let i = 0; i < combined.length; i++) {
+      const char = combined[i];
+      const pos = VisualCode.ALLOWED_CHARS.indexOf(char);
+      if (pos >= 0) {
+        sum += pos * (i + 1); /* Weight by position */
+      }
+    }
+
+    /* Get the checksum character */
+    return VisualCode.ALLOWED_CHARS[sum % VisualCode.ALLOWED_CHARS.length];
+  },
+
+  validate: (code: string): boolean => {
+    const parsed = VisualCode.parseCode(code);
+    if (!parsed) return false;
+
+    const expected = VisualCode.generateChecksum(parsed.prefix, parsed.digits);
+    return parsed.checksum === expected;
+  },
+
+  generate: (prefix = "BX", digits?: string): string => {
+    if (!digits) {
+      digits = "";
+      for (let i = 0; i < 4; i++) {
+        const randomIndex = Math.floor(
+          Math.random() * VisualCode.ALLOWED_CHARS.length,
+        );
+        digits += VisualCode.ALLOWED_CHARS[randomIndex];
+      }
+    }
+
+    const checksum = VisualCode.generateChecksum(prefix, digits);
+    return `${prefix}-${digits}-${checksum}`;
+  },
+
+  correctCode: (code: string): string | null => {
+    const normalized = code.toUpperCase().replace(/\s/g, "");
+
+    const ocrCorrected = normalized
+      .replace(/O/g, "0")
+      .replace(/I/g, "1")
+      .replace(/Z/g, "2")
+      .replace(/S/g, "5");
+
+    const match = ocrCorrected.match(
+      /^([A-Z]{2})[-_]?([A-Z0-9]{4})[-_]?([A-Z0-9])?$/,
+    );
+
+    if (!match) return null;
+
+    const [_, prefix, digits, providedChecksum] = match;
+
+    const correctChecksum = VisualCode.generateChecksum(prefix, digits);
+
+    return `${prefix}-${digits}-${correctChecksum}`;
+  },
+
+  findCodesInText: (
+    text: string,
+  ): {
+    code: string;
+    isValid: boolean;
+    correctedCode: string | null;
+  }[] => {
+    const results: {
+      code: string;
+      isValid: boolean;
+      correctedCode: string | null;
+    }[] = [];
+
+    const normalized = text.toUpperCase().replace(/\s+/g, "");
+
+    const codePattern = /(BX)[-_]([A-Z0-9]{4})[-_]([A-Z0-9])/g;
+
+    let match;
+    while ((match = codePattern.exec(normalized)) !== null) {
+      const extractedCode = `${match[1]}-${match[2]}-${match[3]}`;
+      const isValid = VisualCode.validate(extractedCode);
+
+      results.push({
+        code: extractedCode,
+        isValid,
+        correctedCode: isValid ? null : VisualCode.correctCode(extractedCode),
+      });
+    }
+
+    return results;
+  },
+};

@@ -111,4 +111,28 @@ export class WeaviateV2ContainersRepository
       return [];
     }
   }
+
+  public async findByVisualCode(visualCode: string): Promise<Container | null> {
+    if (!visualCode) {
+      return null;
+    }
+
+    const object = await this.client.graphql.get()
+      .withClassName(this.className)
+      .withFields(`${this.classProperties} _additional{id creationTimeUnix}`)
+      .withWhere({
+        path: ["visualCode"],
+        operator: "Equal",
+        valueString: visualCode,
+      }).do().catch((error) => {
+        this.error("findByVisualCode", `Failed retrieving container with visual code (${visualCode}):`, error.message);
+        throw error;
+      });
+
+    if (!object || !object.data || !object?.data?.Get[this.className][0]?.name) {
+      return null;
+    }
+
+    return this.mapObject2Entity(object.data.Get[this.className][0]);
+  }
 }

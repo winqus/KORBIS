@@ -8,7 +8,7 @@ export class Item implements IVirtualAsset {
 
   name!: string;
 
-  type: "item" = "item";
+  type!: "item";
 
   description!: string;
 
