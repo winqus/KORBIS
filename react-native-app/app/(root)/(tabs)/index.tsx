@@ -6,7 +6,7 @@ import { useSupabase } from "@/lib/useSupabase";
 import ItemList from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import icons from "@/constants/icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { IVirtualAsset } from "@/types";
 import SearchBar from "@/components/SearchBar";
 import React, { useEffect, useRef } from "react";
@@ -16,6 +16,7 @@ import {
   currentParentAsset,
   popParent,
   parentStack,
+  clearParentStack,
 } from "@/signals/parent";
 import { useIsFocused } from "@react-navigation/core";
 import { FlashList } from "@shopify/flash-list";
@@ -33,6 +34,7 @@ export default function Index() {
     queryImageUri?: string;
   }>();
   const router = useRouter();
+  const navigation = useNavigation();
   const listRef = useRef<FlashList<IVirtualAsset>>(null);
 
   const scrollPositionsRef = useRef<Record<string, number>>({});
@@ -69,6 +71,12 @@ export default function Index() {
       });
     }
   };
+
+  useEffect(() => {
+    navigation.addListener("tabPress" as any, () => {
+      clearParentStack();
+    });
+  }, [navigation]);
 
   useEffect(() => {
     refetchItems({
