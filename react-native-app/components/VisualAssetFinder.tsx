@@ -28,6 +28,7 @@ import {
   Rect,
   TextRecognitionResult,
 } from "@/modules/expo-mlkit/src/TextRecognitionV2.types";
+import { clearParentStack, pushParent } from "@/signals/parent";
 
 interface VisualAssetFinderProps {
   image: { uri: string; width: number; height: number };
@@ -376,12 +377,15 @@ export const VisualAssetFinder = ({
   const handleCodePress = (codeData: DetectedCode) => {
     console.log("handleCodePress", codeData);
     if (codeData.container) {
+      clearParentStack();
+      pushParent({
+        id: codeData.container.id,
+        type: codeData.container.type,
+        name: codeData.container.name || "My Home",
+      });
+
       router.push({
-        pathname: "/containers/[id]",
-        params: {
-          id: codeData.container.id,
-          containerData: JSON.stringify(codeData.container || undefined),
-        },
+        pathname: "/",
       });
     }
   };
