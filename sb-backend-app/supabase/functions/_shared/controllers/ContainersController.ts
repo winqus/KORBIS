@@ -13,6 +13,9 @@ import {
 } from "../usecases/index.ts";
 import { handleError } from "./errorHandler.ts";
 import { inject, injectable } from "@needle-di/core";
+import { BadRequestError } from "../errors/index.ts";
+import { CONTAINER_VISUAL_CODE_PREFIX } from "../config.ts";
+import validator from 'validator';
 
 @injectable()
 export class ContainersController {
@@ -71,8 +74,20 @@ export class ContainersController {
       const { id } = req.params;
       const userId = req["userId"] as string;
 
+      if (typeof id !== "string") {
+        throw new BadRequestError("Container ID must be a string");
+      }
+
+      const visualCode: string | undefined = (id as string).startsWith(CONTAINER_VISUAL_CODE_PREFIX) ? id : undefined;
+      const containerId: string | undefined = validator.isUUID(id) ? id : undefined;
+
+      if (!containerId && !visualCode) {
+        throw new BadRequestError("Container ID or visual code is required");
+      }
+      
       const command = GetContainerCommand.create({
-        containerId: id,
+        containerId,
+        visualCode,
         userId,
       });
 

@@ -68,6 +68,11 @@ export const containerSchema = {
       description: "Item description/notes",
     },
     {
+      name: "visualCode",
+      dataType: ["text"],
+      description: "Visual code of the container for OCR",
+    },
+    {
       name: "imageId",
       dataType: ["uuid"],
       description: "ID of the item image",

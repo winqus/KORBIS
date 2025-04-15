@@ -7,7 +7,7 @@ export class Container implements IVirtualAsset {
 
   name!: string;
 
-  type: "container" = "container";
+  type!: "container";
 
   description!: string;
 
@@ -22,4 +22,6 @@ export class Container implements IVirtualAsset {
   path!: string;
 
   imageId?: string;
+
+  visualCode?: string;
 }

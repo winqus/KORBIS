@@ -11,6 +11,8 @@ import {
 } from "../../errors/index.ts";
 import { AssetTypeEnum } from "../../core/index.ts";
 import { DOMAIN_ROOT_NAME } from "../../config.ts";
+import { VisualCode } from '../../utils.ts';
+import { CONTAINER_VISUAL_CODE_PREFIX } from '../../config.ts';
 
 @injectable()
 export class CreateContainer {
@@ -54,6 +56,7 @@ export class CreateContainer {
       path: parent.path,
       parentId: parent.id,
       parentType: parent.type,
+      visualCode: VisualCode.generateRandomVisualCode(CONTAINER_VISUAL_CODE_PREFIX),
     }, imageBase64);
 
     const { imageUrl } = await this.domainCdnService.uploadImage(
