@@ -3,6 +3,7 @@ import { GetAssetsOfParent } from "../usecases/GetAssetsOfParent/GetAssetsOfPare
 import { GetAssetsOfParentCommand } from "../usecases/GetAssetsOfParent/GetAssetsOfParentCommand.ts";
 import { handleError } from "./errorHandler.ts";
 import { inject, injectable } from "@needle-di/core";
+import { AssetTypeEnum } from "../core/index.ts";
 
 @injectable()
 export class AssetsController {
@@ -18,7 +19,7 @@ export class AssetsController {
       const command = GetAssetsOfParentCommand.create({
         userId,
         parentId: typeof parentId === 'string' ? parentId : undefined,
-        parentType: typeof parentType === 'string' ? parentType : undefined,
+        parentType: typeof parentType === 'string' ? parentType : (undefined as any),
         skip: typeof skip === 'string' ? parseInt(skip) : undefined,
         limit: typeof limit === 'string' ? parseInt(limit) : undefined,
       });
