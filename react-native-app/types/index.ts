@@ -62,6 +62,8 @@ export interface Container extends IVirtualAsset {
   childCount: number;
 
   path: string;
+
+  visualCode?: string;
 }
 
 export interface ImageType {
