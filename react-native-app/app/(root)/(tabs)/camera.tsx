@@ -33,8 +33,20 @@ const Camera = () => {
     router.push("/");
   };
 
-  const handleManualAdd = () => {
-    console.log("TODO: Handle manual item creation");
+  const handleManualAdd = (
+    candidates: { quantity: number; imageUri: string }[],
+  ) => {
+    if (candidates.length > 0) {
+      const firstCandidate = candidates[0];
+
+      router.push({
+        pathname: "/item-creation",
+        params: {
+          initialQuantity: firstCandidate.quantity.toString(),
+          initialPictureUri: firstCandidate.imageUri,
+        },
+      });
+    }
   };
 
   const handleItemSelect = (item: Item) => {

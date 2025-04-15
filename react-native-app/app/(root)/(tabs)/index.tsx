@@ -7,10 +7,10 @@ import ItemList from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import icons from "@/constants/icons";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import { IVirtualAsset } from "@/types";
+import { AssetType, IVirtualAsset } from "@/types";
 import SearchBar from "@/components/SearchBar";
 import React, { useEffect, useRef } from "react";
-import { isProcessing, pendingJobsCount } from "@/signals/queue";
+import { isProcessing, pendingJobsCount, jobQueue } from "@/signals/queue";
 import {
   pushParent,
   currentParentAsset,
@@ -49,6 +49,9 @@ export default function Index() {
     params: {
       queryText: params.queryText || "",
       queryImageUri: params.queryImageUri || "",
+      // queryImageUri: params.queryImageUri
+      // ? decodeURIComponent(params.queryImageUri)
+      // : undefined,
       parentId: currentParentAsset.value.id,
       parentType: currentParentAsset.value.type,
     },
@@ -71,6 +74,16 @@ export default function Index() {
       });
     }
   };
+
+  const queueItems: IVirtualAsset[] = jobQueue.value.map((job) => ({
+    id: job.id,
+    type: "item" as AssetType,
+    name: job.candidate.name || "Processing item...",
+    imageUrl: job.imageUri,
+    ownerId: "queue",
+  }));
+
+  const combinedAssets = [...queueItems, ...(items || [])];
 
   useEffect(() => {
     navigation.addListener("tabPress" as any, () => {
@@ -138,7 +151,6 @@ export default function Index() {
 
   const handleScroll = (event: any) => {
     const position = event.nativeEvent.contentOffset.y;
-    // Save position for current container ID
     scrollPositionsRef.current[currentContainerId] = position;
   };
 
@@ -170,7 +182,9 @@ export default function Index() {
       {/* Found Items text */}
       <View className="mt-5">
         <Text className="text-xl font-rubik-bold text-black-300 mt-5">
-          {loadingItems ? "Searching in" : `Found ${items?.length} item(s) in`}{" "}
+          {loadingItems
+            ? "Searching in"
+            : `Found ${combinedAssets.length} item(s) in`}{" "}
           <Text className="font-rubik-bold text-primary-300">
             {currentParentAsset.value.name}
           </Text>
@@ -179,8 +193,8 @@ export default function Index() {
 
       {isProcessing.value && (
         <View className="mt-5">
-          <Text className="text-lg font-rubik-semiboldtext-primary-300">
-            Currently adding {pendingJobsCount} items...
+          <Text className="text-lg font-rubik-semibold text-primary-300">
+            Currently adding {pendingJobsCount.value} items...
           </Text>
         </View>
       )}
@@ -190,7 +204,7 @@ export default function Index() {
   return (
     <SafeAreaView className="bg-white h-full">
       <ItemList
-        assets={loadingItems ? [] : (items ?? [])}
+        assets={loadingItems ? [] : combinedAssets}
         onCardPress={handleCardPress}
         loading={loadingItems}
         showHeader={true}

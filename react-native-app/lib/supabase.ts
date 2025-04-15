@@ -398,13 +398,19 @@ export async function searchItems({
 
 export async function deleteItem({ id }: Pick<Item, "id">) {
   try {
+    if (!id) {
+      throw new Error("No item ID provided");
+    }
+
     await requireAuthentication();
 
-    const { error } = await supabase.from("items").delete().eq("id", id);
+    await invokeFunction(`items/${id}`, { method: "DELETE" });
 
-    if (error) {
-      throw new Error(error.message);
-    }
+    invalidateCacheByFn("getItemById");
+    invalidateCacheByFn("getItems");
+    invalidateCacheByFn("searchItems");
+    invalidateCacheByFn("getAssets");
+    invalidateCacheByFn("searchAssets");
 
     return true;
   } catch (error) {
@@ -627,7 +633,6 @@ export async function uploadItemFile({
       },
     });
 
-    // Invalidate item files cache
     invalidateCacheByFn("getItemFiles");
     invalidateCacheByFn("getItemById");
 

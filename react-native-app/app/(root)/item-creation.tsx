@@ -11,24 +11,29 @@ import StaticFooterMenu from "@/components/StaticFooterMenu";
 import SquareGallery from "@/components/SquareGallery";
 import GenerativeInputField from "@/components/GenerativeInputField";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   createContainer,
   createItem,
   generateItemMetadataFromPicture,
 } from "@/lib/supabase";
 import * as ImagePicker from "expo-image-picker";
-import { GeneratedItemMetadata, IVirtualAsset } from "@/types";
+import { AssetType, GeneratedItemMetadata, IVirtualAsset } from "@/types";
 import { getPictureBase64FromLocalUri } from "@/lib/utils";
 import { Quantity } from "@/components/AssetQuantity";
 import { ParentAssetInfo } from "@/components/ParentAssetInfo";
 import detectNewline from "detect-newline";
 import Checkbox from "expo-checkbox";
+import { enqueueJob } from "@/signals/queue";
 
 const ItemCreation = () => {
   const router = useRouter();
+  const { initialQuantity, initialPictureUri } = useLocalSearchParams<{
+    initialQuantity?: string;
+    initialPictureUri?: string;
+  }>();
 
-  const [uri, setUri] = useState(mostRecentlyTakenPictureUri.value || "");
+  const [uri, setUri] = useState(initialPictureUri || "");
   const [isGenerating, setIsGenerating] = useState(false);
   const [canAdd, setCanAdd] = useState(false);
   const [canGenerate, setCanGenerate] = useState(uri !== "");
@@ -44,7 +49,9 @@ const ItemCreation = () => {
     type: currentParentAsset.value.type || undefined,
     id: currentParentAsset.value.id || undefined,
   });
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(
+    initialQuantity ? parseInt(initialQuantity, 10) : 1,
+  );
 
   const fieldMap = {
     name: "shorthand",
@@ -133,17 +140,27 @@ const ItemCreation = () => {
   };
 
   const handleAdd = async () => {
-    const pictureBase64 = await getRecentPictureBase64();
-
     if (form.isContainer) {
+      // For containers, keep the existing direct creation method
+      const pictureBase64 = await getPictureBase64FromLocalUri(uri);
+
+      // Only proceed if we have a valid parentAsset.type that can be cast to AssetType
+      const parentType =
+        parentAsset.type === "container"
+          ? ("container" as AssetType)
+          : undefined;
+
       const newContainer = await createContainer({
         name: form.name,
         description: form.description,
         pictureBase64: pictureBase64 || undefined,
-        parent: parentAsset.id && {
-          id: parentAsset.id,
-          type: parentAsset.type,
-        },
+        parent:
+          parentAsset.id && parentType
+            ? {
+                id: parentAsset.id,
+                type: parentType,
+              }
+            : undefined,
       });
 
       if (!newContainer) {
@@ -152,22 +169,24 @@ const ItemCreation = () => {
         return;
       }
     } else {
-      const newItem = await createItem({
-        name: form.name,
-        description: form.description,
-        pictureBase64: pictureBase64 || undefined,
-        parent: parentAsset.id && {
-          id: parentAsset.id,
-          type: parentAsset.type,
-        },
-        quantity: quantity,
-      });
-
-      if (!newItem) {
-        console.error("Failed to create item");
-        Alert.alert("Error", "Failed to create item");
+      // For regular items, use the queue system
+      if (!uri) {
+        Alert.alert("Error", "No image selected");
         return;
       }
+
+      // Add item to the processing queue
+      enqueueJob({
+        candidate: {
+          name: form.name,
+          description: form.description,
+          quantity: quantity,
+          parentId: parentAsset.id,
+          parentType: parentAsset.type as "root" | "container",
+          parentName: parentAsset.name,
+        },
+        imageUri: uri,
+      });
     }
 
     setForm({

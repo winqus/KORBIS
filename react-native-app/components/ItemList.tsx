@@ -75,12 +75,20 @@ const ItemList = ({
             );
           }
 
+          // Check if this is a queue item that should be shown in generating state
+          const isQueueItem = asset.ownerId === "queue";
+          const variant = isQueueItem ? "generating" : "default";
+
           return (
             <View
               className={`flex-1 mx-5 ${index % 2 === 0 ? "mr-2.5" : "ml-2.5"}`}
             >
               {asset.type === "item" ? (
-                <ItemCard item={asset} onPress={() => onCardPress(asset)} />
+                <ItemCard
+                  item={asset}
+                  onPress={() => onCardPress(asset)}
+                  variant={variant}
+                />
               ) : (
                 <ContainerCard
                   container={asset}
