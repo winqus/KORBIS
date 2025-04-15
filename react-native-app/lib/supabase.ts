@@ -902,6 +902,7 @@ function mapAny2Container(
     parentName: container.parentName,
     childCount: container.childCount,
     path: container.path,
+    visualCode: container.visualCode,
   } satisfies Container;
 }
 

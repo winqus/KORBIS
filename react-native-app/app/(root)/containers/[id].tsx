@@ -306,7 +306,10 @@ const ContainerDetail = () => {
           <AssetLocation />
 
           {/* AssetOther */}
-          <AssetOther id={container?.id || ""} />
+          <AssetOther
+            id={container?.id || ""}
+            visualCode={container?.visualCode || ""}
+          />
 
           {/* Container Items Count */}
           {/* <AssetContainerContents childCount={container?.childCount || 0} /> */}
