@@ -100,7 +100,7 @@ const ContainerDetail = () => {
   const handleDelete = () => {
     Alert.alert(
       "Delete Container",
-      "Are you sure you want to delete this container? All items inside will be lost.",
+      "Are you sure you want to delete this container?",
       [
         {
           text: "Cancel",
