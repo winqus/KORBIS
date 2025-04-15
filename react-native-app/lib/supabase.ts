@@ -14,7 +14,6 @@ import { openAuthSessionAsync } from "expo-web-browser";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
 import { decode } from "base64-arraybuffer";
 import {
-  AssetType,
   Container,
   GeneratedItemMetadata,
   Item,
@@ -22,6 +21,7 @@ import {
   File,
 } from "@/types";
 import * as FileSystem from "expo-file-system";
+import { invalidateCacheByFn } from "./useSupabase";
 
 throwIfMissing("env variables", process.env, [
   "EXPO_PUBLIC_SUPABASE_PROJECT_URL",
@@ -255,6 +255,11 @@ export async function createItem({
 
     console.log("created item", itemData);
 
+    invalidateCacheByFn("getItems");
+    invalidateCacheByFn("searchItems");
+    invalidateCacheByFn("getAssets");
+    invalidateCacheByFn("searchAssets");
+
     return mapAny2Item(itemData, user, config);
   } catch (error) {
     console.error("createItem error", error);
@@ -288,6 +293,11 @@ export async function createContainer({
     });
 
     console.log("created container", itemData);
+
+    invalidateCacheByFn("getItems");
+    invalidateCacheByFn("searchItems");
+    invalidateCacheByFn("getAssets");
+    invalidateCacheByFn("searchAssets");
 
     return mapAny2Item(itemData, user, config);
   } catch (error) {
@@ -397,6 +407,12 @@ export async function deleteItem({ id }: Pick<Item, "id">) {
     await invokeFunction(`items/${id}`, { method: "DELETE" });
 
     console.log(`Successfully deleted item with ID: ${id}`);
+
+    invalidateCacheByFn("getItems");
+    invalidateCacheByFn("searchItems");
+    invalidateCacheByFn("getAssets");
+    invalidateCacheByFn("searchAssets");
+    invalidateCacheByFn("getItemById");
 
     return true;
   } catch (error) {
@@ -550,6 +566,10 @@ export async function uploadItemFile({
       },
     });
 
+    // Invalidate item files cache
+    invalidateCacheByFn("getItemFiles");
+    invalidateCacheByFn("getItemById");
+
     return mapAny2File(fileData, user, config);
   } catch (error) {
     console.error("Upload file error", error);
@@ -593,6 +613,10 @@ export async function deleteItemFile({
     });
 
     console.log(`Successfully deleted file with ID: ${fileId}`);
+
+    // Invalidate files cache
+    invalidateCacheByFn("getItemFiles");
+    invalidateCacheByFn("getItemById");
 
     return true;
   } catch (error) {

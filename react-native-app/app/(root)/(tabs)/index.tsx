@@ -6,18 +6,20 @@ import { useSupabase } from "@/lib/useSupabase";
 import ItemList from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import icons from "@/constants/icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { IVirtualAsset } from "@/types";
 import SearchBar from "@/components/SearchBar";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { isProcessing, pendingJobsCount } from "@/signals/queue";
 import {
   pushParent,
   currentParentAsset,
   popParent,
   parentStack,
+  clearParentStack,
 } from "@/signals/parent";
 import { useIsFocused } from "@react-navigation/core";
+import { FlashList } from "@shopify/flash-list";
 
 export default function Index() {
   // TODO: remove
@@ -32,6 +34,11 @@ export default function Index() {
     queryImageUri?: string;
   }>();
   const router = useRouter();
+  const navigation = useNavigation();
+  const listRef = useRef<FlashList<IVirtualAsset>>(null);
+
+  const scrollPositionsRef = useRef<Record<string, number>>({});
+  const currentContainerId = String(currentParentAsset.value.id || "root");
 
   const {
     data: items,
@@ -52,7 +59,10 @@ export default function Index() {
 
   const handleCardPress = (asset: IVirtualAsset) => {
     if (asset.type === "item") {
-      router.push(`/items/${asset.id}`);
+      router.push({
+        pathname: "/items/[id]",
+        params: { id: asset.id, itemData: JSON.stringify(asset) },
+      });
     } else if (asset.type === "container") {
       pushParent({
         type: "container",
@@ -61,6 +71,12 @@ export default function Index() {
       });
     }
   };
+
+  useEffect(() => {
+    navigation.addListener("tabPress" as any, () => {
+      clearParentStack();
+    });
+  }, [navigation]);
 
   useEffect(() => {
     refetchItems({
@@ -77,6 +93,24 @@ export default function Index() {
   ]);
 
   const isFocused = useIsFocused();
+
+  const restoreScroll = () => {
+    const savedPosition = scrollPositionsRef.current[currentContainerId] || 0;
+
+    listRef.current?.scrollToOffset({
+      offset: savedPosition,
+      animated: false,
+    });
+  };
+
+  const handleListLoad = () => {
+    if (listRef.current) {
+      setTimeout(() => {
+        restoreScroll();
+      }, 10);
+    }
+  };
+
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
@@ -96,12 +130,17 @@ export default function Index() {
           return true;
         }
 
-        console.log("[hardwareBackPress] Returning", !isFocused);
         return isFocused; /* true to prevent default behavior */
       },
     );
     return () => backHandler.remove();
   }, [isFocused]);
+
+  const handleScroll = (event: any) => {
+    const position = event.nativeEvent.contentOffset.y;
+    // Save position for current container ID
+    scrollPositionsRef.current[currentContainerId] = position;
+  };
 
   const itemListHeader = (
     <View className="px-5">
@@ -131,7 +170,7 @@ export default function Index() {
       {/* Found Items text */}
       <View className="mt-5">
         <Text className="text-xl font-rubik-bold text-black-300 mt-5">
-          Found {items?.length} item(s) in{" "}
+          {loadingItems ? "Searching in" : `Found ${items?.length} item(s) in`}{" "}
           <Text className="font-rubik-bold text-primary-300">
             {currentParentAsset.value.name}
           </Text>
@@ -151,11 +190,14 @@ export default function Index() {
   return (
     <SafeAreaView className="bg-white h-full">
       <ItemList
-        assets={items ?? []}
+        assets={loadingItems ? [] : (items ?? [])}
         onCardPress={handleCardPress}
         loading={loadingItems}
         showHeader={true}
         customHeader={itemListHeader}
+        listRef={listRef}
+        onScroll={handleScroll}
+        onLoad={handleListLoad}
       />
     </SafeAreaView>
   );

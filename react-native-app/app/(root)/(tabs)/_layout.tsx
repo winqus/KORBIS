@@ -1,4 +1,4 @@
-import { View, Text, Image, ImageSourcePropType } from "react-native";
+import { View, Image, ImageSourcePropType } from "react-native";
 import React from "react";
 import { Tabs } from "expo-router";
 import icons from "@/constants/icons";
@@ -64,6 +64,7 @@ const TabsLayout = () => {
           tabBarIcon: ({ focused }) => (
             <TabIcon source={icons.home} focused={focused} title="Home" />
           ),
+          tabBarHideOnKeyboard: true,
         }}
       />
       <Tabs.Screen

@@ -27,3 +27,7 @@ export function popParent() {
     parentStack.value = parentStack.value.slice(0, -1);
   }
 }
+
+export function clearParentStack() {
+  parentStack.value = [rootParent];
+}

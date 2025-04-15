@@ -1,15 +1,19 @@
-import { View, FlatList, ActivityIndicator, Text } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import React from "react";
-import { Container, Item } from "@/types";
+import { Container, Item, IVirtualAsset } from "@/types";
 import { ContainerCard, ItemCard } from "@/components/ItemCards";
 import NoResults from "@/components/NoResults";
+import { FlashList } from "@shopify/flash-list";
 
 interface ItemListProps {
-  assets: (Item | Container)[];
-  onCardPress: (item: Item | Container) => void;
+  assets: IVirtualAsset[];
+  onCardPress: (item: IVirtualAsset) => void;
   loading?: boolean;
   showHeader?: boolean;
   customHeader?: React.ReactElement;
+  listRef?: React.RefObject<FlashList<IVirtualAsset>>;
+  onScroll?: (event: any) => void;
+  onLoad?: () => void;
 }
 
 const ItemList = ({
@@ -18,9 +22,12 @@ const ItemList = ({
   showHeader,
   customHeader,
   onCardPress,
+  listRef,
+  onScroll,
+  onLoad,
 }: ItemListProps) => {
   const listEmptyComponent = loading ? (
-    <ActivityIndicator size="large" className="text-primary-300 mt-5" />
+    <ActivityIndicator color="#0061FF" />
   ) : (
     <NoResults />
   );
@@ -38,13 +45,40 @@ const ItemList = ({
         </View>
       ));
 
+  const skeletons: IVirtualAsset[] = Array.from({ length: 20 }).map(
+    (_, index) => ({
+      id: `skeleton-${index}`,
+      type: "item",
+      name: "Skeleton",
+      imageUrl: "",
+      ownerId: "skeleton",
+    }),
+  );
+
   return (
-    <View>
-      <FlatList
-        data={assets}
-        renderItem={({ item: asset }) => {
+    <View className="flex-1">
+      <FlashList
+        ref={listRef}
+        onScroll={onScroll}
+        onContentSizeChange={onLoad}
+        scrollEventThrottle={16}
+        data={loading ? skeletons : assets}
+        estimatedItemSize={50}
+        renderItem={({ item: asset, index }) => {
+          if (loading) {
+            return (
+              <View
+                className={`flex-1 mx-5 ${index % 2 === 0 ? "mr-2.5" : "ml-2.5"}`}
+              >
+                <ItemCard item={asset} onPress={() => {}} variant="loading" />
+              </View>
+            );
+          }
+
           return (
-            <>
+            <View
+              className={`flex-1 mx-5 ${index % 2 === 0 ? "mr-2.5" : "ml-2.5"}`}
+            >
               {asset.type === "item" ? (
                 <ItemCard item={asset} onPress={() => onCardPress(asset)} />
               ) : (
@@ -53,13 +87,12 @@ const ItemList = ({
                   onPress={() => onCardPress(asset)}
                 />
               )}
-            </>
+            </View>
           );
         }}
         keyExtractor={(asset) => asset.id}
         numColumns={2}
         contentContainerClassName="pb-64"
-        columnWrapperClassName="flex gap-5 px-5"
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={listEmptyComponent}
         ListHeaderComponent={listHeaderComponent}

@@ -58,7 +58,6 @@ const DefaultImage = ({ imageURI }: { imageURI?: string }) => (
         source={{ uri: imageURI }}
         className="size-full"
         contentFit="cover"
-        transition={200}
       />
     )}
   </>
