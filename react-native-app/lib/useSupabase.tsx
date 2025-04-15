@@ -24,7 +24,16 @@ interface CacheEntry<T> {
 
 const CACHE_EXPIRY = 5 * 60 * 1000; /* 5 minutes in milliseconds */
 
-const globalCache = new Map<string, CacheEntry<any>>();
+export const globalCache = new Map<string, CacheEntry<any>>();
+
+export function invalidateCacheByFn(fnName: string): void {
+  const prefix = `${fnName}_`;
+  for (const key of Array.from(globalCache.keys())) {
+    if (key.startsWith(prefix)) {
+      globalCache.delete(key);
+    }
+  }
+}
 
 export const useSupabase = <T, P extends Record<string, string | number>>({
   fn,
