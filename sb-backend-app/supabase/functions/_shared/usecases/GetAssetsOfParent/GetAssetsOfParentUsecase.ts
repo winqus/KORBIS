@@ -4,10 +4,7 @@ import {
   ASSETS_REPOSITORY,
   DOMAIN_CDN_SERVICE,
 } from "../../injection-tokens.ts";
-import {
-  DocumentNotFoundError,
-  NoPermissionError,
-} from "../../errors/index.ts";
+import { NoPermissionError } from "../../errors/index.ts";
 import { Container, Item } from "../../entities/index.ts";
 import { DEFAULT_PAGINATION_LIMIT } from "../../config.ts";
 import { AssetTypeEnum } from "../../core/index.ts";

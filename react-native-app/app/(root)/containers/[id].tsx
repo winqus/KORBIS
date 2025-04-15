@@ -2,62 +2,57 @@ import { View, Dimensions, Alert, Platform, ScrollView } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  deleteItem,
-  getItemById,
-  updateItem,
+  deleteContainer,
+  getContainerById,
+  updateContainer,
   getContainers,
-} from "@/lib/supabase";
-import { useSupabase } from "@/lib/useSupabase";
-import { useItemFiles } from "@/lib/useItemFiles";
-import { Container, Item } from "@/types";
-import { clearParentStack, pushParent } from "@/signals/parent";
+} from "../../../lib/supabase";
+import { useSupabase } from "../../../lib/useSupabase";
+import { Container } from "../../../types";
+import { clearParentStack, pushParent } from "../../../signals/parent";
 import {
-  ParentSelector,
   AssetViewImage,
   AssetBackButton,
   AssetEditButton,
   AssetName,
   AssetTags,
   AssetDescription,
-  AssetAttachments,
   AssetLocation,
   AssetOther,
   AssetDeleteButton,
   ParentAssetInfo,
-  Quantity,
-} from "@/components";
+  AssetContainerContents,
+  ParentSelector,
+} from "../../../components";
 
-const ItemDetail = () => {
-  const { id, itemData } = useLocalSearchParams<{
+const ContainerDetail = () => {
+  const { id, containerData } = useLocalSearchParams<{
     id?: string;
-    itemData?: string;
+    containerData?: string;
   }>();
   const router = useRouter();
-  const [initialItem, setInitialItem] = useState<Item | null>(null);
+  const [initialContainer, setInitialContainer] = useState<Container | null>(
+    null,
+  );
   const [isEditing, setIsEditing] = useState(false);
-  const [editedItem, setEditedItem] = useState<Item | null>(null);
+  const [editedContainer, setEditedContainer] = useState<Container | null>(
+    null,
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [containers, setContainers] = useState<Container[]>([]);
   const [isLoadingContainers, setIsLoadingContainers] = useState(false);
-  const {
-    files,
-    isLoading: isLoadingFiles,
-    uploadFile,
-    openFile,
-    deleteFile,
-  } = useItemFiles(id);
 
   useEffect(() => {
-    if (itemData) {
+    if (containerData) {
       try {
-        const parsedItem = JSON.parse(itemData) as Item;
-        setInitialItem(parsedItem);
-        setEditedItem(parsedItem);
+        const parsedContainer = JSON.parse(containerData) as Container;
+        setInitialContainer(parsedContainer);
+        setEditedContainer(parsedContainer);
       } catch (error) {
-        console.error("Failed to parse item data:", error);
+        console.error("Failed to parse container data:", error);
       }
     }
-  }, [itemData]);
+  }, [containerData]);
 
   useEffect(() => {
     if (isEditing) {
@@ -79,53 +74,59 @@ const ItemDetail = () => {
   };
 
   if (!id) {
-    console.error("No item ID provided");
-    Alert.alert("Error", "No item ID provided");
+    console.error("No container ID provided");
+    Alert.alert("Error", "No container ID provided");
     router.replace("/");
   }
 
   const windowHeight = Dimensions.get("window").height;
 
-  const { data: fetchedItem, loading: isLoadingItem } = useSupabase({
-    fn: getItemById,
+  const { data: fetchedContainer, loading: isLoadingContainer } = useSupabase({
+    fn: getContainerById,
     params: {
       id: id!,
     },
-    skip: !!initialItem,
+    skip: !!initialContainer,
   });
 
-  const item = initialItem || fetchedItem;
+  const container = initialContainer || fetchedContainer;
 
   useEffect(() => {
-    if (fetchedItem && !initialItem) {
-      setEditedItem(fetchedItem);
+    if (fetchedContainer && !initialContainer) {
+      setEditedContainer(fetchedContainer);
     }
-  }, [fetchedItem, initialItem]);
+  }, [fetchedContainer, initialContainer]);
 
   const handleDelete = () => {
-    Alert.alert("Delete Item", "Are you sure you want to delete this item?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Delete",
-        onPress: async () => {
-          await deleteItem({ id: id! });
-          router.replace("/");
+    Alert.alert(
+      "Delete Container",
+      "Are you sure you want to delete this container?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
         },
-        style: "destructive",
-      },
-    ]);
+        {
+          text: "Delete",
+          onPress: async () => {
+            await deleteContainer({ id: id! }).then(() => {
+              router.replace("/");
+            });
+          },
+          style: "destructive",
+        },
+      ],
+    );
   };
 
   const handleParentPress = () => {
-    if (item?.parentId && item?.parentType && item?.parentName) {
+    if (container?.parentId && container?.parentType) {
+      console.log("Parent pressed", container);
       clearParentStack();
       pushParent({
-        id: item.parentId,
-        type: item.parentType,
-        name: item.parentName,
+        id: container.parentId,
+        type: container.parentType,
+        name: container.parentName || "My Home",
       });
 
       router.push({
@@ -139,54 +140,35 @@ const ItemDetail = () => {
   };
 
   const handleSave = async () => {
-    if (!editedItem) return;
+    if (!editedContainer) return;
 
     setIsSaving(true);
     try {
-      const updatedItem = await updateItem({
+      const updatedContainer = await updateContainer({
         id: id!,
-        name: editedItem.name,
-        description: editedItem.description,
-        quantity: editedItem.quantity,
-        parentId: editedItem.parentId,
-        parentType: editedItem.parentType,
+        name: editedContainer.name,
+        description: editedContainer.description,
+        parentId: editedContainer.parentId,
+        parentType: editedContainer.parentType,
       });
 
-      if (!updatedItem) {
-        throw new Error("Failed to update item");
+      if (!updatedContainer) {
+        throw new Error("Failed to update container");
       }
 
-      setInitialItem(updatedItem);
+      setInitialContainer(updatedContainer);
       setIsEditing(false);
     } catch (error) {
-      console.error("Failed to update item:", error);
-      Alert.alert("Error", "Failed to update item");
+      console.error("Failed to update container:", error);
+      Alert.alert("Error", "Failed to update container");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    setEditedItem(item);
+    setEditedContainer(container);
     setIsEditing(false);
-  };
-
-  const handleQuantityDecrease = () => {
-    if (editedItem) {
-      setEditedItem({
-        ...editedItem,
-        quantity: Math.max(1, editedItem.quantity - 1),
-      });
-    }
-  };
-
-  const handleQuantityIncrease = () => {
-    if (editedItem) {
-      setEditedItem({
-        ...editedItem,
-        quantity: editedItem.quantity + 1,
-      });
-    }
   };
 
   const handleParentChange = (parent: {
@@ -194,9 +176,9 @@ const ItemDetail = () => {
     type?: string;
     name?: string;
   }) => {
-    if (editedItem) {
-      setEditedItem({
-        ...editedItem,
+    if (editedContainer) {
+      setEditedContainer({
+        ...editedContainer,
         parentId: parent.id,
         parentType: parent.type as "root" | "container",
         parentName: parent.name,
@@ -205,36 +187,36 @@ const ItemDetail = () => {
   };
 
   const handleNameChange = (name: string) => {
-    if (editedItem) {
-      setEditedItem({
-        ...editedItem,
+    if (editedContainer) {
+      setEditedContainer({
+        ...editedContainer,
         name,
       });
     }
   };
 
   const handleClearName = () => {
-    if (editedItem) {
-      setEditedItem({
-        ...editedItem,
+    if (editedContainer) {
+      setEditedContainer({
+        ...editedContainer,
         name: "",
       });
     }
   };
 
   const handleDescriptionChange = (description: string) => {
-    if (editedItem) {
-      setEditedItem({
-        ...editedItem,
+    if (editedContainer) {
+      setEditedContainer({
+        ...editedContainer,
         description,
       });
     }
   };
 
   const handleClearDescription = () => {
-    if (editedItem) {
-      setEditedItem({
-        ...editedItem,
+    if (editedContainer) {
+      setEditedContainer({
+        ...editedContainer,
         description: "",
       });
     }
@@ -248,7 +230,7 @@ const ItemDetail = () => {
       >
         <View className="relative w-full" style={{ height: windowHeight / 2 }}>
           {/* AssetViewImage */}
-          <AssetViewImage imageUrl={item?.imageUrl} />
+          <AssetViewImage imageUrl={container?.imageUrl} />
 
           <View
             className="z-50 absolute inset-x-2"
@@ -278,70 +260,56 @@ const ItemDetail = () => {
               {/* ParentAsset */}
               {isEditing ? (
                 <ParentSelector
-                  currentParentId={editedItem?.parentId}
-                  currentParentType={editedItem?.parentType}
-                  currentParentName={editedItem?.parentName || "My Home"}
+                  currentParentId={editedContainer?.parentId}
+                  currentParentType={editedContainer?.parentType}
+                  currentParentName={editedContainer?.parentName || "My Home"}
                   onSelectParent={handleParentChange}
                   containers={containers}
                   isLoading={isLoadingContainers}
                 />
               ) : (
                 <ParentAssetInfo
-                  parentType={item?.parentType}
-                  parentName={item?.parentName || "My Home"}
+                  parentType={container?.parentType}
+                  parentName={container?.parentName || "My Home"}
                   onPress={handleParentPress}
-                />
-              )}
-
-              {/* Quantity */}
-              {item?.quantity && (
-                <Quantity
-                  mode={isEditing ? "edit" : "read"}
-                  value={isEditing ? editedItem?.quantity || 1 : item.quantity}
-                  onDecrease={isEditing ? handleQuantityDecrease : undefined}
-                  onIncrease={isEditing ? handleQuantityIncrease : undefined}
                 />
               )}
             </View>
 
             {/* AssetName */}
             <AssetName
-              name={isEditing ? editedItem?.name || "" : item?.name || ""}
+              name={
+                isEditing ? editedContainer?.name || "" : container?.name || ""
+              }
               isEditing={isEditing}
               onNameChange={handleNameChange}
               onClear={handleClearName}
             />
 
             {/* AssetTags */}
-            <AssetTags type="item" />
+            <AssetTags type="container" />
           </View>
 
           {/* AssetDescription */}
           <AssetDescription
             description={
               isEditing
-                ? editedItem?.description || ""
-                : item?.description || ""
+                ? editedContainer?.description || ""
+                : container?.description || ""
             }
             isEditing={isEditing}
             onDescriptionChange={handleDescriptionChange}
             onClear={handleClearDescription}
           />
 
-          {/* AssetAttachments */}
-          <AssetAttachments
-            files={files}
-            isLoading={isLoadingFiles}
-            onUploadFile={uploadFile}
-            onOpenFile={openFile}
-            onDeleteFile={deleteFile}
-          />
-
           {/* AssetLocation */}
           <AssetLocation />
 
           {/* AssetOther */}
-          <AssetOther id={item?.id || ""} />
+          <AssetOther id={container?.id || ""} />
+
+          {/* Container Items Count */}
+          {/* <AssetContainerContents childCount={container?.childCount || 0} /> */}
 
           {/* AssetDeleteButton */}
           <AssetDeleteButton onDelete={handleDelete} />
@@ -351,4 +319,4 @@ const ItemDetail = () => {
   );
 };
 
-export default ItemDetail;
+export default ContainerDetail;

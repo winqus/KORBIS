@@ -85,6 +85,7 @@ const ContainerTextOverlay = ({ name }: { name: string }) => (
 interface ItemCardProps {
   item?: Pick<Item, "id" | "name" | "imageUrl">;
   onPress?: () => void;
+  onLongPress?: () => void;
   variant?: "default" | "loading" | "highlighted" | "generating";
   borderClassName?: string;
 }
@@ -92,6 +93,7 @@ interface ItemCardProps {
 export const ItemCard = ({
   item,
   onPress,
+  onLongPress,
   variant = "default",
   borderClassName = "",
 }: ItemCardProps) => {
@@ -107,6 +109,7 @@ export const ItemCard = ({
   return (
     <TouchableOpacity
       onPress={onPress}
+      onLongPress={onLongPress}
       disabled={variant === "loading" || variant === "generating"}
       className={`flex-1 w-full h-44 mt-4 rounded-2xl bg-accent shadow-lg shadow-black-100/70 relative overflow-hidden ${borderClass}`}
     >
@@ -129,6 +132,7 @@ export const ItemCard = ({
 interface ContainerCardProps {
   container?: Pick<Container, "id" | "name" | "imageUrl">;
   onPress?: () => void;
+  onLongPress?: () => void;
   variant?: "default" | "loading" | "highlighted" | "generating";
   borderClassName?: string;
 }
@@ -136,6 +140,7 @@ interface ContainerCardProps {
 export const ContainerCard = ({
   container,
   onPress,
+  onLongPress,
   variant = "default",
   borderClassName = "",
 }: ContainerCardProps) => {
@@ -151,6 +156,7 @@ export const ContainerCard = ({
   return (
     <TouchableOpacity
       onPress={onPress}
+      onLongPress={onLongPress}
       disabled={variant === "loading" || variant === "generating"}
       className={`flex-1 w-full h-44 mt-4 rounded-2xl bg-accent shadow-lg shadow-black-100/70 relative overflow-hidden ${borderClass}`}
     >

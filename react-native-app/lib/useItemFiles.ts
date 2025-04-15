@@ -16,7 +16,7 @@ interface UseItemFilesReturn {
   isLoading: boolean;
   fetchFiles: () => Promise<void>;
   uploadFile: () => Promise<void>;
-  openFile: (file: FileWithStatus) => Promise<void>;
+  openFile: (file: FileWithStatus | File) => Promise<void>;
   deleteFile: (fileId: string) => Promise<void>;
   checkFileStatus: (file: File) => Promise<boolean>;
 }
@@ -137,7 +137,7 @@ export const useItemFiles = (
     }
   };
 
-  const openFile = async (file: FileWithStatus) => {
+  const openFile = async (file: File | FileWithStatus) => {
     try {
       await ensureDirExists();
 
