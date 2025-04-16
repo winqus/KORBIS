@@ -93,9 +93,12 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
     try {
       const { limit, skip, ownerId, parentId } = options;
 
+      const filesFields = "id name originalName fileUrl mimeType size createdAt";
+      const fields = this.classProperties.filter(property => property !== "files").concat(`files {${filesFields}}`);
+
       let query = this.client.graphql.get()
         .withClassName(this.className)
-        .withFields(`${this.classProperties} _additional{id creationTimeUnix}`)
+        .withFields(`${fields} _additional{id creationTimeUnix}`)
         .withLimit(limit || DEFAULT_PAGINATION_LIMIT)
         .withOffset(skip || 0)
         .withSort([{
