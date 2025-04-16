@@ -28,7 +28,10 @@ const { app } = bootstrap({
       ],
     },
   ],
-  extraBindings: [],
+  extraBindings: [{
+    provide: AssetsController,
+    useClass: AssetsController,
+  }],
 });
 
 // Start the server

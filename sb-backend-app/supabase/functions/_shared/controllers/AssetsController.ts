@@ -4,7 +4,7 @@ import { GetAssetsOfParentCommand } from "../usecases/GetAssetsOfParent/GetAsset
 import { handleError } from "./errorHandler.ts";
 import { inject, injectable } from "jsr:@needle-di/core@0.12.0";
 
-@injectable()
+// @injectable()
 export class AssetsController {
   constructor(
     private readonly getAssetsOfParentUsecase = inject(GetAssetsOfParent),
