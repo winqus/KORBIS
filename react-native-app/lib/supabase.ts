@@ -21,7 +21,7 @@ import {
   File,
 } from "@/types";
 import * as FileSystem from "expo-file-system";
-import { invalidateCacheByFn } from "./useSupabase";
+import { globalCache, invalidateCacheByFn } from "./useSupabase";
 
 throwIfMissing("env variables", process.env, [
   "EXPO_PUBLIC_SUPABASE_PROJECT_URL",
@@ -44,6 +44,8 @@ export const supabase = createClient(config.projectUrl, config.anonKey, {
 
 export async function login() {
   try {
+    globalCache.clear();
+
     const redirectUri = Linking.createURL("/");
     console.log("redirectUri", redirectUri);
 
@@ -97,6 +99,8 @@ export async function logout() {
     if (error) {
       throw new Error(error.message);
     }
+
+    globalCache.clear();
 
     return true;
   } catch (error) {

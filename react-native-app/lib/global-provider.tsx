@@ -29,6 +29,7 @@ export const GlobalProvider = ({ children }: GlobalProviderProps) => {
     refetch,
   } = useSupabase({
     fn: getCurrentUser,
+    cacheKey: `getCurrentUser_${Date.now()}`,
   });
 
   const isLoggedIn = !!user;
