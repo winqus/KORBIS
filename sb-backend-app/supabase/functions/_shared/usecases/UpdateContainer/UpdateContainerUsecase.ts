@@ -13,7 +13,7 @@ import { randomUUID } from "../../utils.ts";
 import { AssetTypeEnum } from "../../core/index.ts";
 import { DOMAIN_ROOT_NAME } from "../../config.ts";
 
-@injectable()
+// @injectable()
 export class UpdateContainer {
   constructor(
     private readonly containersRepository = inject(CONTAINERS_REPOSITORY),

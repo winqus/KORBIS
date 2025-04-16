@@ -2,7 +2,7 @@ import { SupabaseService } from "../services/index.ts";
 import { DomainCdnService } from "../interfaces/index.ts";
 import { inject, injectable } from "@needle-di/core";
 
-@injectable()
+// @injectable()
 export class SupabaseAdapter implements DomainCdnService {
   private readonly config = {
     imageBucketName: "domain-images",

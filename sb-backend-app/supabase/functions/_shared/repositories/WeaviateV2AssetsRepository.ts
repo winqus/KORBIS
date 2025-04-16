@@ -9,7 +9,7 @@ import { DEFAULT_PAGINATION_LIMIT } from "../config.ts";
 import { ClassConstructor, plainToInstance } from 'npm:class-transformer@0.5.1';
 import { AssetTypeEnum } from "../core/index.ts";
 
-@injectable()
+// @injectable()
 export class WeaviateV2AssetsRepository implements AssetsRepository {
   private readonly ASSET_CLASSES = ["Item", "Container"] as const;
   private readonly ASSET_CLASS_FIELDS: Record<

@@ -9,7 +9,7 @@ import { Optional } from "../core/index.ts";
 import { randomUUID } from "../utils.ts";
 import { DEFAULT_PAGINATION_LIMIT } from "../config.ts";
 
-@injectable()
+// @injectable()
 export class WeaviateV2ContainersRepository
   extends WeaviateV2BaseRepository<Container>
   implements ContainersRepository {

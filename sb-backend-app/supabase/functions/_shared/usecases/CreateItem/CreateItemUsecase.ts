@@ -13,7 +13,7 @@ import { IVirtualAsset } from "../../entities/index.ts";
 import { AssetTypeEnum } from "../../core/index.ts";
 import { DOMAIN_ROOT_NAME } from "../../config.ts";
 
-@injectable()
+// @injectable()
 export class CreateItem {
   constructor(
     private readonly itemsRepository = inject(ITEMS_REPOSITORY),

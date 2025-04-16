@@ -9,7 +9,7 @@ import { Container, Item } from "../../entities/index.ts";
 import { DEFAULT_PAGINATION_LIMIT } from "../../config.ts";
 import { AssetTypeEnum } from "../../core/index.ts";
 
-@injectable()
+// @injectable()
 export class GetAssetsOfParent {
   constructor(
     private readonly assetsRepository = inject(ASSETS_REPOSITORY),

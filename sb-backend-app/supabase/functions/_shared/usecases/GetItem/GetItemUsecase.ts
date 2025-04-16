@@ -10,7 +10,7 @@ import {
   NoPermissionError,
 } from "../../errors/index.ts";
 
-@injectable()
+// @injectable()
 export class GetItem {
   constructor(
     private readonly itemsRepository = inject(ITEMS_REPOSITORY),

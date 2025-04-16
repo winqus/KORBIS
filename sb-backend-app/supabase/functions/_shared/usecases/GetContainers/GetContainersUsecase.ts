@@ -9,7 +9,7 @@ import {
 } from "../../errors/index.ts";
 import { Container } from "../../entities/index.ts";
 
-@injectable()
+// @injectable()
 export class GetContainers {
   constructor(
     private readonly containersRepository = inject(CONTAINERS_REPOSITORY),

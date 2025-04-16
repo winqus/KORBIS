@@ -10,7 +10,7 @@ import {
 } from "../../errors/index.ts";
 import { File } from "../../entities/File.ts";
 
-@injectable()
+// @injectable()
 export class GetItemFiles {
   constructor(
     private readonly itemsRepository = inject(ITEMS_REPOSITORY),

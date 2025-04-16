@@ -11,7 +11,7 @@ import {
 import { File } from "../../entities/index.ts";
 import { randomUUID } from "../../utils.ts";
 
-@injectable()
+// @injectable()
 export class AddFileForItem {
   constructor(
     private readonly itemsRepository = inject(ITEMS_REPOSITORY),

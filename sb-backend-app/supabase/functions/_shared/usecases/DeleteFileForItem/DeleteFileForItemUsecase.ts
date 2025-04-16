@@ -9,7 +9,7 @@ import {
   NoPermissionError,
 } from "../../errors/index.ts";
 
-@injectable()
+// @injectable()
 export class DeleteFileForItem {
   constructor(
     private readonly itemsRepository = inject(ITEMS_REPOSITORY),

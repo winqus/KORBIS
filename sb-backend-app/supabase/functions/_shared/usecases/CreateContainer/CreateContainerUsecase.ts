@@ -14,7 +14,7 @@ import { DOMAIN_ROOT_NAME } from "../../config.ts";
 import { VisualCode } from '../../utils.ts';
 import { CONTAINER_VISUAL_CODE_PREFIX } from '../../config.ts';
 
-@injectable()
+// @injectable()
 export class CreateContainer {
   constructor(
     private readonly containersRepository = inject(CONTAINERS_REPOSITORY),

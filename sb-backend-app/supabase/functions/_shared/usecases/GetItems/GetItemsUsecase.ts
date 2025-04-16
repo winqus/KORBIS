@@ -6,7 +6,7 @@ import {
 } from "../../injection-tokens.ts";
 import { Item } from "../../entities/index.ts";
 
-@injectable()
+// @injectable()
 export class GetItems {
   constructor(
     private readonly itemsRepository = inject(ITEMS_REPOSITORY),

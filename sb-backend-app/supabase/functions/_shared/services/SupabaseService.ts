@@ -10,7 +10,7 @@ import {
   SUPABASE_CURRENT_USER,
 } from "../injection-tokens.ts";
 
-@injectable()
+// @injectable()
 export class SupabaseService {
   constructor(
     private readonly adminClient = inject(SUPABASE_ADMIN, {

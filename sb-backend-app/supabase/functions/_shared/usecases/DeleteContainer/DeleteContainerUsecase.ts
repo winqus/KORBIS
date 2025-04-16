@@ -9,7 +9,7 @@ import {
 import { GetAssetsOfParent, GetAssetsOfParentCommand } from "../index.ts";
 import { AssetTypeEnum } from "../../core/index.ts";
 
-@injectable()
+// @injectable()
 export class DeleteContainer {
   constructor(
     private readonly containersRepository = inject(CONTAINERS_REPOSITORY),

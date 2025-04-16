@@ -13,6 +13,23 @@ import {
   SUPABASE_CURRENT_USER,
   WEAVIATE_CLIENT,
 } from "./injection-tokens.ts";
+import { SupabaseService } from "./services/index.ts";
+import {
+  AddFileForItem,
+  CreateContainer,
+  CreateItem,
+  DeleteContainer,
+  DeleteFileForItem,
+  DeleteItem,
+  GetAssetsOfParent,
+  GetContainer,
+  GetContainers,
+  GetItem,
+  GetItemFiles,
+  GetItems,
+  UpdateContainer,
+  UpdateItem,
+} from "./usecases/index.ts";
 
 export interface BootstrapConfig {
   requiredEnvVars: string[];
@@ -70,8 +87,68 @@ export function bootstrap(
       },
     },
     {
+      provide: SupabaseService,
+      useClass: SupabaseService,
+    },
+    {
       provide: DOMAIN_CDN_SERVICE,
       useClass: SupabaseAdapter,
+    },
+    {
+      provide: AddFileForItem,
+      useClass: AddFileForItem,
+    },
+    {
+      provide: CreateContainer,
+      useClass: CreateContainer,
+    },
+    {
+      provide: CreateItem,
+      useClass: CreateItem,
+    },
+    {
+      provide: DeleteContainer,
+      useClass: DeleteContainer,
+    },
+    {
+      provide: DeleteFileForItem,
+      useClass: DeleteFileForItem,
+    },
+    {
+      provide: DeleteItem,
+      useClass: DeleteItem,
+    },
+    {
+      provide: GetAssetsOfParent,
+      useClass: GetAssetsOfParent,
+    },
+    {
+      provide: GetContainer,
+      useClass: GetContainer,
+    },
+    {
+      provide: GetContainers,
+      useClass: GetContainers,
+    },
+    {
+      provide: GetItem,
+      useClass: GetItem,
+    },
+    {
+      provide: GetItemFiles,
+      useClass: GetItemFiles,
+    },
+    {
+      provide: GetItems,
+      useClass: GetItems,
+    },
+    {
+      provide: UpdateContainer,
+      useClass: UpdateContainer,
+    },
+    {
+      provide: UpdateItem,
+      useClass: UpdateItem,
     },
   );
 

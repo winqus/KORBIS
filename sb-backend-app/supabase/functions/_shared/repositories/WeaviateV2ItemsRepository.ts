@@ -32,7 +32,7 @@ const SEARCH_PROPERTIES = {
   DESCRIPTION: "description",
 } as const;
 
-@injectable()
+// @injectable()
 export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
   implements ItemsRepository {
   protected readonly assetType = "item";
