@@ -17,6 +17,16 @@ const { container, app } = bootstrap({
     "WEAVIATE_ENDPOINT",
     "WEAVIATE_API_KEY",
   ],
+  extraBindings: [
+    {
+      provide: ItemsController,
+      useClass: ItemsController,
+    },
+    {
+      provide: ItemsControllerOld,
+      useClass: ItemsControllerOld,
+    },
+  ],
   repositories: [
     { token: ITEMS_REPOSITORY, repository: WeaviateV2ItemsRepository },
     {
@@ -25,7 +35,6 @@ const { container, app } = bootstrap({
     },
   ],
   controllers: [],
-  extraBindings: [],
 });
 
 const itemsController = container.get(ItemsController);

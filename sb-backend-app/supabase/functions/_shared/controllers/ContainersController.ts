@@ -17,7 +17,7 @@ import { BadRequestError } from "../errors/index.ts";
 import { CONTAINER_VISUAL_CODE_PREFIX } from "../config.ts";
 import validator from 'validator';
 
-@injectable()
+// @injectable()
 export class ContainersController {
   constructor(
     private readonly createContainerUsecase = inject(CreateContainer),

@@ -20,6 +20,12 @@ const { app } = bootstrap({
       repository: WeaviateV2AssetsRepository,
     },
   ],
+  extraBindings: [
+    {
+      provide: AssetsController,
+      useClass: AssetsController,
+    },
+  ],
   controllers: [
     {
       instance: AssetsController,
@@ -28,10 +34,6 @@ const { app } = bootstrap({
       ],
     },
   ],
-  extraBindings: [{
-    provide: AssetsController,
-    useClass: AssetsController,
-  }],
 });
 
 // Start the server

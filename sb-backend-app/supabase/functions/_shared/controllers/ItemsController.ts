@@ -20,7 +20,7 @@ import {
 import { handleError } from "./errorHandler.ts";
 import { inject, injectable } from "@needle-di/core";
 
-@injectable()
+// @injectable()
 export class ItemsController {
   constructor(
     private readonly createItemUsecase = inject(CreateItem),

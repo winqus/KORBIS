@@ -15,7 +15,7 @@ type CreateItemDTO = {
   imageBase64?: string;
 };
 
-@injectable()
+// @injectable()
 export default class ItemsControllerOld {
   constructor(private readonly itemsRepository: ItemsRepository) {}
 
