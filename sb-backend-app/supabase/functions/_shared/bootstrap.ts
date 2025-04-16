@@ -219,7 +219,7 @@ function createAuthMiddleware(container: Container) {
           return createClient(
             configService.getOrThrow("SUPABASE_URL"),
             configService.getOrThrow("SUPABASE_ANON_KEY"),
-            { global: { headers: { Authorization: jwt } } },
+            { global: { headers: { Authorization: `Bearer ${jwt}` } } },
           );
         },
       });
@@ -227,6 +227,8 @@ function createAuthMiddleware(container: Container) {
       const user = await container.get(SUPABASE_ADMIN).auth.getUser(jwt);
 
       let userId = user.data.user?.id;
+      console.log("User:", user);
+      console.log(">>>USER", await container.get(SUPABASE_CURRENT_USER).auth.getUser());
       if (!userId && isLocalEnv()) {
         console.log(
           "[DEV] No userId found in JWT, using LOCAL_TEST_USER_ID from .env",
