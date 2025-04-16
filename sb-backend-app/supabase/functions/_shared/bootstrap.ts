@@ -205,13 +205,16 @@ function createAuthMiddleware(container: Container) {
         console.log("User JWT:", jwt.slice(0, 10), "...");
       }
 
-      container.bind({
-        provide: JWT,
-        useValue: jwt,
-      });
+      if (!container.has(JWT)) {
+        container.bind({
+          provide: JWT,
+          useValue: jwt,
+        });
+      }
 
-      container.bind({
-        provide: SUPABASE_CURRENT_USER,
+      if (!container.has(SUPABASE_CURRENT_USER)) {
+        container.bind({
+          provide: SUPABASE_CURRENT_USER,
         useFactory: () => {
           const configService = inject(CONFIG_SERVICE);
           const jwt = inject(JWT);
@@ -221,14 +224,14 @@ function createAuthMiddleware(container: Container) {
             configService.getOrThrow("SUPABASE_ANON_KEY"),
             { global: { headers: { Authorization: `Bearer ${jwt}` } } },
           );
-        },
-      });
+          },
+        });
+      }
 
       const user = await container.get(SUPABASE_ADMIN).auth.getUser(jwt);
 
       let userId = user.data.user?.id;
-      console.log("User:", user);
-      console.log(">>>USER", await container.get(SUPABASE_CURRENT_USER).auth.getUser());
+
       if (!userId && isLocalEnv()) {
         console.log(
           "[DEV] No userId found in JWT, using LOCAL_TEST_USER_ID from .env",
