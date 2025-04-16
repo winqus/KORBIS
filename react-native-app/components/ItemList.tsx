@@ -5,14 +5,18 @@ import { ContainerCard, ItemCard } from "@/components/ItemCards";
 import NoResults from "@/components/NoResults";
 import { FlashList } from "@shopify/flash-list";
 
+export type ItemListAsset = IVirtualAsset & {
+  status?: "pending" | "generating" | "completed" | "failed";
+};
+
 interface ItemListProps {
-  assets: IVirtualAsset[];
-  onCardPress: (item: IVirtualAsset) => void;
-  onCardLongPress?: (item: IVirtualAsset) => void;
+  assets: ItemListAsset[];
+  onCardPress: (item: ItemListAsset) => void;
+  onCardLongPress?: (item: ItemListAsset) => void;
   loading?: boolean;
   showHeader?: boolean;
   customHeader?: React.ReactElement;
-  listRef?: React.RefObject<FlashList<IVirtualAsset>>;
+  listRef?: React.RefObject<FlashList<ItemListAsset>>;
   onScroll?: (event: any) => void;
   onLoad?: () => void;
 }
@@ -47,7 +51,7 @@ const ItemList = ({
         </View>
       ));
 
-  const skeletons: IVirtualAsset[] = Array.from({ length: 20 }).map(
+  const skeletons: ItemListAsset[] = Array.from({ length: 20 }).map(
     (_, index) => ({
       id: `skeleton-${index}`,
       type: "item",
@@ -77,9 +81,16 @@ const ItemList = ({
             );
           }
 
-          const isQueueItem =
-            asset.ownerId === "queue" || asset.ownerId === "manual-queue";
-          const variant = isQueueItem ? "generating" : "default";
+          let variant: "default" | "loading" | "highlighted" | "generating" =
+            "default";
+
+          if (asset.status === "generating") {
+            variant = "generating";
+          } else if (asset.status === "pending") {
+            variant = "loading";
+          } else if (asset.status === "completed") {
+            variant = "highlighted";
+          }
 
           return (
             <View

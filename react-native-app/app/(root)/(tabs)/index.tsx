@@ -3,7 +3,7 @@ import { BackHandler, Image, Text, TouchableOpacity, View } from "react-native";
 import { searchAssets } from "@/lib/supabase";
 import { useGlobalContext } from "@/lib/global-provider";
 import { useSupabase } from "@/lib/useSupabase";
-import ItemList from "@/components/ItemList";
+import ItemList, { ItemListAsset } from "@/components/ItemList";
 import { SafeAreaView } from "react-native-safe-area-context";
 import icons from "@/constants/icons";
 import {
@@ -156,42 +156,46 @@ export default function Index() {
           job.parentType === currentParentAsset.value.type),
     );
   };
-  const autoQueueItems: IVirtualAsset[] = filterAutoJobsOfCurrentParent(
+  const autoQueueItems: ItemListAsset[] = filterAutoJobsOfCurrentParent(
     jobQueue.value,
   ).map((job) => ({
     id: job.id,
     type: "item" as AssetType,
-    name: job.candidate.name || "Processing item...",
+    name: job.candidate.name || " ",
     imageUrl: job.imageUri,
     ownerId: "queue",
+    status: "generating",
   }));
-  const completedAutoQueueItems: IVirtualAsset[] =
+  const completedAutoQueueItems: ItemListAsset[] =
     filterAutoJobsOfCurrentParent(completedJobs.value).map((job) => ({
       id: job.id,
       type: "item" as AssetType,
-      name: job.candidate.name || "Processing item...",
+      name: job.candidate.name || " ",
       imageUrl: job.imageUri,
       ownerId: "manual-queue",
+      status: "completed",
     }));
-  const manualQueueItems: IVirtualAsset[] = filterManualJobsOfCurrentParent(
+  const manualQueueItems: ItemListAsset[] = filterManualJobsOfCurrentParent(
     manualJobQueue.value,
   ).map((job) => ({
     id: job.id,
     type: "item" as AssetType,
-    name: job.name || "Processing item...",
+    name: job.name || " ",
     imageUrl: job.imageUri,
     ownerId: "manual-queue",
+    status: "pending",
   }));
-  const completedManualQueueItems: IVirtualAsset[] =
+  const completedManualQueueItems: ItemListAsset[] =
     filterManualJobsOfCurrentParent(manualCompletedJobs.value).map((job) => ({
       id: job.id,
       type: "item" as AssetType,
-      name: job.name || "Processing item...",
+      name: job.name || " ",
       imageUrl: job.imageUri,
       ownerId: "manual-queue",
+      status: "completed",
     }));
 
-  const combinedAssets = [
+  const combinedAssets: ItemListAsset[] = [
     ...autoQueueItems,
     ...manualQueueItems,
     ...completedAutoQueueItems,
