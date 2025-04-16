@@ -26,6 +26,7 @@ import { SmartItemFrame } from "./SmartItemFrame";
 import { AssetType } from "../types";
 import { GuidanceHoverText } from "./GuidanceHoverText";
 import { AutoCreateItemsPayload } from "../signals/queue";
+import { currentParentAsset } from "@/signals/parent";
 
 type CreationCandidateAsset = {
   id: string;
@@ -62,6 +63,7 @@ export const VisualAssetCreator = ({
   const [segmentationResult, setSegmentationResult] =
     useState<SubjectSegmentationResult | null>(null);
   const [candidates, setCandidates] = useState<CreationCandidateAsset[]>([]);
+  const [addButtonEnabled, setAddButtonEnabled] = useState<boolean>(true);
 
   useEffect(() => {
     if (!segmentator.isInitialized || !image?.uri) return;
@@ -168,7 +170,9 @@ export const VisualAssetCreator = ({
   };
 
   const handleAutoAdd = async () => {
-    const payload = await Promise.all(
+    setAddButtonEnabled(false);
+
+    const payload: AutoCreateItemsPayload = await Promise.all(
       candidates
         .filter((c) => c.state === "selected")
         .map(async (candidate) => {
@@ -185,11 +189,21 @@ export const VisualAssetCreator = ({
           ).frame;
           const croppedImage = await cropImage(image.uri, squareFrame);
 
+          const parent =
+            currentParentAsset.value.type === "container" &&
+            currentParentAsset.value.id
+              ? {
+                  type: currentParentAsset.value.type,
+                  id: currentParentAsset.value.id,
+                }
+              : undefined;
+
           return {
             candidate: {
               quantity: candidate.quantity,
             },
             imageUri: croppedImage.uri,
+            parent,
           };
         }),
     );
@@ -309,7 +323,11 @@ export const VisualAssetCreator = ({
                   ? "Auto add item"
                   : `Auto add ${selectedCandidatesCount} items`
               }
-              disabled={!canAutoCreate || selectedCandidatesCount === 0}
+              disabled={
+                !addButtonEnabled ||
+                !canAutoCreate ||
+                selectedCandidatesCount === 0
+              }
             />
           )}
 
@@ -320,7 +338,7 @@ export const VisualAssetCreator = ({
                 ? `or customize each item`
                 : "or customize the item"
             }
-            disabled={false}
+            disabled={!addButtonEnabled}
           />
         </View>
       </View>

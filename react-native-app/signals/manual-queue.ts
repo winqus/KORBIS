@@ -22,6 +22,7 @@ type Job<T> = T & {
 
 export const manualJobQueue = signal<Job<ManualItemPayload>[]>([]);
 export const manualFailedJobs = signal<Job<ManualItemPayload>[]>([]);
+export const manualCompletedJobs = signal<Job<ManualItemPayload>[]>([]);
 
 export const isManualProcessing = signal(false);
 
@@ -62,6 +63,10 @@ function updateManualJobStatus(
   console.log(`Manual job ${job.id} status updated to:`, status);
 }
 
+export function clearCompletedManualQueueJobs() {
+  manualCompletedJobs.value = [];
+}
+
 async function processManualQueue() {
   if (isManualProcessing.value || manualJobQueue.value.length === 0) return;
 
@@ -96,6 +101,7 @@ async function processManualQueue() {
       }
 
       updateManualJobStatus(job, "completed");
+      manualCompletedJobs.value = [...manualCompletedJobs.value, job];
     } catch (e) {
       updateManualJobStatus(job, "failed");
       console.error(`Failed manual job ${job.id} error:`, e);

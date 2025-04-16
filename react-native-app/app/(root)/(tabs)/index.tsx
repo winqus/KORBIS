@@ -15,11 +15,20 @@ import {
 import { AssetType, IVirtualAsset, VirtualAsset } from "@/types";
 import SearchBar from "@/components/SearchBar";
 import React, { useEffect, useRef } from "react";
-import { isProcessing, pendingJobsCount, jobQueue } from "@/signals/queue";
+import {
+  isProcessing,
+  pendingJobsCount,
+  jobQueue,
+  completedJobs,
+  Job,
+  clearCompletedAutoQueueJobs,
+} from "@/signals/queue";
 import {
   isManualProcessing,
   pendingManualJobsCount,
   manualJobQueue,
+  ManualItemPayload,
+  clearCompletedManualQueueJobs,
 } from "@/signals/manual-queue";
 import {
   pushParent,
@@ -30,6 +39,8 @@ import {
 } from "@/signals/parent";
 import { useIsFocused } from "@react-navigation/core";
 import { FlashList } from "@shopify/flash-list";
+import { manualCompletedJobs } from "../../../signals/manual-queue";
+import { AutoCreateItemPayload } from "../../../signals/queue";
 
 export default function Index() {
   // TODO: remove
@@ -126,24 +137,65 @@ export default function Index() {
     }
   };
 
-  const autoQueueItems: IVirtualAsset[] = jobQueue.value.map((job) => ({
+  const filterAutoJobsOfCurrentParent = (
+    jobs: Job<AutoCreateItemPayload>[],
+  ) => {
+    return jobs.filter(
+      (job) =>
+        (job.parent?.id == null &&
+          job.parent?.type === currentParentAsset.value.id) ||
+        (job.parent?.id === currentParentAsset.value.id &&
+          job.parent?.type === currentParentAsset.value.type),
+    );
+  };
+  const filterManualJobsOfCurrentParent = (jobs: Job<ManualItemPayload>[]) => {
+    return jobs.filter(
+      (job) =>
+        job.parentId == null ||
+        (job.parentId === currentParentAsset.value.id &&
+          job.parentType === currentParentAsset.value.type),
+    );
+  };
+  const autoQueueItems: IVirtualAsset[] = filterAutoJobsOfCurrentParent(
+    jobQueue.value,
+  ).map((job) => ({
     id: job.id,
     type: "item" as AssetType,
     name: job.candidate.name || "Processing item...",
     imageUrl: job.imageUri,
     ownerId: "queue",
   }));
-  const manualQueueItems: IVirtualAsset[] = manualJobQueue.value.map((job) => ({
+  const completedAutoQueueItems: IVirtualAsset[] =
+    filterAutoJobsOfCurrentParent(completedJobs.value).map((job) => ({
+      id: job.id,
+      type: "item" as AssetType,
+      name: job.candidate.name || "Processing item...",
+      imageUrl: job.imageUri,
+      ownerId: "manual-queue",
+    }));
+  const manualQueueItems: IVirtualAsset[] = filterManualJobsOfCurrentParent(
+    manualJobQueue.value,
+  ).map((job) => ({
     id: job.id,
     type: "item" as AssetType,
     name: job.name || "Processing item...",
     imageUrl: job.imageUri,
     ownerId: "manual-queue",
   }));
+  const completedManualQueueItems: IVirtualAsset[] =
+    filterManualJobsOfCurrentParent(manualCompletedJobs.value).map((job) => ({
+      id: job.id,
+      type: "item" as AssetType,
+      name: job.name || "Processing item...",
+      imageUrl: job.imageUri,
+      ownerId: "manual-queue",
+    }));
 
   const combinedAssets = [
     ...autoQueueItems,
     ...manualQueueItems,
+    ...completedAutoQueueItems,
+    ...completedManualQueueItems,
     ...(items || []),
   ];
 
@@ -154,6 +206,14 @@ export default function Index() {
   }, [navigation]);
 
   useEffect(() => {
+    if (isProcessing.value === false) {
+      clearCompletedAutoQueueJobs();
+    }
+
+    if (isManualProcessing.value === false) {
+      clearCompletedManualQueueJobs();
+    }
+
     refetchItems({
       queryText: params.queryText || "",
       queryImageUri: params.queryImageUri || "",

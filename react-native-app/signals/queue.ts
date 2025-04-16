@@ -1,22 +1,24 @@
 import { computed, signal } from "@preact/signals-react";
-import { Item } from "../types";
+import { Item, IVirtualAsset } from "../types";
 import { getPictureBase64FromLocalUri, randomUUIDv4 } from "@/lib/utils";
 import { createItem, generateItemMetadataFromPicture } from "@/lib/supabase";
 
 export type AutoCreateItemPayload = {
   candidate: Partial<Item>;
   imageUri: string;
+  parent?: Pick<IVirtualAsset, "type" | "id">;
 };
 
 export type AutoCreateItemsPayload = AutoCreateItemPayload[];
 
-type Job<T> = T & {
+export type Job<T> = T & {
   id: string;
   status: "pending" | "processing" | "completed" | "failed";
 };
 
 export const jobQueue = signal<Job<AutoCreateItemPayload>[]>([]);
 export const failedJobs = signal<Job<AutoCreateItemPayload>[]>([]);
+export const completedJobs = signal<Job<AutoCreateItemPayload>[]>([]);
 
 export const isProcessing = signal(false);
 
@@ -50,6 +52,10 @@ function updateJobStatus(job: Job<unknown>, status: Job<unknown>["status"]) {
   console.log(`Job ${job.id} status updated to:`, status);
 }
 
+export function clearCompletedAutoQueueJobs() {
+  completedJobs.value = [];
+}
+
 async function processQueue() {
   if (isProcessing.value || jobQueue.value.length === 0) return;
 
@@ -59,7 +65,7 @@ async function processQueue() {
     const job = jobQueue.value[0];
     try {
       updateJobStatus(job, "processing");
-      const { candidate, imageUri } = job;
+      const { candidate, imageUri, parent } = job;
 
       const imageBase64 = await getPictureBase64FromLocalUri(imageUri);
       if (!imageBase64) {
@@ -79,6 +85,7 @@ async function processQueue() {
         description: generatedMetadata.description,
         pictureBase64: imageBase64,
         quantity: candidate.quantity,
+        parent,
       });
 
       if (!newItem) {
@@ -86,12 +93,13 @@ async function processQueue() {
       }
 
       updateJobStatus(job, "completed");
+      completedJobs.value = [...completedJobs.value, job];
     } catch (e) {
       updateJobStatus(job, "failed");
       console.error(`Failed job ${job.id} error:`, e);
       failedJobs.value = [...failedJobs.value, job];
     } finally {
-      jobQueue.value = jobQueue.value.slice(1); // remove the processed job
+      jobQueue.value = jobQueue.value.slice(1);
     }
   }
 
