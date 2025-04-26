@@ -313,6 +313,47 @@ Deno.test("SupabaseService.ensureFileUploadToBucket - should handle bucket creat
   assertEquals(result.error?.message, "Permission denied");
 });
 
+Deno.test("SupabaseService.ensureFileUploadToBucket - should handle unexpected thrown error during bucket creation", async () => {
+  const mockStorageFileApi: any = createMockStorageFileApi({
+    upload: spy(async () => ({ 
+      data: null, 
+      error: { message: "Bucket not found" }
+    }))
+  });
+  
+  const mockStorageApi: any = createMockStorageApi({
+    from: spy(() => mockStorageFileApi),
+    createBucket: spy(async () => {
+      throw new Error("Unexpected error");
+    })
+  });
+  
+  const mockClient: any = createMockClient({
+    storage: mockStorageApi
+  });
+  
+  const mockAdminClient = () => mockClient;
+  
+  const service = new SupabaseService(
+    mockAdminClient,
+    () => createMockClient() as any,
+    new MockConfigService()
+  );
+  
+  const result = await service.ensureFileUploadToBucket({
+    bucketName: "test-bucket",
+    fileBuffer: new ArrayBuffer(10),
+    filePath: "test/file.png",
+    contentType: "image/png",
+    bucketOptions: {
+      public: true
+    }
+  });
+  
+  assertEquals(result.data, null);
+  assertEquals(result.error?.message, "Failed to create bucket and upload file: Unexpected error");
+});
+
 Deno.test("SupabaseService.deleteBucket - should delete bucket", async () => {
   const mockClient: any = createMockClient();
   const mockAdminClient = () => mockClient;
