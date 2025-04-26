@@ -12,5 +12,8 @@
   },
   "compilerOptions": {
     "types": ["npm:@types/express", "jsr:@supabase/functions-js/edge-runtime.d.ts", "npm:@types/validator"]
+  },
+  "tasks": {
+    "test": "deno test ./tests/**/*test.ts --ignore='**/*-e2e-test.ts' --ignore='**/index.ts' --allow-env -c ./deno.json --no-check --unstable-detect-cjs"
   }
 }

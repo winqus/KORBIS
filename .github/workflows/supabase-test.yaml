@@ -1,0 +1,30 @@
+name: Build & Test Functions
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'sb-backend-app/supabase/functions/**'
+  pull_request:
+    paths:
+      - 'sb-backend-app/supabase/functions/**'
+  workflow_dispatch:
+
+jobs:
+  test-functions:
+    name: Test Supabase Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Build & Run tests
+        run: deno task test
+        working-directory: sb-backend-app/supabase/functions
