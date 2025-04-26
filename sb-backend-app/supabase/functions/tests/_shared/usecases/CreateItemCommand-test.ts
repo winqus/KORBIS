@@ -10,7 +10,7 @@ Deno.test("Creates CreateItemCommand", () => {
   console.log("Creating CreateItemCommand instance...");
 
   const command = CreateItemCommand.create({
-    userId: "useris",
+    userId: "550e8400-e29b-41d4-a716-446655440000",
     name: "Test Item",
     description: "This is a test item",
     imageBase64:
@@ -18,8 +18,10 @@ Deno.test("Creates CreateItemCommand", () => {
   });
 
   assertExists(command);
-  assertEquals(command.userId, "useris");
+  assertEquals(command.userId, "550e8400-e29b-41d4-a716-446655440000");
 });
+
+// deno test ./supabase/**/*.ts --ignore=**/*-e2e-test.ts --ignore=**/index.ts --coverage -A -c .\supabase\functions\deno.json --no-check --unstable-detect-cjs
 
 //  deno test -A -c .\supabase\functions\deno.json .\supabase\functions\tests\_shared\usecases\CreateItemCommand-test.ts
 // import "reflect-metadata";

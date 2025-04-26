@@ -3,3 +3,6 @@
 .env.keys
 .env.local
 .env.*.local
+
+coverage/
+coverage.lcov

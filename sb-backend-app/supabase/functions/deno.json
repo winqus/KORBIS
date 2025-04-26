@@ -1,5 +1,6 @@
 {
   "imports": {
+    "@/": "./_shared/",
     "express": "npm:express@4.21.2",
     "weaviate-ts-client": "npm:weaviate-ts-client@2.2.0",
     "@google/generative-ai": "npm:@google/generative-ai",
@@ -12,6 +13,10 @@
   },
   "compilerOptions": {
     "types": ["npm:@types/express", "jsr:@supabase/functions-js/edge-runtime.d.ts", "npm:@types/validator"]
+  },
+  "test": {
+    "include": ["supabase/functions/tests/**/*.ts"],
+    "exclude": ["**/index.ts"]
   },
   "tasks": {
     "test": "deno test ./tests/**/*test.ts --ignore='**/*-e2e-test.ts' --ignore='**/index.ts' --allow-env -c ./deno.json --no-check --unstable-detect-cjs"

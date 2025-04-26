@@ -28,6 +28,7 @@ Deno.test(
       ownerId: generateUUID5("test-owner-id"), 
       name: "Test Item",
       description: "This is a test item",
+      quantity: 1,
     });
     assert(item.id, "Item's ID should be defined");
     assertEquals(item.name, "Test Item", "Item name should match");
@@ -48,6 +49,7 @@ Deno.test(
       ownerId: generateUUID5("test-owner-id"),
       name: "Test Item",
       description: "This is a test item",
+      quantity: 1,
     });
     const foundItem = await repo.findById(item.id);
     assert(foundItem, "Item should be found");
@@ -70,10 +72,12 @@ Deno.test(
       ownerId: generateUUID5("test-owner-id"),
       name: "Test Item",
       description: "This is a test item",
+      quantity: 1,
     });
     const updatedItem = await repo.update(item.id, {
       name: "Updated Test Item",
       description: "This is an updated test item",
+      quantity: 2,
     });
     assert(updatedItem, "Item should be updated");
     assertEquals(
@@ -100,18 +104,21 @@ Deno.test("Gets paginated items", {
         ownerId: generateUUID5("test-owner-id"),
         name: `Test Item ${i}`,
         description: `This is test item ${i}`,
+        quantity: 1,
       })),
   );
 
   const paginatedItems = await repo.paginate({
     limit: 3,
     skip: 0,
+    ownerId: generateUUID5("test-owner-id"),
   });
   const paginatedItemsIds = paginatedItems.map((item) => item.id);
 
   const paginatedItems2 = await repo.paginate({
     limit: 3,
     skip: 3,
+    ownerId: generateUUID5("test-owner-id"),
   });
   const paginatedItems2Ids = paginatedItems2.map((item) => item.id);
 
@@ -130,6 +137,7 @@ Deno.test("Deletes item by ID", {
     ownerId: generateUUID5("test-owner-id"),
     name: "Test Item for deletion",
     description: "This is a test item",
+    quantity: 1,
   });
   await repo.delete(item.id);
 
