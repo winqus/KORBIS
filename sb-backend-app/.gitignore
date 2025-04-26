@@ -5,3 +5,4 @@
 .env.*.local
 
 coverage/
+coverage.lcov
