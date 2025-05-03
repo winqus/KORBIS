@@ -71,7 +71,7 @@ const DefaultImage = ({ imageURI }: { imageURI?: string }) => {
       <Image
         source={{ uri: imageURI }}
         className="size-full"
-        contentFit="contain"
+        contentFit="cover"
       />
     </View>
   );
