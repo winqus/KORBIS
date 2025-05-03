@@ -1,5 +1,5 @@
 import React from "react";
-import { Image } from "expo-image";
+import { Image, useImage } from "expo-image";
 import images from "../constants/images";
 import { View } from "react-native";
 
@@ -9,6 +9,13 @@ interface AssetViewImageProps {
 
 export const AssetViewImage = ({ imageUrl }: AssetViewImageProps) => {
   const blurhash = "UQLz~yt8M_Ip_N_3Rka|WB-;xaxa9aRjROIV";
+  const image = useImage(imageUrl || "");
+  const isSquarish = (width: number, height: number) => {
+    const ratio = width / height;
+    return ratio > 0.75 && ratio < 1.33;
+  };
+  const shouldCover = () =>
+    !image ? false : isSquarish(image.width, image.height);
 
   return (
     <View className="flex-1">
@@ -22,9 +29,9 @@ export const AssetViewImage = ({ imageUrl }: AssetViewImageProps) => {
 
       {/* Main image */}
       <Image
-        source={{ uri: imageUrl }}
+        source={image}
         className="size-full"
-        contentFit="contain"
+        contentFit={shouldCover() ? "cover" : "contain"}
       />
 
       {/* Overlay gradient */}
