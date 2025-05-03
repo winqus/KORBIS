@@ -2,9 +2,9 @@ appId: com.anonymous.reactnativekorbis
 ---
 - runFlow:
     file: ./setup.yaml
-- assertVisible: ".*Found.*"
 - tapOn:
     id: "home-tab-button"
+- assertVisible: ".*Found.*"
 - assertVisible:
     id: "__item-list__"
 - assertVisible:
