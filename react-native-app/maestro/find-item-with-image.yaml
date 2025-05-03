@@ -1,0 +1,16 @@
+appId: com.anonymous.reactnativekorbis
+---
+- runFlow:
+    file: ./setup.yaml
+- tapOn:
+    id: "camera-tab-button"
+- tapOn:
+    id: "__find-option-btn-item-camera-controls__"
+- assertVisible: ".*Take a picture to find a match.*"
+- tapOn:
+    id: "__shutter-btn-item-camera-controls__"
+- assertVisible: ".*Finding matches.*"
+- tapOn:
+    id: "__item-visual-asset-finder__"
+    index: 0
+- assertVisible: ".*Test item 1.*"
