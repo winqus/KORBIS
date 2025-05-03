@@ -52,17 +52,30 @@ const GeneratingState = ({ imageURI }: { imageURI?: string }) => (
   </>
 );
 
-const DefaultImage = ({ imageURI }: { imageURI?: string }) => (
-  <>
-    {imageURI && (
+const DefaultImage = ({ imageURI }: { imageURI?: string }) => {
+  const blurhash = "UQLz~yt8M_Ip_N_3Rka|WB-;xaxa9aRjROIV";
+
+  if (!imageURI) return null;
+
+  return (
+    <View className="flex-1">
+      {/* Blurred background image */}
+      <Image
+        placeholder={{ blurhash }}
+        className="absolute inset-0 w-full h-full"
+        contentFit="cover"
+        blurRadius={20}
+      />
+
+      {/* Main image */}
       <Image
         source={{ uri: imageURI }}
         className="size-full"
-        contentFit="cover"
+        contentFit="contain"
       />
-    )}
-  </>
-);
+    </View>
+  );
+};
 
 const ItemTextOverlay = ({ name }: { name: string }) => (
   <View className="size-full flex flex-col justify-end items-start absolute p-1 z-10">
