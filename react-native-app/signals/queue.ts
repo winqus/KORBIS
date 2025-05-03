@@ -92,6 +92,11 @@ async function processQueue() {
         throw new Error(`Failed to create item`);
       }
 
+      (job as any).candidate = {
+        ...job.candidate,
+        ...newItem,
+        type: newItem.type,
+      };
       updateJobStatus(job, "completed");
       completedJobs.value = [...completedJobs.value, job];
     } catch (e) {

@@ -10,6 +10,7 @@ const BackgroundGradient = () => (
   <Image
     source={images.cardGradient}
     className="size-full absolute bottom-0 z-10"
+    tintColor="#666666"
   />
 );
 
@@ -114,6 +115,7 @@ export const ItemCard = ({
       className={`flex-1 w-full h-44 mt-4 rounded-2xl bg-accent shadow-lg shadow-black-100/70 relative overflow-hidden ${borderClass}`}
     >
       {variant === "default" && <BackgroundGradient />}
+      {variant === "highlighted" && <BackgroundGradient />}
 
       {variant === "loading" ? (
         <LoadingState />

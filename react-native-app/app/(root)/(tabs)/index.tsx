@@ -103,8 +103,24 @@ export default function Index() {
   };
 
   const handleCardPress = (asset: IVirtualAsset) => {
-    if (asset.ownerId === "queue" || asset.ownerId === "manual-queue") {
+    if (
+      (asset as any).status !== "completed" &&
+      (asset.ownerId === "queue" || asset.ownerId === "manual-queue")
+    ) {
       return;
+    }
+
+    if ((asset as any).status === "completed") {
+      const completedJob = completedJobs.value.find(
+        (job) => job.id === asset.id,
+      );
+      (asset as any) =
+        completedJob?.candidate == null
+          ? asset
+          : {
+              ...completedJob.candidate,
+              type: "item",
+            };
     }
 
     if (asset.type === "item") {
