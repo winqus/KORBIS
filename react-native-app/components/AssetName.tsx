@@ -28,7 +28,11 @@ export const AssetName = ({
   }
 
   return (
-    <Text className="text-2xl font-rubik-bold" selectable={true}>
+    <Text
+      testID="__asset-name__"
+      className="text-2xl font-rubik-bold"
+      selectable={true}
+    >
       {name}
     </Text>
   );

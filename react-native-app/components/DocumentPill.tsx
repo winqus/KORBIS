@@ -25,7 +25,10 @@ export const DocumentPill = ({
   onDelete?: () => void;
   isDownloaded?: boolean;
 }) => (
-  <View className="flex flex-row items-center w-full justify-between">
+  <View
+    testID="__document-pill__"
+    className="flex flex-row items-center w-full justify-between"
+  >
     <TouchableOpacity
       onPress={onPress}
       className="flex flex-row items-center px-1.5 py-1 gap-2 bg-primary-100 rounded-md flex-1"

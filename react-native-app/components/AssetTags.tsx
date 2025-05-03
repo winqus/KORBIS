@@ -8,7 +8,10 @@ interface AssetTagsProps {
 
 export const AssetTags = ({ type }: AssetTagsProps) => {
   return (
-    <View className="flex flex-row items-center gap-1.5">
+    <View
+      testID="__asset-tags__"
+      className="flex flex-row items-center gap-1.5"
+    >
       <TagPill label={type === "item" ? "Item" : "Container"} />
     </View>
   );
