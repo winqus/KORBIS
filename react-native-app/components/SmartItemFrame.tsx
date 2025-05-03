@@ -84,6 +84,7 @@ export const SmartItemFrame = (props: SmartItemFrameProps) => {
     <>
       {/* Frame */}
       <TouchableOpacity
+        testID="__smart-item-frame__"
         onPress={onSelect}
         className="absolute"
         style={{

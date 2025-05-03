@@ -1,0 +1,28 @@
+#"__smart-item-frame__"
+
+appId: com.anonymous.reactnativekorbis
+---
+- runFlow:
+      file: ./setup.yaml
+- tapOn:
+      id: "camera-tab-button"
+- assertVisible: ".*Take a picture to add your item.*"
+- tapOn:
+      id: "__shutter-btn-item-camera-controls__"
+- tapOn:
+      id: "__smart-item-frame__"
+      index: 0
+- tapOn: ".*or customize the item.*"
+- tapOn: ".*Give it a name.*"
+- inputText: "Test item 1"
+- hideKeyboard
+- tapOn: ".*Describe the item.*"
+- inputText: "Test item 1 description"
+- hideKeyboard
+- tapOn:
+      id: "__increase-edit-asset-quantity__"
+      repeat: 2
+- tapOn:
+      id: "__decrease-edit-asset-quantity__"
+- tapOn: ".*Add.*"
+- assertVisible: "Test item 1"

@@ -21,6 +21,7 @@ const EditQuantity = ({
       className="flex-row justify-center items-center gap-4"
     >
       <TouchableOpacity
+        testID="__decrease-edit-asset-quantity__"
         onPress={onDecrease}
         disabled={value <= minValue}
         className="w-6 h-6 rounded-full justify-center items-center bg-primary-100"
@@ -31,6 +32,7 @@ const EditQuantity = ({
       <Text className="font-bold text-xs text-black-300">{value}</Text>
 
       <TouchableOpacity
+        testID="__increase-edit-asset-quantity__"
         onPress={onIncrease}
         className="w-6 h-6 rounded-full justify-center items-center bg-primary-100"
       >

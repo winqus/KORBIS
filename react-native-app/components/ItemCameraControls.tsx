@@ -60,6 +60,7 @@ export const AddFindOptionsSegment = (props: {
     <View className={`flex-row justify-center ${containerClassName || "mb-6"}`}>
       <View className="flex-row bg-black/20 rounded-full overflow-hidden">
         <TouchableOpacity
+          testID="__add-option-btn-item-camera-controls__"
           onPress={onPressAdd}
           className={`px-8 py-2 ${
             activeOption === "add" ? "bg-white" : "bg-transparent"
@@ -75,6 +76,7 @@ export const AddFindOptionsSegment = (props: {
         </TouchableOpacity>
 
         <TouchableOpacity
+          testID="__find-option-btn-item-camera-controls__"
           onPress={onPressFind}
           className={`px-8 py-2 ${
             activeOption === "find" ? "bg-white" : "bg-transparent"
@@ -108,13 +110,18 @@ export const CameraControlsRow = (props: {
     >
       {/* Camera flip button (left side) */}
       {onPressFlip && (
-        <TouchableOpacity onPress={onPressFlip} className="absolute left-10">
+        <TouchableOpacity
+          testID="__flip-btn-item-camera-controls__"
+          onPress={onPressFlip}
+          className="absolute left-10"
+        >
           <Ionicons name="camera-reverse-outline" size={28} color="white" />
         </TouchableOpacity>
       )}
 
       {/* Capture button (center) */}
       <TouchableOpacity
+        testID="__shutter-btn-item-camera-controls__"
         onPress={onPressCapture}
         className="size-20 rounded-full bg-white border-2 border-gray-300 items-center justify-center"
         style={{ elevation: 3 }} /* for Android shadow */
@@ -125,6 +132,7 @@ export const CameraControlsRow = (props: {
       {/* Gallery selection button (right side) */}
       {onPressGallery && (
         <TouchableOpacity
+          testID="__gallery-btn-item-camera-controls__"
           onPress={onPressGallery}
           className="absolute right-10 p-2 rounded-lg"
         >
