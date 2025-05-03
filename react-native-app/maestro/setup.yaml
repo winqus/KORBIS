@@ -1,0 +1,15 @@
+### https://docs.maestro.dev/
+### https://dev.to/b42/test-your-react-native-app-with-maestro-5bfj
+### https://blog.theodo.com/2024/03/three-hacks-level-up-maestro-testing/
+
+### Run app with `npx expo start` or `npx expo run:android`
+### Run tests with e.g. `maestro test .\maestro\flow.yaml`
+
+#appId: "com.anonymous.rntestsexample" # Android development build
+#appId: host.exp.exponent # Expo Go
+
+appId: com.anonymous.reactnativekorbis
+---
+- launchApp
+#- openLink: exp://127.0.0.1:8081
+- openLink: com.anonymous.reactnativekorbis://expo-development-client/?url=http%3A%2F%2F10.21.234.248%3A8081

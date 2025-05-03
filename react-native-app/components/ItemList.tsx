@@ -64,6 +64,7 @@ const ItemList = ({
   return (
     <View className="flex-1">
       <FlashList
+        testID="__item-list__"
         ref={listRef}
         onScroll={onScroll}
         onContentSizeChange={onLoad}
@@ -94,6 +95,7 @@ const ItemList = ({
 
           return (
             <View
+              testID="__asset-card__"
               className={`flex-1 mx-5 ${index % 2 === 0 ? "mr-2.5" : "ml-2.5"}`}
             >
               {asset.type === "item" ? (
