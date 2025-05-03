@@ -1,0 +1,14 @@
+flows:
+  - "*"
+executionOrder:
+  continueOnFailure: false
+  flowsOrder:
+    - flow
+    - items-list
+    - view-item-info
+    - view-items-in-container
+    - create-item-with-image
+    - find-item-with-image
+    - search-item-by-keyword
+    - update-item-info
+    - remove-item

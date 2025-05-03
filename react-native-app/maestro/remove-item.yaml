@@ -5,9 +5,9 @@ appId: com.anonymous.reactnativekorbis
 - tapOn:
       id: "home-tab-button"
 - assertVisible: ".*Found.*"
-- assertVisible: "Test item 1"
-- tapOn: "Test item 1"
-- assertVisible: "Test item 1 description"
+- assertVisible: ".*Test item 1.*"
+- tapOn: ".*Test item 1.*"
+- assertVisible: ".*Test item 1 description.*"
 - scrollUntilVisible:
       element:
           id: "__asset-delete-button__"
@@ -16,4 +16,4 @@ appId: com.anonymous.reactnativekorbis
 - tapOn: "DELETE"
 - assertVisible:
       id: "__item-list__"
-- assertNotVisible: "Test item 1"
+- assertNotVisible: ".*Test item 1.*"
