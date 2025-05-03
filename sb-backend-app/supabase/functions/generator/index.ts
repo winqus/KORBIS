@@ -163,23 +163,25 @@ async function generateItemDataForVisualMatches(
         responseMimeType: "application/json",
         candidateCount: 1,
         responseSchema: {
-          description: "Item metadata",
+          description: "Concise item metadata for UI display",
           type: SchemaType.OBJECT,
           properties: {
             item_name: {
               type: SchemaType.STRING,
-              description: "Few worded title of the item",
+              description:
+                "Short, product-style name (e.g. 'Nivea Men Cream', no 'batch' or 'group')",
               nullable: false,
             },
             shorthand: {
               type: SchemaType.STRING,
-              description: "ONE word long name of the item",
+              description:
+                "One lowercase word summarizing the item (e.g. brand or category)",
               nullable: false,
             },
             description: {
               type: SchemaType.STRING,
               description:
-                "BRIEF descriptive name of the item. For quick understanding",
+                "Brief friendly description for quick user understanding",
               nullable: false,
             },
           },
@@ -187,8 +189,24 @@ async function generateItemDataForVisualMatches(
         },
       },
     });
-    const summarizationSystemPrompt =
-      `Based on these reverse object image search results, determine whether the object(s) represent a specific concrete product, a general object, or a batch/group of similar objects. Answer in the format: {"item_name": "<put the name here, based on whether it is a concrete product, a general object, or a batch/group>, write it like in product listing style"}`;
+
+    const summarizationSystemPrompt = `
+    Analyze the following reverse image search results and identify what object is shown.
+    Determine if it's a specific product, general object, or group of similar items.
+    
+    Return structured JSON with:
+    - "item_name": short product-style title (NO 'batch', 'group', etc.)
+    - "shorthand": one lowercase word (brand or object type)
+    - "description": short, friendly summary of the item
+    
+    Respond in exactly this format:
+    {
+      "item_name": "...",
+      "shorthand": "...",
+      "description": "..."
+    }
+    `;
+
 
     let matchesJson = JSON.stringify(matches, null, 1);
     if (matchesJson.length > 5_000) {
