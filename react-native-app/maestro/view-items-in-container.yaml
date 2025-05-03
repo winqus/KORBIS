@@ -2,8 +2,6 @@ appId: com.anonymous.reactnativekorbis
 ---
 - runFlow:
       file: ./setup.yaml
-- tapOn:
-      id: "home-tab-button"
 - scrollUntilVisible:
       element:
           id: "__container-card__"

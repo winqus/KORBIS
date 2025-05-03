@@ -2,9 +2,11 @@ appId: com.anonymous.reactnativekorbis
 ---
 - runFlow:
       file: ./setup.yaml
-- tapOn:
-      id: "home-tab-button"
 - assertVisible: ".*Found.*"
+- scrollUntilVisible:
+    element:
+      text: ".*Gold Chest.*"
+- tapOn: ".*Gold Chest.*"
 - assertVisible: ".*Test item 1.*"
 - tapOn: ".*Test item 1.*"
 - assertVisible: ".*Test item 1 description.*"
