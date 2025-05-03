@@ -11,4 +11,5 @@ executionOrder:
     - find-item-with-image
     - search-item-by-keyword
     - update-item-info
+    - move-item-to-container
     - remove-item
