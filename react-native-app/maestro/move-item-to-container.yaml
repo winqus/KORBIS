@@ -7,7 +7,7 @@ appId: com.anonymous.reactnativekorbis
 - tapOn: ".*Test item 1.*"
 - assertVisible:
     id: "__asset-view-image__"
-- assertVisible: "Test item 1"
+- assertVisible: ".*Test item 1.*"
 - tapOn: "Edit"
 - tapOn: ".*My Assets*"
 - assertVisible: ".*Select Parent.*"
