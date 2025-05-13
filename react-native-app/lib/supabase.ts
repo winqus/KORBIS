@@ -23,11 +23,6 @@ import {
 import * as FileSystem from "expo-file-system";
 import { globalCache, invalidateCacheByFn } from "./useSupabase";
 
-throwIfMissing("env variables", process.env, [
-  "EXPO_PUBLIC_SUPABASE_PROJECT_URL",
-  "EXPO_PUBLIC_SUPABASE_ANON_KEY",
-]);
-
 export const config = {
   projectUrl: process.env.EXPO_PUBLIC_SUPABASE_PROJECT_URL!,
   anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
