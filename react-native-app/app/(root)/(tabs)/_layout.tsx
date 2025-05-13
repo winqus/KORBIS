@@ -65,6 +65,7 @@ const TabsLayout = () => {
             <TabIcon source={icons.home} focused={focused} title="Home" />
           ),
           tabBarHideOnKeyboard: true,
+          tabBarButtonTestID: "home-tab-button",
         }}
       />
       <Tabs.Screen
@@ -76,6 +77,7 @@ const TabsLayout = () => {
             <TabIcon source={icons.camera} focused={focused} title="Camera" />
           ),
           tabBarStyle: { display: "none" },
+          tabBarButtonTestID: "camera-tab-button",
         }}
       />
       <Tabs.Screen
@@ -86,6 +88,7 @@ const TabsLayout = () => {
           tabBarIcon: ({ focused }) => (
             <TabIcon source={icons.person} focused={focused} title="Profile" />
           ),
+          tabBarButtonTestID: "profile-tab-button",
         }}
       />
     </Tabs>

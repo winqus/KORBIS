@@ -1,0 +1,21 @@
+appId: com.anonymous.reactnativekorbis
+---
+- runFlow:
+      file: ./setup.yaml
+- assertVisible: ".*Found.*"
+- scrollUntilVisible:
+    element:
+      text: ".*Gold Chest.*"
+- tapOn: ".*Gold Chest.*"
+- assertVisible: ".*Test item 1.*"
+- tapOn: ".*Test item 1.*"
+- assertVisible: ".*Test item 1 description.*"
+- scrollUntilVisible:
+      element:
+          id: "__asset-delete-button__"
+- tapOn:
+      id: "__asset-delete-button__"
+- tapOn: "DELETE"
+- assertVisible:
+      id: "__item-list__"
+- assertNotVisible: ".*Test item 1.*"

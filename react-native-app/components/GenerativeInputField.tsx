@@ -66,6 +66,7 @@ const GenerativeInputField = ({
             )}
             {!isLoading && (
               <TextInput
+                testID="__generative-input-field__"
                 className={`flex-1 font-rubik text-justify ${inputClass || "text-black-200 text-3xl leading-[3rem]"} `}
                 placeholder={placeholder}
                 onChangeText={onChangeText}

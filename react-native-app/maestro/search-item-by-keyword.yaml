@@ -1,0 +1,12 @@
+appId: com.anonymous.reactnativekorbis
+---
+- runFlow:
+    file: ./setup.yaml
+- assertVisible:
+    id: "__container-card__"
+- tapOn: ".*Search anything.*"
+- inputText: "Test"
+- hideKeyboard
+- assertNotVisible:
+    id: "__container-card__"
+- assertVisible: ".*Test item 1.*"

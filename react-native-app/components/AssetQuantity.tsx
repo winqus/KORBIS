@@ -16,8 +16,12 @@ const EditQuantity = ({
   minValue = 1,
 }: EditQuantityProps) => {
   return (
-    <View className="flex-row justify-center items-center gap-4">
+    <View
+      testID="__edit-asset-quantity__"
+      className="flex-row justify-center items-center gap-4"
+    >
       <TouchableOpacity
+        testID="__decrease-edit-asset-quantity__"
         onPress={onDecrease}
         disabled={value <= minValue}
         className="w-6 h-6 rounded-full justify-center items-center bg-primary-100"
@@ -28,6 +32,7 @@ const EditQuantity = ({
       <Text className="font-bold text-xs text-black-300">{value}</Text>
 
       <TouchableOpacity
+        testID="__increase-edit-asset-quantity__"
         onPress={onIncrease}
         className="w-6 h-6 rounded-full justify-center items-center bg-primary-100"
       >
@@ -43,7 +48,10 @@ type ReadQuantityProps = {
 
 const ReadQuantity = ({ value }: ReadQuantityProps) => {
   return (
-    <View className="min-w-20 h-6 p-0.5 rounded-full justify-center items-center bg-primary-100">
+    <View
+      testID="__read-asset-quantity__"
+      className="min-w-20 h-6 p-0.5 rounded-full justify-center items-center bg-primary-100"
+    >
       <Text className="font-rubik-semibold text-xs text-black-300">
         {value} {value === 1 ? "unit" : "units"}
       </Text>

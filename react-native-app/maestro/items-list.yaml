@@ -1,0 +1,14 @@
+appId: com.anonymous.reactnativekorbis
+---
+- runFlow:
+    file: ./setup.yaml
+- assertVisible: ".*Found.*"
+- assertVisible:
+    id: "__item-list__"
+- assertVisible:
+    id: "__item-card__"
+    index: 0
+- scroll
+- assertVisible:
+    id: "__item-list__"
+

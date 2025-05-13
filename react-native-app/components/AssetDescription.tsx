@@ -16,7 +16,10 @@ export const AssetDescription = ({
   onClear,
 }: AssetDescriptionProps) => {
   return (
-    <View className="flex flex-col items-start gap-3">
+    <View
+      testID="__asset-description__"
+      className="flex flex-col items-start gap-3"
+    >
       <Text className="text-black-300 text-xl font-rubik-bold">
         Description
       </Text>

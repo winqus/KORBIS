@@ -18,7 +18,7 @@ export const AssetViewImage = ({ imageUrl }: AssetViewImageProps) => {
     !image ? false : isSquarish(image.width, image.height);
 
   return (
-    <View className="flex-1">
+    <View testID="__asset-view-image__" className="flex-1">
       {/* Blurred background image */}
       <Image
         placeholder={{ blurhash }}

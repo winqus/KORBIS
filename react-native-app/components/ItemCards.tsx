@@ -71,7 +71,7 @@ const DefaultImage = ({ imageURI }: { imageURI?: string }) => {
       <Image
         source={{ uri: imageURI }}
         className="size-full"
-        contentFit="contain"
+        contentFit="cover"
       />
     </View>
   );
@@ -122,6 +122,7 @@ export const ItemCard = ({
 
   return (
     <TouchableOpacity
+      testID="__item-card__"
       onPress={onPress}
       onLongPress={onLongPress}
       disabled={variant === "loading" || variant === "generating"}
@@ -170,6 +171,7 @@ export const ContainerCard = ({
 
   return (
     <TouchableOpacity
+      testID="__container-card__"
       onPress={onPress}
       onLongPress={onLongPress}
       disabled={variant === "loading" || variant === "generating"}

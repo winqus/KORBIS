@@ -28,7 +28,10 @@ export const ParentAssetInfo = ({
       disabled={!onPress}
     >
       {iconMap[parentType]}
-      <Text className="text-base font-rubik-medium text-black-200 bg-">
+      <Text
+        testID="__parent-asset-name__"
+        className="text-base font-rubik-medium text-black-200"
+      >
         {parentName}
       </Text>
     </TouchableOpacity>

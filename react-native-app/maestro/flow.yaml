@@ -6,11 +6,16 @@
 ### Run tests with e.g. `maestro test .\maestro\flow.yaml`
 
 #appId: "com.anonymous.rntestsexample" # Android development build
-appId: host.exp.exponent # Expo Go
+#appId: host.exp.exponent # Expo Go
+
+appId: com.anonymous.reactnativekorbis
 ---
-- launchApp
-- openLink: exp://127.0.0.1:8081
-- assertVisible: ".*inventory.*"
+- runFlow:
+      file: ./setup.yaml
+#- launchApp
+#- openLink: exp://127.0.0.1:8081
+#- openLink: com.anonymous.reactnativekorbis://expo-development-client/?url=http%3A%2F%2F10.21.234.248%3A8081
+- assertVisible: ".*Welcome.*"
 
 ### Other examples
 #- assertVisible: "Welcome!"

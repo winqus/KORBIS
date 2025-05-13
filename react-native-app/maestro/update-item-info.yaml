@@ -1,0 +1,26 @@
+appId: com.anonymous.reactnativekorbis
+---
+- runFlow:
+    file: ./setup.yaml
+- assertVisible: ".*Found.*"
+- assertVisible: "Test item 1"
+- tapOn: "Test item 1"
+- assertVisible:
+    id: "__asset-view-image__"
+- assertVisible: "Test item 1"
+- tapOn: "Edit"
+- tapOn: "Test item 1"
+- inputText: "11"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: "Save"
+    direction: UP
+- tapOn: "Save"
+- assertVisible:
+    id: "__read-asset-quantity__"
+- assertVisible: "Test item 111"
+- back
+- assertVisible:
+    id: "__item-list__"
+- assertVisible: "Test item 111"

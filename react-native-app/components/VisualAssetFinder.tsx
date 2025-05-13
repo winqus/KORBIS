@@ -511,7 +511,10 @@ export const VisualAssetFinder = ({
 
                   {items?.slice(0, 3).map((item) => (
                     <View key={item.id} className="">
-                      <TouchableOpacity onPress={() => handleSelectItem(item)}>
+                      <TouchableOpacity
+                        testID="__item-visual-asset-finder__"
+                        onPress={() => handleSelectItem(item)}
+                      >
                         <Image
                           source={{ uri: item.imageUrl }}
                           className="size-16 rounded-md"

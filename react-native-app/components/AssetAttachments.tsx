@@ -25,7 +25,11 @@ export const AssetAttachments = ({
         <Text className="text-black-300 text-xl font-rubik-bold">
           Attachments
         </Text>
-        <TouchableOpacity disabled={isLoading} onPress={onUploadFile}>
+        <TouchableOpacity
+          testID="__add-asset-attachments__"
+          disabled={isLoading}
+          onPress={onUploadFile}
+        >
           <Feather
             name="file-plus"
             size={20}
