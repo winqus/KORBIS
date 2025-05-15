@@ -1,21 +1,23 @@
 import { NextFunction, Request, Response } from "express";
 import {
+  AddFileForItem,
+  AddFileForItemCommand,
   CreateItem,
   CreateItemCommand,
+  DeleteFileForItem,
+  DeleteFileForItemCommand,
   DeleteItem,
   DeleteItemCommand,
   GetItem,
   GetItemCommand,
-  GetItems,
-  GetItemsCommand,
-  AddFileForItem,
-  AddFileForItemCommand,
-  DeleteFileForItem,
-  DeleteFileForItemCommand,
   GetItemFiles,
   GetItemFilesCommand,
+  GetItems,
+  GetItemsCommand,
   UpdateItem,
   UpdateItemCommand,
+  SearchItems,
+  SearchItemsCommand,
 } from "../usecases/index.ts";
 import { handleError } from "./errorHandler.ts";
 import { inject, injectable } from "@needle-di/core";
@@ -31,11 +33,13 @@ export class ItemsController {
     private readonly deleteFileForItemUsecase = inject(DeleteFileForItem),
     private readonly getItemFilesUsecase = inject(GetItemFiles),
     private readonly updateItemUsecase = inject(UpdateItem),
+    private readonly searchItemsUsecase = inject(SearchItems),
   ) {}
 
   public async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, description, imageBase64, parentId, parentType, quantity } = req.body;
+      const { name, description, imageBase64, parentId, parentType, quantity } =
+        req.body;
       const userId = req["userId"] as string;
 
       const command = CreateItemCommand.create({
@@ -97,7 +101,8 @@ export class ItemsController {
   public async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { name, description, imageBase64, quantity, parentId, parentType } = req.body;
+      const { name, description, imageBase64, quantity, parentId, parentType } =
+        req.body;
       const userId = req["userId"] as string;
 
       const command = UpdateItemCommand.create({
@@ -192,6 +197,25 @@ export class ItemsController {
       await this.deleteFileForItemUsecase.execute(command);
 
       res.status(204).send();
+    } catch (error) {
+      handleError(error, req, res, next);
+    }
+  }
+
+  public async search(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { queryText, queryImageBase64 } = req.body;
+      const userId = req["userId"] as string;
+
+      const command = SearchItemsCommand.create({
+        userId,
+        queryText,
+        queryImageBase64,
+      });
+
+      const result = await this.searchItemsUsecase.execute(command);
+
+      res.status(200).json(result);
     } catch (error) {
       handleError(error, req, res, next);
     }

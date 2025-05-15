@@ -147,11 +147,15 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
     query: SearchItemsProps,
   ): Promise<Array<Item & { score: number }>> {
     try {
-      const { queryText, queryImageBase64 } = query;
+      const { queryText, queryImageBase64, ownerId } = query;
       if (!queryText && !queryImageBase64) {
         throw new Error(
           "Either queryText or queryImageBase64 must be provided",
         );
+      }
+
+      if (!ownerId) {
+        throw new Error("ownerId not provided")
       }
 
       const fields = this.classProperties.filter(property => property !== "files");
@@ -169,6 +173,11 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
           .withFields(`${fields} _additional{id distance}`)
           .withNearImage({ image: queryImageBase64 })
           .withLimit(SEARCH_RESULTS_LIMIT)
+          .withWhere({
+            path: ["ownerId"],
+            operator: "Equal",
+            valueString: ownerId,
+          })
           .do();
 
         this.log(
@@ -210,6 +219,11 @@ export class WeaviateV2ItemsRepository extends WeaviateV2BaseRepository<Item>
             alpha: HYBRID_SEARCH_ALPHA,
           })
           .withLimit(SEARCH_RESULTS_LIMIT)
+          .withWhere({
+            path: ["ownerId"],
+            operator: "Equal",
+            valueString: ownerId,
+          })
           .do();
 
         this.log(
