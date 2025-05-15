@@ -23,6 +23,8 @@ export * from "./GetItemFiles/GetItemFilesCommand.ts";
 export * from "./GetItemFiles/GetItemFilesUsecase.ts";
 export * from "./GetItems/GetItemsCommand.ts";
 export * from "./GetItems/GetItemsUsecase.ts";
+export * from "./SearchItems/SearchItemsCommand.ts";
+export * from "./SearchItems/SearchItemsUsecase.ts";
 export * from "./UpdateContainer/UpdateContainerCommand.ts";
 export * from "./UpdateContainer/UpdateContainerUsecase.ts";
 export * from "./UpdateItem/UpdateItemCommand.ts";

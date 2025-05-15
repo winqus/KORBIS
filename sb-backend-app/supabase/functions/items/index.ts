@@ -4,7 +4,6 @@ import {
   WeaviateV2ContainersRepository,
   WeaviateV2ItemsRepository,
 } from "@/repositories/index.ts";
-import ItemsControllerOld from "./controller.ts";
 import { ItemsController } from "@/controllers/index.ts";
 import { bootstrap } from "@/bootstrap.ts";
 import { CONTAINERS_REPOSITORY, ITEMS_REPOSITORY } from "@/injection-tokens.ts";
@@ -22,10 +21,6 @@ const { container, app } = bootstrap({
       provide: ItemsController,
       useClass: ItemsController,
     },
-    {
-      provide: ItemsControllerOld,
-      useClass: ItemsControllerOld,
-    },
   ],
   repositories: [
     { token: ITEMS_REPOSITORY, repository: WeaviateV2ItemsRepository },
@@ -38,11 +33,7 @@ const { container, app } = bootstrap({
 });
 
 const itemsController = container.get(ItemsController);
-const itemsControllerOld = new ItemsControllerOld(
-  container.get(ITEMS_REPOSITORY),
-);
 
-/* NEW */
 app.post("/items", itemsController.create.bind(itemsController));
 app.get("/items/:id", itemsController.get.bind(itemsController));
 app.put("/items/:id", itemsController.update.bind(itemsController));
@@ -51,9 +42,7 @@ app.get("/items", itemsController.getPaginated.bind(itemsController));
 app.post("/items/files", itemsController.addFile.bind(itemsController));
 app.get("/items/:itemId/files", itemsController.getFiles.bind(itemsController));
 app.delete("/items/:itemId/files/:fileId", itemsController.deleteFile.bind(itemsController));
-
-/* OLD */
-app.post("/items/search", itemsControllerOld.search.bind(itemsControllerOld));
+app.post("/items/search", itemsController.search.bind(itemsController));
 
 // Start the server
 app.listen(port, (error: any) => {

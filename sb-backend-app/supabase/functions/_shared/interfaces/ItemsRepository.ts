@@ -5,6 +5,7 @@ import { File } from "../entities/File.ts";
 export type SearchItemsProps = {
   queryText?: string;
   queryImageBase64?: string;
+  ownerId: string;
 };
 
 export interface ItemsRepository {
@@ -35,7 +36,7 @@ export interface ItemsRepository {
   search(query: SearchItemsProps): Promise<Scored<Item>[]>;
   
   addFile(
-    itemId: string, 
+    itemId: string,
     fileData: {
       id: string;
       name: string;

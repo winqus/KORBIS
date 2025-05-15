@@ -9,7 +9,8 @@ import {
   AddFileForItem, 
   DeleteFileForItem, 
   GetItemFiles, 
-  UpdateItem 
+  UpdateItem,
+  SearchItems,
 } from "../../../_shared/usecases/index.ts";
 
 class MockRequest {
@@ -76,7 +77,8 @@ Deno.test("ItemsController.create - should create an item successfully", async (
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   
   const req = new MockRequest({
@@ -111,7 +113,8 @@ Deno.test("ItemsController.create - should handle errors", async () => {
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     body: {
@@ -141,7 +144,8 @@ Deno.test("ItemsController.get - should get an item by id", async () => {
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     params: { id: "550e8400-e29b-41d4-a716-446655440000" },
@@ -166,7 +170,8 @@ Deno.test("ItemsController.get - should return 400 on invalid input", async () =
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     params: { id: "invalid-uuid" },
@@ -193,7 +198,8 @@ Deno.test("ItemsController.getPaginated - should get paginated items", async () 
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     query: { limit: "10", skip: "0", parentId: "550e8400-e29b-41d4-a716-446655440000" },
@@ -218,7 +224,8 @@ Deno.test("ItemsController.getPaginated - should return 400 on invalid input", a
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     query: { limit: "0", skip: "0", parentId: "invalid-uuid" },
@@ -242,7 +249,8 @@ Deno.test("ItemsController.update - should update an item", async () => {
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    updateItemMock
+    updateItemMock,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     params: { id: "550e8400-e29b-41d4-a716-446655440000" },
@@ -278,7 +286,8 @@ Deno.test("ItemsController.update - should handle parent as root", async () => {
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    updateItemMock
+    updateItemMock,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     params: { id: "550e8400-e29b-41d4-a716-446655440000" },
@@ -310,7 +319,8 @@ Deno.test("ItemsController.update - should return 400 on invalid input", async (
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    updateItemMock
+    updateItemMock,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     params: { id: "550e8400-e29b-41d4-a716-446655440000" },
@@ -342,7 +352,8 @@ Deno.test("ItemsController.delete - should delete an item", async () => {
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     params: { id: "550e8400-e29b-41d4-a716-446655440000" },
@@ -366,7 +377,8 @@ Deno.test("ItemsController.delete - should return 400 on invalid input", async (
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     params: { id: "invalid-uuid" },
@@ -395,7 +407,8 @@ Deno.test("ItemsController.getFiles - should get files for an item", async () =>
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     getItemFilesMock,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     params: { itemId: "550e8400-e29b-41d4-a716-446655440000" },
@@ -420,7 +433,8 @@ Deno.test("ItemsController.getFiles - should return 400 on invalid input", async
     {} as AddFileForItem,
     {} as DeleteFileForItem,
     getItemFilesMock,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );  
   const req = new MockRequest({
     params: { itemId: "invalid-uuid" },
@@ -452,7 +466,8 @@ Deno.test("ItemsController.addFile - should add a file to an item", async () => 
     addFileForItemMock,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     body: {
@@ -484,7 +499,8 @@ Deno.test("ItemsController.addFile - should return 400 on invalid input", async 
     addFileForItemMock,
     {} as DeleteFileForItem,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     body: {
@@ -514,7 +530,8 @@ Deno.test("ItemsController.deleteFile - should delete a file from an item", asyn
     {} as AddFileForItem,
     deleteFileForItemMock,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     params: { fileId: "550e8400-e29b-41d4-a716-446655440000", itemId: "550e8400-e29b-41d4-a716-446655440000" },
@@ -538,7 +555,8 @@ Deno.test("ItemsController.deleteFile - should return 400 on invalid input", asy
     {} as AddFileForItem,
     deleteFileForItemMock,
     {} as GetItemFiles,
-    {} as UpdateItem
+    {} as UpdateItem,
+    {} as SearchItems,
   );
   const req = new MockRequest({
     params: { fileId: "invalid-uuid", itemId: "550e8400-e29b-41d4-a716-446655440000" },
