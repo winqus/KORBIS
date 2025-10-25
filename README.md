@@ -16,5 +16,9 @@ New items listed after creation, automatic item counting, image based search:
 
 ## Demo Video
 <p align="center" width="100%">
-<video src="docs/videos/demo.mp4" width="560" height="315" controls></video>
+<video src="https://github.com/user-attachments/assets/9d0e5ea5-ad2b-4f43-a470-e55588ccb71a" width="auto" height="auto" controls></video>
 </p>
+
+
+
+
